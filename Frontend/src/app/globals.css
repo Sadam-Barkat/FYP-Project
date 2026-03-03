@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f4f7fa;
+  --foreground: #333333;
+
+  /* Brand colors (used for custom CSS, Tailwind utilities come from tailwind.config.js) */
+  --color-primary: #0066cc;
+  --color-primary-light: #e6f2ff;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-purple: #8b5cf6;
+  --color-teal: #14b8a6;
+  --color-yellow: #facc15;
+
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f4f7fa;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-500: #6b7280;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
