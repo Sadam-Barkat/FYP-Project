@@ -2,6 +2,7 @@ import { Bell, UserCircle, Moon } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import ExportPDFButton from "@/components/layout/ExportPDFButton";
 import LogoutButton from "@/components/layout/LogoutButton";
+import HeaderTitle from "@/components/layout/HeaderTitle";
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
-          <h1 className="text-xl font-semibold text-[#0066cc]">Admin Dashboard</h1>
+          <HeaderTitle />
           
           <div className="flex items-center space-x-6">
             <span className="text-sm font-semibold text-gray-800 hidden sm:block">Real-Time Dash</span>

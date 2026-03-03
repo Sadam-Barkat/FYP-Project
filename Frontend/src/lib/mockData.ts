@@ -27,6 +27,80 @@ export interface Alert {
   department: string;
 }
 
+// ---------------- DOCTOR DATA ---------------- //
+
+export interface LastVitals {
+  heartRate: number;
+  bloodPressure: string;
+  spo2: number;
+  temperature: number;
+  respRate: number;
+}
+
+export interface DoctorPatient {
+  id: string;
+  name: string;
+  age: number;
+  gender: "M" | "F";
+  bed: string;
+  ward: string;
+  status: Status;
+  lastUpdated: string;
+  lastVitals: LastVitals;
+  alerts: string[];
+}
+
+export interface VitalsHistoryPoint {
+  time: string;
+  heartRate: number;
+  bloodPressureSys: number;
+  bloodPressureDia: number;
+  spo2: number;
+  temperature: number;
+  respRate: number;
+}
+
+export interface DoctorAnalytics {
+  totalTreated: number;
+  discharges: number;
+  avgRecovery: number;
+  recoveryRate: number;
+  alertsResolved: number;
+  conditions: {
+    normal: number;
+    critical: number;
+    emergency: number;
+  };
+  treatmentTrend: { week: string; count: number }[];
+  recentDischarges: { name: string; date: string; outcome: string }[];
+}
+
+export const mockDoctorAnalytics: DoctorAnalytics = {
+  totalTreated: 150,
+  discharges: 120,
+  avgRecovery: 5.2,
+  recoveryRate: 80,
+  alertsResolved: 45,
+  conditions: {
+    normal: 40,
+    critical: 30,
+    emergency: 30,
+  },
+  treatmentTrend: [
+    { week: "Week 1", count: 25 },
+    { week: "Week 2", count: 28 },
+    { week: "Week 3", count: 32 },
+    { week: "Week 4", count: 30 },
+    { week: "Week 5", count: 35 },
+  ],
+  recentDischarges: [
+    { name: "John Doe", date: "Today", outcome: "Recovered" },
+    { name: "Alice Smith", date: "Yesterday", outcome: "Transferred" },
+    { name: "Bob Johnson", date: "2 days ago", outcome: "Recovered" },
+    { name: "Emma Brown", date: "3 days ago", outcome: "Recovered" },
+  ],
+};
+
 // ---------------- OVERVIEW DATA ---------------- //
 export const mockKPIs: KPI[] = [
   { title: "Total Patients", value: 142, trend: "up", trendValue: "+5%", status: "good" },
@@ -159,3 +233,131 @@ export const mockForecastData = [
   { month: "Dec", actual: null, forecast: 1600 },
   { month: "Jan", actual: null, forecast: 1450 },
 ];
+
+// Assigned patients for Doctor role (personalized)
+export const assignedPatients: DoctorPatient[] = [
+  {
+    id: "P-1003",
+    name: "Muhammad Usman",
+    age: 68,
+    gender: "M",
+    bed: "ER-05",
+    ward: "Emergency",
+    status: "Emergency",
+    lastUpdated: "Just now",
+    lastVitals: {
+      heartRate: 132,
+      bloodPressure: "88/56",
+      spo2: 88,
+      temperature: 38.9,
+      respRate: 30,
+    },
+    alerts: ["SpO2 below 90%", "Hypotension detected"],
+  },
+  {
+    id: "P-1001",
+    name: "Ahmed Khan",
+    age: 45,
+    gender: "M",
+    bed: "ICU-01",
+    ward: "ICU",
+    status: "Critical",
+    lastUpdated: "2 mins ago",
+    lastVitals: {
+      heartRate: 118,
+      bloodPressure: "92/60",
+      spo2: 92,
+      temperature: 38.2,
+      respRate: 26,
+    },
+    alerts: ["Tachycardia trend", "Rising temperature"],
+  },
+  {
+    id: "P-1005",
+    name: "Zainab Tariq",
+    age: 55,
+    gender: "F",
+    bed: "ICU-04",
+    ward: "ICU",
+    status: "Critical",
+    lastUpdated: "5 mins ago",
+    lastVitals: {
+      heartRate: 104,
+      bloodPressure: "110/70",
+      spo2: 95,
+      temperature: 37.9,
+      respRate: 22,
+    },
+    alerts: ["ICU stay > 5 days"],
+  },
+  {
+    id: "P-1002",
+    name: "Sara Ali",
+    age: 32,
+    gender: "F",
+    bed: "W-12",
+    ward: "General Ward",
+    status: "Normal",
+    lastUpdated: "15 mins ago",
+    lastVitals: {
+      heartRate: 84,
+      bloodPressure: "118/76",
+      spo2: 98,
+      temperature: 36.9,
+      respRate: 18,
+    },
+    alerts: [],
+  },
+  {
+    id: "P-1004",
+    name: "Fatima Bilal",
+    age: 28,
+    gender: "F",
+    bed: "W-08",
+    ward: "General Ward",
+    status: "Normal",
+    lastUpdated: "1 hour ago",
+    lastVitals: {
+      heartRate: 78,
+      bloodPressure: "120/80",
+      spo2: 99,
+      temperature: 36.7,
+      respRate: 16,
+    },
+    alerts: ["Planned discharge in 24h"],
+  },
+];
+
+// Detailed vitals history per patient (used in doctor detail view)
+export const vitalsHistoryByPatient: Record<string, VitalsHistoryPoint[]> = {
+  "P-1003": [
+    { time: "08:00", heartRate: 128, bloodPressureSys: 90, bloodPressureDia: 58, spo2: 90, temperature: 38.4, respRate: 28 },
+    { time: "10:00", heartRate: 130, bloodPressureSys: 88, bloodPressureDia: 56, spo2: 89, temperature: 38.7, respRate: 29 },
+    { time: "12:00", heartRate: 132, bloodPressureSys: 86, bloodPressureDia: 55, spo2: 88, temperature: 38.9, respRate: 30 },
+    { time: "14:00", heartRate: 135, bloodPressureSys: 84, bloodPressureDia: 54, spo2: 87, temperature: 39.1, respRate: 32 },
+  ],
+  "P-1001": [
+    { time: "08:00", heartRate: 110, bloodPressureSys: 98, bloodPressureDia: 64, spo2: 94, temperature: 37.9, respRate: 24 },
+    { time: "10:00", heartRate: 112, bloodPressureSys: 96, bloodPressureDia: 62, spo2: 93, temperature: 38.0, respRate: 25 },
+    { time: "12:00", heartRate: 118, bloodPressureSys: 92, bloodPressureDia: 60, spo2: 92, temperature: 38.2, respRate: 26 },
+    { time: "14:00", heartRate: 115, bloodPressureSys: 94, bloodPressureDia: 61, spo2: 93, temperature: 38.0, respRate: 24 },
+  ],
+  "P-1005": [
+    { time: "08:00", heartRate: 98, bloodPressureSys: 112, bloodPressureDia: 72, spo2: 96, temperature: 37.5, respRate: 20 },
+    { time: "10:00", heartRate: 102, bloodPressureSys: 110, bloodPressureDia: 70, spo2: 95, temperature: 37.8, respRate: 21 },
+    { time: "12:00", heartRate: 104, bloodPressureSys: 110, bloodPressureDia: 70, spo2: 95, temperature: 37.9, respRate: 22 },
+    { time: "14:00", heartRate: 100, bloodPressureSys: 112, bloodPressureDia: 72, spo2: 96, temperature: 37.6, respRate: 21 },
+  ],
+  "P-1002": [
+    { time: "08:00", heartRate: 80, bloodPressureSys: 118, bloodPressureDia: 76, spo2: 98, temperature: 36.8, respRate: 18 },
+    { time: "10:00", heartRate: 82, bloodPressureSys: 118, bloodPressureDia: 76, spo2: 98, temperature: 36.9, respRate: 18 },
+    { time: "12:00", heartRate: 84, bloodPressureSys: 118, bloodPressureDia: 76, spo2: 98, temperature: 36.9, respRate: 18 },
+    { time: "14:00", heartRate: 83, bloodPressureSys: 118, bloodPressureDia: 76, spo2: 99, temperature: 36.8, respRate: 17 },
+  ],
+  "P-1004": [
+    { time: "08:00", heartRate: 76, bloodPressureSys: 120, bloodPressureDia: 80, spo2: 98, temperature: 36.7, respRate: 16 },
+    { time: "10:00", heartRate: 78, bloodPressureSys: 120, bloodPressureDia: 80, spo2: 99, temperature: 36.7, respRate: 16 },
+    { time: "12:00", heartRate: 78, bloodPressureSys: 120, bloodPressureDia: 80, spo2: 99, temperature: 36.7, respRate: 16 },
+    { time: "14:00", heartRate: 77, bloodPressureSys: 120, bloodPressureDia: 80, spo2: 99, temperature: 36.7, respRate: 16 },
+  ],
+};
