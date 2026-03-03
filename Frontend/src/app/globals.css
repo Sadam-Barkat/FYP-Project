@@ -24,6 +24,18 @@
   --color-neutral-900: #111827;
 }
 
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  --color-neutral-50: #0f172a;
+  --color-neutral-100: #1e293b;
+  --color-neutral-200: #334155;
+  --color-neutral-500: #94a3b8;
+  --color-neutral-800: #f1f5f9;
+  --color-neutral-900: #f8fafc;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

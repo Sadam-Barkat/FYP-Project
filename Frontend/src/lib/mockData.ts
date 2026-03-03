@@ -361,3 +361,23 @@ export const vitalsHistoryByPatient: Record<string, VitalsHistoryPoint[]> = {
     { time: "14:00", heartRate: 77, bloodPressureSys: 120, bloodPressureDia: 80, spo2: 99, temperature: 36.7, respRate: 16 },
   ],
 };
+
+// ---------------- NURSE DATA ---------------- //
+
+export interface NursePatient {
+  id: string;
+  name: string;
+  age: number;
+  gender: "M" | "F";
+  bed: string;
+  ward: string;
+}
+
+export const nursePatients: NursePatient[] = [
+  { id: "P-1001", name: "Ahmed Khan", age: 45, gender: "M", bed: "ICU-01", ward: "ICU" },
+  { id: "P-1002", name: "Sara Ali", age: 32, gender: "F", bed: "Gen-12", ward: "General" },
+  { id: "P-1003", name: "Muhammad Usman", age: 68, gender: "M", bed: "ER-05", ward: "Emergency" },
+  { id: "P-1004", name: "Fatima Bilal", age: 28, gender: "F", bed: "Mat-03", ward: "Maternity" },
+  { id: "P-1005", name: "Zainab Tariq", age: 55, gender: "F", bed: "ICU-04", ward: "ICU" },
+  { id: "P-1006", name: "Ali Raza", age: 41, gender: "M", bed: "Gen-15", ward: "General" },
+];

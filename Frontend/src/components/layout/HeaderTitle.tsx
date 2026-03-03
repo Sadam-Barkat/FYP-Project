@@ -22,7 +22,7 @@ export default function HeaderTitle() {
   }
 
   return (
-    <h1 className="text-xl font-semibold text-[#0066cc]">
+    <h1 className="text-xl font-semibold text-[#0066cc] dark:text-[#60a5fa] transition-colors">
       {title}
     </h1>
   );

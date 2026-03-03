@@ -44,23 +44,23 @@ export default function Sidebar() {
 
   const navItems = role === "doctor" ? doctorNavItems : role === "nurse" ? nurseNavItems : adminNavItems;
 
-  // Hide the entire sidebar for the Doctor role or if on a doctor route
-  if (role === "doctor" || pathname.startsWith("/doctor")) {
+  // Hide the entire sidebar for Doctor and Nurse roles or routes
+  if (role === "doctor" || pathname.startsWith("/doctor") || role === "nurse" || pathname.startsWith("/nurse")) {
     return null;
   }
 
   return (
     <aside
-      className={`bg-white flex flex-col border-r border-gray-200 hidden md:flex shrink-0 transition-all duration-300 ${
+      className={`bg-white dark:bg-gray-900 flex flex-col border-r border-gray-200 dark:border-gray-800 hidden md:flex shrink-0 transition-all duration-300 ${
         collapsed ? "w-20" : "w-64"
       }`}
     >
       {/* Hamburger Menu Area */}
-      <div className="h-16 flex items-center justify-center border-b border-gray-100">
+      <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="p-2 text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+          className="p-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <Menu size={24} />
@@ -79,8 +79,8 @@ export default function Sidebar() {
               href={item.href} 
               className={`flex items-center px-6 py-3 border-l-4 transition-colors ${
                 isActive 
-                  ? "bg-[#e6f2ff] text-[#0066cc] border-[#0066cc]" 
-                  : "text-gray-700 hover:bg-gray-50 border-transparent hover:border-gray-300"
+                  ? "bg-[#e6f2ff] dark:bg-[#1e3a8a] text-[#0066cc] dark:text-[#60a5fa] border-[#0066cc] dark:border-[#60a5fa]" 
+                  : "text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border-transparent hover:border-gray-300 dark:hover:border-gray-700"
               }`}
             >
               <Icon size={20} className={collapsed ? "" : "mr-4"} />
