@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routers import auth
 
 app = FastAPI(
     title="Hospital Real-Time Dashboard Backend",
@@ -7,7 +8,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration (allow frontend origin later)
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # Update this to ["http://localhost:3000"] in production
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include Routers
+app.include_router(auth.router)
 
 @app.get("/")
 async def root():
