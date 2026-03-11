@@ -1,6 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import auth, overview, patients_beds, pharmacy, laboratory
+from app.api.routers import (
+    auth,
+    overview,
+    patients_beds,
+    pharmacy,
+    laboratory,
+    billing_finance,
+    hr_staff,
+    alerts_overview,
+    analytics_forecasts,
+)
 
 app = FastAPI(
     title="Hospital Real-Time Dashboard Backend",
@@ -23,6 +33,10 @@ app.include_router(overview.router)
 app.include_router(patients_beds.router)
 app.include_router(pharmacy.router)
 app.include_router(laboratory.router)
+app.include_router(billing_finance.router)
+app.include_router(hr_staff.router)
+app.include_router(alerts_overview.router)
+app.include_router(analytics_forecasts.router)
 
 @app.get("/")
 async def root():
