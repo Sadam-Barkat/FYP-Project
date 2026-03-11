@@ -31,12 +31,19 @@ export default function LoginPage() {
         return;
       }
 
+      const role = data.user?.role ?? "admin";
+
       if (typeof window !== "undefined") {
+        // Store in localStorage for existing client-side checks
         localStorage.setItem("access_token", data.access_token ?? "");
-        localStorage.setItem("userRole", data.user?.role ?? "admin");
+        localStorage.setItem("userRole", role);
+
+        // Also store in cookies so Next.js middleware/proxy can read auth state
+        const maxAge = 60 * 30; // 30 minutes
+        document.cookie = `access_token=${data.access_token ?? ""}; Path=/; Max-Age=${maxAge}`;
+        document.cookie = `userRole=${role}; Path=/; Max-Age=${maxAge}`;
       }
 
-      const role = data.user?.role ?? "admin";
       if (role === "admin") router.push("/admin");
       else if (role === "doctor") router.push("/doctor");
       else if (role === "nurse") router.push("/nurse");

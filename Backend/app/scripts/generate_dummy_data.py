@@ -59,17 +59,41 @@ async def create_dummy_data():
             
         await session.commit()
 
-        # 2. Staff (for HR)
+        # 2. Staff (for HR) - also set basic shift windows for doctors
         staff_members = []
         for user in users:
-            staff = Staff(name=f"{user.first_name} {user.last_name}", role=user.role.value, department="General")
+            # Simple mapping of department/shift by role to create variation in doctors_on_duty
+            base_department = "General"
+            shift_start = None
+            shift_end = None
+            if user.role == UserRole.doctor:
+                base_department = "Cardiology"
+                # Morning shift for some, evening for others
+                if random.random() < 0.5:
+                    shift_start = "08:00"
+                    shift_end = "16:00"
+                else:
+                    shift_start = "16:00"
+                    shift_end = "23:00"
+            elif user.role == UserRole.nurse:
+                base_department = "ICU"
+
+            staff = Staff(
+                name=f"{user.first_name} {user.last_name}",
+                role=user.role.value,
+                department=base_department,
+                shift_start=shift_start,
+                shift_end=shift_end,
+            )
             session.add(staff)
             staff_members.append(staff)
         await session.commit()
 
         # 3. Departments
         depts = []
-        for d in ["Cardiology", "Neurology", "Emergency", "ICU", "Pediatrics"]:
+        # Include core department names that match the overview aggregations
+        core_departments = ["Cardiology", "Neurology", "Emergency", "ICU", "Pediatrics", "General"]
+        for d in core_departments:
             dept = Department(name=f"{d}_{fake.unique.random_number(digits=6)}", description=f"{d} Department")
             session.add(dept)
             depts.append(dept)
@@ -78,7 +102,9 @@ async def create_dummy_data():
         # 4. Ward Details
         wards = []
         for dept in depts:
-            ward = WardDetail(ward_name=f"{dept.name} Ward", capacity=30, department_id=dept.id)
+            # Use a human-friendly ward name, but keep a clear base label
+            base_label = dept.name.split("_", 1)[0]  # e.g. "ICU", "Emergency", "General"
+            ward = WardDetail(ward_name=f"{base_label} Ward", capacity=30, department_id=dept.id)
             session.add(ward)
             wards.append(ward)
         await session.commit()
@@ -86,8 +112,14 @@ async def create_dummy_data():
         # 5. Beds
         beds = []
         for ward in wards:
+            base_label = ward.ward_name.split(" ", 1)[0]  # "ICU", "Emergency", "General", etc.
             for i in range(1, 11):
-                bed = Bed(number=f"{ward.ward_name[:3]}-{fake.unique.random_number(digits=6)}", ward=ward.ward_name, status=random.choice(list(BedStatus)))
+                # Bed.ward will use the base label so overview aggregations by ward name work correctly
+                bed = Bed(
+                    number=f"{base_label[:3]}-{fake.unique.random_number(digits=6)}",
+                    ward=base_label,
+                    status=random.choice(list(BedStatus)),
+                )
                 session.add(bed)
                 beds.append(bed)
         await session.commit()
@@ -101,9 +133,26 @@ async def create_dummy_data():
         await session.commit()
 
         # 7. Admissions
+        # Spread admissions across the last ~60 days and randomly discharge some patients
         admissions = []
+        now = datetime.utcnow()
         for patient in patients[:100]:
-            adm = Admission(patient_id=patient.id, bed_id=random.choice(beds).id, admission_date=fake.date_time_between(start_date="-30d", end_date="-10d"))
+            admission_date = fake.date_time_between(start_date="-60d", end_date="-5d")
+            discharge_date = None
+            # ~60% of patients get discharged a few days after admission
+            if random.random() < 0.6:
+                discharge_offset = random.randint(1, 20)
+                discharge_candidate = admission_date + timedelta(days=discharge_offset)
+                # Some may still be admitted today (no discharge if in the future)
+                if discharge_candidate <= now:
+                    discharge_date = discharge_candidate
+
+            adm = Admission(
+                patient_id=patient.id,
+                bed_id=random.choice(beds).id,
+                admission_date=admission_date,
+                discharge_date=discharge_date,
+            )
             session.add(adm)
             admissions.append(adm)
         await session.commit()
@@ -121,20 +170,46 @@ async def create_dummy_data():
                 is_crit = random.random() > 0.8
                 cond = "Emergency" if is_crit else ("Critical" if random.random() > 0.5 else "Normal")
                 hr = random.randint(110, 150) if cond == "Emergency" else random.randint(60, 100)
-                
-                vital = Vital(patient_id=patient.id, recorded_by=random.choice(nurses).id, heart_rate=hr, condition_level=cond)
+
+                # Distribute vitals over the last 30 days
+                recorded_at = fake.date_time_between(start_date="-30d", end_date="now")
+                vital = Vital(
+                    patient_id=patient.id,
+                    recorded_by=random.choice(nurses).id,
+                    heart_rate=hr,
+                    condition_level=cond,
+                    recorded_at=recorded_at,
+                )
                 session.add(vital)
                 vitals.append(vital)
-                
+
                 if cond != "Normal":
-                    alert = Alert(patient_id=patient.id, type="Vitals", message=f"{cond} vitals detected", severity=AlertSeverity.critical)
+                    alert_time = fake.date_time_between(start_date="-30d", end_date="now")
+                    alert = Alert(
+                        patient_id=patient.id,
+                        type="Vitals",
+                        message=f"{cond} vitals detected",
+                        severity=AlertSeverity.critical,
+                    )
+                    # Override created_at to spread alerts over time
+                    alert.created_at = alert_time
                     session.add(alert)
                     await session.flush()
                     if cond == "Emergency":
-                        elog = EmergencyLog(patient_id=patient.id, alert_id=alert.id, action_taken="Dispatched team")
+                        elog = EmergencyLog(
+                            patient_id=patient.id,
+                            alert_id=alert.id,
+                            action_taken="Dispatched team",
+                        )
+                        elog.created_at = alert_time
                         session.add(elog)
-                
-                cat = Categorization(patient_id=patient.id, previous_condition="Normal", new_condition=cond, categorized_by=random.choice(doctors).id)
+
+                cat = Categorization(
+                    patient_id=patient.id,
+                    previous_condition="Normal",
+                    new_condition=cond,
+                    categorized_by=random.choice(doctors).id,
+                )
                 session.add(cat)
         await session.commit()
 
@@ -182,8 +257,16 @@ async def create_dummy_data():
         await session.commit()
 
         # 13. Billing & Transactions
+        # Spread billings across the last 30 days and randomize paid/pending for revenue variation
         for patient in patients[:40]:
-            bill = Billing(patient_id=patient.id, amount=random.uniform(100, 1000), status=random.choice(list(BillingStatus)))
+            bill_date = fake.date_time_between(start_date="-30d", end_date="now")
+            bill_status = random.choice(list(BillingStatus))
+            bill = Billing(
+                patient_id=patient.id,
+                amount=random.uniform(100, 1000),
+                status=bill_status,
+                date=bill_date,
+            )
             session.add(bill)
             await session.flush()
             bi = BillItem(billing_id=bill.id, description="Consultation", amount=50.0)

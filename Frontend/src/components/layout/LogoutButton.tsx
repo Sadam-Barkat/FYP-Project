@@ -10,6 +10,11 @@ export default function LogoutButton() {
       onClick={() => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("userRole");
+          localStorage.removeItem("access_token");
+
+          // Clear auth cookies used by middleware/proxy
+          document.cookie = "access_token=; Path=/; Max-Age=0";
+          document.cookie = "userRole=; Path=/; Max-Age=0";
         }
       }}
     >
