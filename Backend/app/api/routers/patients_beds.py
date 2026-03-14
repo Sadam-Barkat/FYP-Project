@@ -2,13 +2,17 @@ from datetime import datetime, timedelta, time, date
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import Date, and_, cast, func, or_, select
+from sqlalchemy import Date, and_, cast, func, or_, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.bed import Bed, BedStatus
 from app.models.admission import Admission
 from app.models.alert import Alert, AlertSeverity
+from app.models.patient import Patient
+from app.models.vital import Vital
+from app.models.laboratory import LaboratoryResult
+from app.models.billing import Billing
 
 router = APIRouter(prefix="/api", tags=["patients_beds"])
 
@@ -188,5 +192,84 @@ async def get_patients_beds_overview(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to load patients & beds overview: {exc}",
+        )
+
+
+@router.get("/user-management/patients")
+async def get_user_management_patients(
+    db: AsyncSession = Depends(get_db),
+) -> List[Dict[str, Any]]:
+    """
+    Backend for the Admin 'User Management' page — Patients tab.
+
+    Returns a simple list of patients for management UI:
+    id, name, age, gender, contact, address.
+    """
+    try:
+        result = await db.execute(
+            select(
+                Patient.id,
+                Patient.name,
+                Patient.age,
+                Patient.gender,
+                Patient.contact,
+                Patient.address,
+            ).order_by(Patient.id)
+        )
+        rows = result.all()
+        patients: List[Dict[str, Any]] = []
+        for row in rows:
+            patients.append(
+                {
+                    "id": row.id,
+                    "name": row.name,
+                    "age": int(row.age) if row.age is not None else None,
+                    "gender": row.gender,
+                    "contact": row.contact,
+                    "address": row.address,
+                }
+            )
+        return patients
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load user management patients: {exc}",
+        )
+
+
+@router.delete("/user-management/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_management_patient(
+    patient_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """
+    Delete a patient for the User Management page.
+
+    For demo purposes we hard-delete the patient and all directly related rows
+    (vitals, alerts, lab_results, billings, admissions) so foreign keys do not fail.
+    """
+    try:
+        # Make sure patient exists
+        result = await db.execute(select(Patient.id).where(Patient.id == patient_id))
+        exists = result.scalar_one_or_none()
+        if not exists:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+
+        # Delete dependent records first to satisfy FK constraints
+        await db.execute(delete(Vital).where(Vital.patient_id == patient_id))
+        await db.execute(delete(Alert).where(Alert.patient_id == patient_id))
+        await db.execute(delete(LaboratoryResult).where(LaboratoryResult.patient_id == patient_id))
+        await db.execute(delete(Billing).where(Billing.patient_id == patient_id))
+        await db.execute(delete(Admission).where(Admission.patient_id == patient_id))
+        await db.execute(delete(Patient).where(Patient.id == patient_id))
+        await db.commit()
+    except HTTPException:
+        # Re-raise explicit HTTP errors
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete patient: {exc}",
         )
 

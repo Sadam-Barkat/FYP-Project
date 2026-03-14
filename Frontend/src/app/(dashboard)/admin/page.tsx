@@ -114,10 +114,10 @@ export default function AdminDashboard() {
         <div className="text-center md:text-left">
           <h2 className="text-3xl font-semibold text-[#0088cc]">Hospital Overview</h2>
           {isLoading && (
-            <p className="mt-2 text-sm text-gray-500">Loading hospital overview...</p>
+            <p className="mt-2 text-sm text-gray-500" data-hide-in-pdf>Loading hospital overview...</p>
           )}
           {error && (
-            <p className="mt-2 text-sm text-red-500">{error}</p>
+            <p className="mt-2 text-sm text-red-500" data-hide-in-pdf>{error}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
               {totalBeds}
             </h3>
           </div>
-          <ChevronDown className="text-gray-300 mt-4" size={20} />
+          <ChevronDown className="text-gray-300 mt-4" size={20} data-hide-in-pdf aria-hidden />
         </div>
 
         {/* Active Patients Details (Expanded) */}
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
               Cardiology: {active?.cardiology ?? 0} patients
             </li>
           </ul>
-          <p className="text-xs text-gray-400 italic text-center mt-2 cursor-pointer hover:text-gray-600">
+          <p className="text-xs text-gray-400 italic text-center mt-2 cursor-pointer hover:text-gray-600" data-hide-in-pdf>
             Click to collapse
           </p>
         </div>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
               })}
             </h3>
           </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} />
+          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
         </div>
 
         {/* Doctors on Duty */}
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
               {doctorsOnDuty}
             </h3>
           </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} />
+          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
         </div>
       </div>
 
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
               {emergencyCases}
             </h3>
           </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} />
+          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
         </div>
 
         {/* ICU Occupancy */}
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
               {Math.round(icuOccupancy)}%
             </h3>
           </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} />
+          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
         </div>
 
         {/* Empty slots to match layout visually if needed, or charts can go here */}

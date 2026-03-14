@@ -42,3 +42,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Hide UI-only elements when capturing for PDF export (no nav/sidebar) */
+body.pdf-export-mode [data-hide-in-pdf] {
+  display: none !important;
+}
+

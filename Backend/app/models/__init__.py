@@ -13,12 +13,13 @@ from .staff import Staff
 from .organization import Department, WardDetail
 from .hr import Attendance, Shift
 from .clinical import Appointment, Visit, Prescription, TreatmentPlan, DischargeSummary
-from .assignments import DoctorAssignment, NurseAssignment
+from .assignments import DoctorAssignment, NurseAssignment, NursePatientAssignment
 from .laboratory_extra import LabCategory, LabRequest
 from .pharmacy_extra import MedicineCategory, InventoryItem
 from .billing_extra import BillItem, Transaction
 from .analytics import Forecast, Categorization, EmergencyLog, ICUDetail
 from .system import AuditLog
+from .staff_invitation import StaffInvitation
 
 # This file imports all models so that Alembic's env.py can load Base.metadata
 # and see all the tables it needs to generate migrations for.

@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import (
@@ -10,6 +13,7 @@ from app.api.routers import (
     hr_staff,
     alerts_overview,
     analytics_forecasts,
+    export_pdf,
 )
 
 app = FastAPI(
@@ -37,6 +41,7 @@ app.include_router(billing_finance.router)
 app.include_router(hr_staff.router)
 app.include_router(alerts_overview.router)
 app.include_router(analytics_forecasts.router)
+app.include_router(export_pdf.router)
 
 @app.get("/")
 async def root():

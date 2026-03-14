@@ -37,9 +37,11 @@ export default function DashboardLayout({
           </div>
         </header>
         
-        {/* Main content */}
+        {/* Main content - only this area is captured for PDF export (no sidebar, no header) */}
         <main className="flex-1 overflow-y-auto p-6 bg-[#f4f7fa] dark:bg-gray-950 transition-colors">
-          {children}
+          <div id="pdf-export-content" className="min-h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

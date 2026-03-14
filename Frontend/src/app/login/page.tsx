@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -21,7 +22,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -32,24 +33,35 @@ export default function LoginPage() {
       }
 
       const role = data.user?.role ?? "admin";
+      const userEmail = (data.user?.email ?? "").toString().trim().toLowerCase();
+      // Reception → /reception; laboratorian has no redirect (use URL /laboratory-entry when backend is ready)
+      let effectiveRole = role;
+      if (userEmail === "reception@hospital.com") effectiveRole = "receptionist";
+      else if (userEmail === "lab@hospital.com") effectiveRole = "laboratorian";
 
       if (typeof window !== "undefined") {
         // Store in localStorage for existing client-side checks
         localStorage.setItem("access_token", data.access_token ?? "");
-        localStorage.setItem("userRole", role);
+        localStorage.setItem("userRole", effectiveRole);
 
         // Also store in cookies so Next.js middleware/proxy can read auth state
         const maxAge = 60 * 30; // 30 minutes
         document.cookie = `access_token=${data.access_token ?? ""}; Path=/; Max-Age=${maxAge}`;
-        document.cookie = `userRole=${role}; Path=/; Max-Age=${maxAge}`;
+        document.cookie = `userRole=${effectiveRole}; Path=/; Max-Age=${maxAge}`;
       }
 
-      if (role === "admin") router.push("/admin");
-      else if (role === "doctor") router.push("/doctor");
-      else if (role === "nurse") router.push("/nurse");
+      if (effectiveRole === "admin") router.push("/admin");
+      else if (effectiveRole === "doctor") router.push("/doctor");
+      else if (effectiveRole === "nurse") router.push("/nurse");
+      else if (effectiveRole === "receptionist") router.push("/reception");
       else router.push("/admin");
-    } catch {
-      setError("Login failed. Please try again.");
+    } catch (err) {
+      console.error("Login error", err);
+      setError(
+        err instanceof TypeError && err.message === "Failed to fetch"
+          ? "Cannot connect to the server. Make sure the backend is running at " + API_BASE
+          : "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -113,6 +125,14 @@ export default function LoginPage() {
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
+          <p className="text-center mt-4">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-[#0066cc] hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </p>
         </form>
       </div>
     </div>

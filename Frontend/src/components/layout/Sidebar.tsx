@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { 
   Home, BedSingle, Pill, TestTube2, DollarSign, 
-  Users, Bell, LineChart, Menu, Activity
+  Users, Bell, LineChart, Menu, Activity, UserCog
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -29,6 +29,7 @@ export default function Sidebar() {
     { name: "HR & Staff", href: "/admin/hr-staff", icon: Users },
     { name: "Alerts & Monitoring", href: "/admin/alerts", icon: Bell },
     { name: "Analytics & Forecasts", href: "/admin/analytics", icon: LineChart },
+    { name: "User Management", href: "/admin/staff", icon: UserCog },
   ];
 
   const doctorNavItems = [
@@ -44,8 +45,8 @@ export default function Sidebar() {
 
   const navItems = role === "doctor" ? doctorNavItems : role === "nurse" ? nurseNavItems : adminNavItems;
 
-  // Hide the entire sidebar for Doctor and Nurse roles or routes
-  if (role === "doctor" || pathname.startsWith("/doctor") || role === "nurse" || pathname.startsWith("/nurse")) {
+  // Hide the entire sidebar for Doctor, Nurse, Receptionist, and Laboratorian roles or routes
+  if (role === "doctor" || pathname.startsWith("/doctor") || role === "nurse" || pathname.startsWith("/nurse") || role === "receptionist" || pathname.startsWith("/reception") || role === "laboratorian" || pathname.startsWith("/laboratory-entry")) {
     return null;
   }
 

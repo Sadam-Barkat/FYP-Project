@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 import jwt
 
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM
-from app.schemas.user import UserLogin, TokenResponse
+from app.schemas.user import UserLogin, TokenResponse, ForgotPasswordRequest, ResetPasswordRequest
+from app.utils.password_reset_email import send_password_reset_email, validate_password_reset_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -19,8 +20,9 @@ async def login(
     user_credentials: UserLogin,
     db: AsyncSession = Depends(get_db)
 ):
-    # 1. Query user by email
-    query = select(User).where(User.email == user_credentials.email)
+    # 1. Query user by email (case-insensitive)
+    email_clean = (user_credentials.email or "").strip().lower()
+    query = select(User).where(func.lower(User.email) == email_clean)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
 
@@ -56,6 +58,41 @@ async def login(
             "last_name": user.last_name
         }
     }
+
+
+@router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """
+    If a user with this email exists, send a password reset link. Always return the same message
+    to avoid revealing whether the email is registered.
+    """
+    query = select(User).where(func.lower(User.email) == body.email.strip().lower())
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    if user:
+        try:
+            await send_password_reset_email(body.email)
+        except Exception:
+            pass  # Don't reveal failure; still return generic message
+    return {"message": "If an account exists with this email, you will receive a link to reset your password. Please check your inbox."}
+
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    """Validate reset token and set new password."""
+    email = validate_password_reset_token(body.token)
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 6 characters.")
+    query = select(User).where(func.lower(User.email) == email)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found.")
+    user.hashed_password = get_password_hash(body.new_password)
+    db.add(user)
+    await db.commit()
+    return {"message": "Password has been reset. You can now sign in."}
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     """Dependency to retrieve the current logged-in user using the JWT token."""

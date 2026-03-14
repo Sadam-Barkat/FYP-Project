@@ -12,3 +12,4 @@ faker==24.4.0
 pyjwt==2.8.0
 passlib[bcrypt]==1.7.4
 email-validator==2.3.0
+reportlab==4.2.5
