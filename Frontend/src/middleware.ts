@@ -20,7 +20,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/doctor") ||
     pathname.startsWith("/nurse") ||
-    pathname.startsWith("/reception");
+    pathname.startsWith("/reception") ||
+    pathname.startsWith("/laboratory-entry");
 
   // If route is protected and there is no token, redirect to /login
   if (isProtectedRoute && !token) {
@@ -33,6 +34,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*", "/doctor/:path*", "/nurse", "/nurse/:path*", "/reception", "/reception/:path*", "/login"],
+  matcher: ["/", "/admin/:path*", "/doctor/:path*", "/nurse", "/nurse/:path*", "/reception", "/reception/:path*", "/laboratory-entry", "/laboratory-entry/:path*", "/login"],
 };
 

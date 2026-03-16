@@ -15,7 +15,11 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedRole = localStorage.getItem("userRole");
+      let storedRole = sessionStorage.getItem("userRole");
+      if (!storedRole) {
+        storedRole = localStorage.getItem("userRole");
+        if (storedRole) sessionStorage.setItem("userRole", storedRole);
+      }
       if (storedRole) setRole(storedRole);
     }
   }, []);
@@ -29,7 +33,7 @@ export default function Sidebar() {
     { name: "HR & Staff", href: "/admin/hr-staff", icon: Users },
     { name: "Alerts & Monitoring", href: "/admin/alerts", icon: Bell },
     { name: "Analytics & Forecasts", href: "/admin/analytics", icon: LineChart },
-    { name: "User Management", href: "/admin/staff", icon: UserCog },
+    { name: "User Management", href: "/admin/user-management", icon: UserCog },
   ];
 
   const doctorNavItems = [

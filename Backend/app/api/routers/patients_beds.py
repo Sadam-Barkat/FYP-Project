@@ -13,6 +13,10 @@ from app.models.patient import Patient
 from app.models.vital import Vital
 from app.models.laboratory import LaboratoryResult
 from app.models.billing import Billing
+from app.models.assignments import DoctorAssignment, NursePatientAssignment
+from app.models.laboratory_extra import LabRequest
+from app.models.clinical import Appointment, Visit, Prescription, TreatmentPlan
+from app.models.analytics import Categorization, EmergencyLog
 
 router = APIRouter(prefix="/api", tags=["patients_beds"])
 
@@ -58,6 +62,10 @@ async def get_patients_beds_overview(
         )
         total_capacity = total_capacity_result.scalar_one() or 0
 
+        # ----- Total patients (all registered in system) -----
+        total_patients_result = await db.execute(select(func.count(Patient.id)))
+        total_patients = total_patients_result.scalar_one() or 0
+
         # ----- Occupied beds on selected date -----
         # Beds that are marked occupied AND have an active admission that day
         occupied_beds_result = await db.execute(
@@ -91,6 +99,20 @@ async def get_patients_beds_overview(
             )
         )
         emergency_cases = emergency_cases_result.scalar_one() or 0
+
+        # ----- Critical condition cases (high severity) on selected date -----
+        critical_condition_result = await db.execute(
+            select(func.count())
+            .select_from(Alert)
+            .where(
+                and_(
+                    Alert.severity == AlertSeverity.high,
+                    Alert.created_at >= day_start,
+                    Alert.created_at <= day_end,
+                )
+            )
+        )
+        critical_condition_cases = critical_condition_result.scalar_one() or 0
 
         # ----- Bed occupancy by department on selected date -----
         # Total beds per ward
@@ -179,10 +201,12 @@ async def get_patients_beds_overview(
 
         return {
             "total_capacity": int(total_capacity),
+            "total_patients": int(total_patients),
             "occupied_beds": int(occupied_beds),
             "occupancy_percentage": occupancy_percentage,
             "available_beds": int(available_beds),
             "emergency_cases": int(emergency_cases),
+            "critical_condition_cases": int(critical_condition_cases),
             "bed_occupancy_by_department": bed_occupancy_by_department,
             "admissions_discharges_trend": admissions_discharges_trend,
             "selected_date": base_date.isoformat(),
@@ -245,8 +269,8 @@ async def delete_user_management_patient(
     """
     Delete a patient for the User Management page.
 
-    For demo purposes we hard-delete the patient and all directly related rows
-    (vitals, alerts, lab_results, billings, admissions) so foreign keys do not fail.
+    Removes the patient and all related rows so the patient disappears from both
+    doctor and nurse dashboards (assignments) and satisfies all foreign key constraints.
     """
     try:
         # Make sure patient exists
@@ -255,7 +279,19 @@ async def delete_user_management_patient(
         if not exists:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
 
-        # Delete dependent records first to satisfy FK constraints
+        # Delete dependent records first (order matters for FKs)
+        # Assignments: so patient is removed from doctor and nurse dashboards
+        await db.execute(delete(DoctorAssignment).where(DoctorAssignment.patient_id == patient_id))
+        await db.execute(delete(NursePatientAssignment).where(NursePatientAssignment.patient_id == patient_id))
+        # Lab, clinical, analytics
+        await db.execute(delete(LabRequest).where(LabRequest.patient_id == patient_id))
+        await db.execute(delete(Appointment).where(Appointment.patient_id == patient_id))
+        await db.execute(delete(Visit).where(Visit.patient_id == patient_id))
+        await db.execute(delete(Prescription).where(Prescription.patient_id == patient_id))
+        await db.execute(delete(TreatmentPlan).where(TreatmentPlan.patient_id == patient_id))
+        await db.execute(delete(Categorization).where(Categorization.patient_id == patient_id))
+        await db.execute(delete(EmergencyLog).where(EmergencyLog.patient_id == patient_id))
+        # Core patient data
         await db.execute(delete(Vital).where(Vital.patient_id == patient_id))
         await db.execute(delete(Alert).where(Alert.patient_id == patient_id))
         await db.execute(delete(LaboratoryResult).where(LaboratoryResult.patient_id == patient_id))

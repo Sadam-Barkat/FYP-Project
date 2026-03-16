@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, Bell, Clock, Activity } from "lucide-react";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 
 type AlertFeedItem = {
   id: number;
@@ -70,6 +71,10 @@ export default function AlertsPage() {
     const interval = setInterval(fetchOverview, 15000);
     return () => clearInterval(interval);
   }, [fetchOverview]);
+
+  useRealtimeEvent("vitals_updated", () => {
+    fetchOverview();
+  });
 
   const handleAcknowledge = async (alertId: number) => {
     setAcknowledgingId(alertId);

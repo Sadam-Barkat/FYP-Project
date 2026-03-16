@@ -1,20 +1,77 @@
 "use client";
 
-import { useState } from "react";
-import { UserPlus, User, Stethoscope, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { UserPlus, User, Stethoscope, Heart, CheckCircle, AlertTriangle } from "lucide-react";
 
-// Mock lists for design; backend will replace with API data
-const MOCK_DOCTORS = [
-  { id: "1", name: "Dr. Ayesha Khan" },
-  { id: "2", name: "Dr. Bilal Ahmed" },
-  { id: "3", name: "Dr. Sara Ali" },
-];
+function MessageModal({
+  open,
+  onClose,
+  title,
+  message,
+  variant = "success",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  variant?: "success" | "error";
+}) {
+  if (!open) return null;
+  const isError = variant === "error";
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reception-message-modal-title"
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+          {isError ? (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+          ) : (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+          )}
+          <h3 id="reception-message-modal-title" className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            {title}
+          </h3>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+        </div>
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
+            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-const MOCK_NURSES = [
-  { id: "1", name: "Fatima Hassan" },
-  { id: "2", name: "Sana Mahmood" },
-  { id: "3", name: "Zainab Noor" },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+interface DoctorOption {
+  id: number;
+  name: string;
+}
+
+interface NurseOption {
+  id: number;
+  name: string;
+}
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -27,20 +84,111 @@ export default function ReceptionPage() {
   const [bloodGroup, setBloodGroup] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [nurseId, setNurseId] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [nurses, setNurses] = useState<NurseOption[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [loadingNurses, setLoadingNurses] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageModalTitle, setMessageModalTitle] = useState("Success");
+  const [messageModalMessage, setMessageModalMessage] = useState("");
+  const [messageModalVariant, setMessageModalVariant] = useState<"success" | "error">("success");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingDoctors(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/receptionist/doctors`);
+        if (!res.ok) throw new Error("Failed to load doctors");
+        const data = await res.json();
+        if (!cancelled) setDoctors(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setDoctors([]);
+      } finally {
+        if (!cancelled) setLoadingDoctors(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingNurses(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/receptionist/nurses`);
+        if (!res.ok) throw new Error("Failed to load nurses");
+        const data = await res.json();
+        if (!cancelled) setNurses(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setNurses([]);
+      } finally {
+        if (!cancelled) setLoadingNurses(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Backend will be implemented later; for now just show success state
-    setSubmitted(true);
-    setName("");
-    setAge("");
-    setGender("");
-    setContact("");
-    setAddress("");
-    setBloodGroup("");
-    setDoctorId("");
-    setNurseId("");
+    const docId = doctorId ? Number(doctorId) : 0;
+    const nurId = nurseId ? Number(nurseId) : 0;
+    if (!docId || !nurId) {
+      setMessageModalTitle("Cannot add patient");
+      setMessageModalMessage("Please select a doctor and a nurse.");
+      setMessageModalVariant("error");
+      setMessageModalOpen(true);
+      return;
+    }
+    if (age === "" || age < 1) {
+      setMessageModalTitle("Cannot add patient");
+      setMessageModalMessage("Please enter a valid age.");
+      setMessageModalVariant("error");
+      setMessageModalOpen(true);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/receptionist/patients`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          age: Number(age),
+          gender: gender.trim(),
+          contact: contact.trim() || null,
+          address: address.trim() || null,
+          blood_group: bloodGroup.trim() || null,
+          doctor_id: docId,
+          nurse_id: nurId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof data.detail === "string" ? data.detail : "Failed to register patient.");
+      }
+      const patientName = (data as { name?: string }).name ?? name.trim();
+      setName("");
+      setAge("");
+      setGender("");
+      setContact("");
+      setAddress("");
+      setBloodGroup("");
+      setDoctorId("");
+      setNurseId("");
+      setMessageModalTitle("Success");
+      setMessageModalMessage(`Patient "${patientName}" has been added successfully.`);
+      setMessageModalVariant("success");
+      setMessageModalOpen(true);
+    } catch (err) {
+      setMessageModalTitle("Error");
+      setMessageModalMessage(err instanceof Error ? err.message : "Failed to register patient.");
+      setMessageModalVariant("error");
+      setMessageModalOpen(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -147,10 +295,11 @@ export default function ReceptionPage() {
                 value={doctorId}
                 onChange={(e) => setDoctorId(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                disabled={loadingDoctors}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none disabled:opacity-70"
               >
-                <option value="">Select a doctor</option>
-                {MOCK_DOCTORS.map((d) => (
+                <option value="">{loadingDoctors ? "Loading…" : "Select a doctor"}</option>
+                {doctors.map((d) => (
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
@@ -169,33 +318,37 @@ export default function ReceptionPage() {
                 value={nurseId}
                 onChange={(e) => setNurseId(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                disabled={loadingNurses}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none disabled:opacity-70"
               >
-                <option value="">Select a nurse</option>
-                {MOCK_NURSES.map((n) => (
+                <option value="">{loadingNurses ? "Loading…" : "Select a nurse"}</option>
+                {nurses.map((n) => (
                   <option key={n.id} value={n.id}>{n.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {submitted && (
-            <div className="px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm border border-green-200 dark:border-green-800">
-              Patient form submitted. (Backend integration will be added later.)
-            </div>
-          )}
-
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0066cc] text-white font-medium rounded-lg hover:bg-[#0052a3] dark:bg-[#60a5fa] dark:hover:bg-[#3b82f6] focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 transition-colors"
+              disabled={submitting || loadingDoctors || loadingNurses}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0066cc] text-white font-medium rounded-lg hover:bg-[#0052a3] dark:bg-[#60a5fa] dark:hover:bg-[#3b82f6] focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <UserPlus size={18} />
-              Add patient
+              {submitting ? "Adding…" : "Add patient"}
             </button>
           </div>
         </form>
       </div>
+
+      <MessageModal
+        open={messageModalOpen}
+        onClose={() => setMessageModalOpen(false)}
+        title={messageModalTitle}
+        message={messageModalMessage}
+        variant={messageModalVariant}
+      />
     </div>
   );
 }

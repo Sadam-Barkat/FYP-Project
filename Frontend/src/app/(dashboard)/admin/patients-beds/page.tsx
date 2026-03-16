@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { BedSingle, UserPlus, UserMinus, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { BedSingle, UserPlus, UserMinus, AlertTriangle, Users } from "lucide-react";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import {
   BarChart,
   Bar,
@@ -31,10 +32,12 @@ interface AdmissionsDischargesPoint {
 
 interface PatientsBedsOverview {
   total_capacity: number;
+  total_patients: number;
   occupied_beds: number;
   occupancy_percentage: number;
   available_beds: number;
   emergency_cases: number;
+  critical_condition_cases: number;
   bed_occupancy_by_department: BedOccupancyDepartment[];
   admissions_discharges_trend: AdmissionsDischargesPoint[];
   selected_date: string;
@@ -48,41 +51,29 @@ export default function PatientsBedsPage() {
     new Date().toISOString().slice(0, 10)
   );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchOverview = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const query = selectedDate ? `?date=${selectedDate}` : "";
-        const res = await fetch(`${API_BASE}/api/patients-beds-overview${query}`);
-        if (!res.ok) {
-          throw new Error("Failed to load patients & beds overview");
-        }
-        const data: PatientsBedsOverview = await res.json();
-        if (isMounted) {
-          setOverview(data);
-        }
-      } catch {
-        if (isMounted) {
-          setError("Failed to load data");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+  const fetchOverview = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const query = selectedDate ? `?date=${selectedDate}` : "";
+      const res = await fetch(`${API_BASE}/api/patients-beds-overview${query}`);
+      if (!res.ok) {
+        throw new Error("Failed to load patients & beds overview");
       }
-    };
-
-    fetchOverview();
-    const interval = setInterval(fetchOverview, 30000); // refresh every 30s
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+      const data: PatientsBedsOverview = await res.json();
+      setOverview(data);
+    } catch {
+      setError("Failed to load data");
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedDate]);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
+
+  useRealtimeEvent("patients_updated", fetchOverview);
 
   const bedsData: BedOccupancyDepartment[] =
     overview?.bed_occupancy_by_department ?? [];
@@ -90,10 +81,12 @@ export default function PatientsBedsPage() {
     overview?.admissions_discharges_trend ?? [];
 
   const totalBeds = overview?.total_capacity ?? 0;
+  const totalPatients = overview?.total_patients ?? 0;
   const totalOccupied = overview?.occupied_beds ?? 0;
   const occupancyRate = overview?.occupancy_percentage ?? 0;
   const availableBeds = overview?.available_beds ?? Math.max(totalBeds - totalOccupied, 0);
   const emergencyCases = overview?.emergency_cases ?? 0;
+  const criticalConditionCases = overview?.critical_condition_cases ?? 0;
 
   return (
     <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
@@ -131,7 +124,22 @@ export default function PatientsBedsPage() {
       </div>
 
       {/* Top Row Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {/* Total Patients */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#6366f1] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+          <Users
+            className="absolute top-4 left-4 text-[#6366f1]"
+            size={24}
+          />
+          <div className="mt-4 text-center">
+            <p className="text-gray-800 font-medium text-sm">Total Patients</p>
+            <h3 className="text-4xl font-bold text-[#6366f1] mt-3">
+              {totalPatients}
+            </h3>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">Registered in system</p>
+        </div>
+
         {/* Total Beds */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <BedSingle
@@ -179,7 +187,7 @@ export default function PatientsBedsPage() {
           <p className="text-xs text-gray-500 mt-4">Ready for admission</p>
         </div>
 
-        {/* Critical/Emergency */}
+        {/* Emergency Cases */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <AlertTriangle
             className="absolute top-4 left-4 text-[#ef4444]"
@@ -194,6 +202,24 @@ export default function PatientsBedsPage() {
           </div>
           <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
             High priority
+          </p>
+        </div>
+
+        {/* Critical Condition */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+          <AlertTriangle
+            className="absolute top-4 left-4 text-[#f59e0b]"
+            fill="#fef3c7"
+            size={24}
+          />
+          <div className="mt-4 text-center">
+            <p className="text-gray-800 font-medium text-sm">Critical Condition</p>
+            <h3 className="text-4xl font-bold text-[#f59e0b] mt-3">
+              {criticalConditionCases}
+            </h3>
+          </div>
+          <p className="text-xs text-gray-500 mt-4 text-amber-600 font-medium">
+            Monitor closely
           </p>
         </div>
       </div>

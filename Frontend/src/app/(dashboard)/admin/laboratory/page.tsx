@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TestTube2, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import {
   BarChart,
   Bar,
@@ -47,41 +48,29 @@ export default function LaboratoryPage() {
     new Date().toISOString().slice(0, 10)
   );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchOverview = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const query = selectedDate ? `?date=${selectedDate}` : "";
-        const res = await fetch(`${API_BASE}/api/laboratory-overview${query}`);
-        if (!res.ok) {
-          throw new Error("Failed to load laboratory overview");
-        }
-        const data: LaboratoryOverview = await res.json();
-        if (isMounted) {
-          setOverview(data);
-        }
-      } catch {
-        if (isMounted) {
-          setError("Failed to load data");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+  const fetchOverview = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const query = selectedDate ? `?date=${selectedDate}` : "";
+      const res = await fetch(`${API_BASE}/api/laboratory-overview${query}`);
+      if (!res.ok) {
+        throw new Error("Failed to load laboratory overview");
       }
-    };
-
-    fetchOverview();
-    const interval = setInterval(fetchOverview, 30000); // refresh every 30s
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+      const data: LaboratoryOverview = await res.json();
+      setOverview(data);
+    } catch {
+      setError("Failed to load data");
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedDate]);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
+
+  useRealtimeEvent("laboratory_updated", fetchOverview);
 
   const pendingTests = overview?.pending_tests ?? 0;
   const completedToday = overview?.completed_today ?? 0;

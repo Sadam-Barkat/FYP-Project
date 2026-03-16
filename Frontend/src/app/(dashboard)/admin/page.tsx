@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import {
   BedSingle,
   DollarSign,
@@ -49,6 +50,7 @@ interface HospitalOverview {
   todays_revenue: number;
   doctors_on_duty: number;
   emergency_cases: number;
+  critical_condition_cases: number;
   icu_occupancy: number;
   admission_trend: AdmissionTrendPoint[];
   bed_occupancy_by_department: BedOccupancyDepartment[];
@@ -62,47 +64,40 @@ export default function AdminDashboard() {
     new Date().toISOString().slice(0, 10)
   );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchOverview = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const query = selectedDate ? `?date=${selectedDate}` : "";
-        const res = await fetch(`${API_BASE}/api/hospital-overview${query}`);
-        if (!res.ok) {
-          throw new Error("Failed to load hospital overview");
-        }
-        const data: HospitalOverview = await res.json();
-        if (isMounted) {
-          setOverview(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Failed to load data");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+  const fetchOverview = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const query = selectedDate ? `?date=${selectedDate}` : "";
+      const res = await fetch(`${API_BASE}/api/hospital-overview${query}`);
+      if (!res.ok) {
+        throw new Error("Failed to load hospital overview");
       }
-    };
-
-    fetchOverview();
-    const interval = setInterval(fetchOverview, 15000); // refresh every 15 seconds for selected date
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+      const data: HospitalOverview = await res.json();
+      setOverview(data);
+    } catch (err) {
+      setError("Failed to load data");
+    } finally {
+      setIsLoading(false);
+    }
   }, [selectedDate]);
+
+  useEffect(() => {
+    fetchOverview();
+    const interval = setInterval(fetchOverview, 15000);
+    return () => clearInterval(interval);
+  }, [fetchOverview]);
+
+  useRealtimeEvent("vitals_updated", () => {
+    fetchOverview();
+  });
 
   const totalBeds = overview?.total_beds ?? 0;
   const active = overview?.active_patients;
   const todaysRevenue = overview?.todays_revenue ?? 0;
   const doctorsOnDuty = overview?.doctors_on_duty ?? 0;
   const emergencyCases = overview?.emergency_cases ?? 0;
+  const criticalConditionCases = overview?.critical_condition_cases ?? 0;
   const icuOccupancy = overview?.icu_occupancy ?? 0;
   const admissionTrend = overview?.admission_trend ?? [];
   const bedOccupancyByDept = overview?.bed_occupancy_by_department ?? [];
@@ -221,6 +216,22 @@ export default function AdminDashboard() {
             <p className="text-gray-800 font-medium text-sm">Emergency Cases</p>
             <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
               {emergencyCases}
+            </h3>
+          </div>
+          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+        </div>
+
+        {/* Critical Condition */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+          <AlertTriangle
+            className="absolute top-4 left-4 text-[#f59e0b]"
+            fill="#fef3c7"
+            size={24}
+          />
+          <div className="mt-4 text-center">
+            <p className="text-gray-800 font-medium text-sm">Critical Condition</p>
+            <h3 className="text-4xl font-bold text-[#f59e0b] mt-3">
+              {criticalConditionCases}
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />

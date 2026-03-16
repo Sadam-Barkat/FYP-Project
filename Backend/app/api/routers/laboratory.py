@@ -12,6 +12,9 @@ from app.models.staff import Staff
 
 router = APIRouter(prefix="/api", tags=["laboratory"])
 
+# Must match laboratorian: category stored in test_name as "CategoryName | TestName"
+LAB_ENTRY_DELIMITER = " | "
+
 
 @router.get("/laboratory-overview")
 async def get_laboratory_overview(
@@ -77,16 +80,16 @@ async def get_laboratory_overview(
         critical_results = critical_results_result.scalar_one() or 0
 
         # ----- Daily test volume by category (Completed vs Pending) -----
-        # Map LabRequest.lab_category_id -> category name
-        # Completed count: LaboratoryResult grouped by category name; Pending: LabRequest.status='pending'
+        # Two sources: (1) LabRequest-based (legacy), (2) LaboratoryResult only (laboratorian entries)
+        # Laboratorian stores category in test_name as "CategoryName | TestName"
 
-        # Category names
+        # Category names from LabCategory
         categories_result = await db.execute(
             select(LabCategory.id, LabCategory.name)
         )
         categories = {row.id: row.name for row in categories_result}
 
-        # Completed tests on selected date per category (join via LabRequest)
+        # (1) Completed on selected date per category via LabRequest join
         completed_by_cat_result = await db.execute(
             select(
                 LabRequest.lab_category_id,
@@ -104,12 +107,12 @@ async def get_laboratory_overview(
             )
             .group_by(LabRequest.lab_category_id)
         )
-        completed_by_cat = {
+        completed_by_cat: Dict[str, int] = {
             categories.get(row.lab_category_id, "Other"): row.count
             for row in completed_by_cat_result
         }
 
-        # Pending tests on selected date per category
+        # (2) Pending on selected date per category from LabRequest
         pending_by_cat_result = await db.execute(
             select(
                 LabRequest.lab_category_id,
@@ -123,10 +126,28 @@ async def get_laboratory_overview(
             )
             .group_by(LabRequest.lab_category_id)
         )
-        pending_by_cat = {
+        pending_by_cat: Dict[str, int] = {
             categories.get(row.lab_category_id, "Other"): row.count
             for row in pending_by_cat_result
         }
+
+        # (3) Include laboratorian-added results (LaboratoryResult only, no LabRequest)
+        # Category is stored in test_name as "CategoryName | TestName"
+        laboratorian_results = await db.execute(
+            select(LaboratoryResult.test_name, LaboratoryResult.status).where(
+                cast(LaboratoryResult.collected_at, Date) == base_date
+            )
+        )
+        for row in laboratorian_results.all():
+            test_name = row.test_name or ""
+            if LAB_ENTRY_DELIMITER in test_name:
+                cat_name = test_name.split(LAB_ENTRY_DELIMITER, 1)[0].strip() or "Other"
+            else:
+                cat_name = "Other"
+            if row.status == "completed":
+                completed_by_cat[cat_name] = completed_by_cat.get(cat_name, 0) + 1
+            else:
+                pending_by_cat[cat_name] = pending_by_cat.get(cat_name, 0) + 1
 
         # Merge into list
         all_category_names = set(completed_by_cat.keys()) | set(pending_by_cat.keys())

@@ -100,7 +100,7 @@ async def get_hospital_overview(
         )
         doctors_on_duty = doctors_on_duty_result.scalar_one() or 0
 
-        # ---- emergency_cases (critical alerts on selected date) ----
+        # ---- emergency_cases (critical-severity alerts on selected date) ----
         emergency_cases_result = await db.execute(
             select(func.count())
             .select_from(Alert)
@@ -113,6 +113,20 @@ async def get_hospital_overview(
             )
         )
         emergency_cases = emergency_cases_result.scalar_one() or 0
+
+        # ---- critical_condition_cases (high-severity alerts on selected date) ----
+        critical_condition_result = await db.execute(
+            select(func.count())
+            .select_from(Alert)
+            .where(
+                and_(
+                    Alert.severity == AlertSeverity.high,
+                    Alert.created_at >= day_start,
+                    Alert.created_at <= day_end,
+                )
+            )
+        )
+        critical_condition_cases = critical_condition_result.scalar_one() or 0
 
         # ---- icu_occupancy ----
         icu_total_result = await db.execute(
@@ -194,6 +208,7 @@ async def get_hospital_overview(
             "todays_revenue": todays_revenue,
             "doctors_on_duty": int(doctors_on_duty),
             "emergency_cases": int(emergency_cases),
+            "critical_condition_cases": int(critical_condition_cases),
             "icu_occupancy": icu_occupancy,
             "admission_trend": admission_trend,
             "bed_occupancy_by_department": bed_occupancy_by_department,

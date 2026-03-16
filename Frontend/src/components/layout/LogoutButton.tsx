@@ -11,6 +11,12 @@ export default function LogoutButton() {
         if (typeof window !== "undefined") {
           localStorage.removeItem("userRole");
           localStorage.removeItem("access_token");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userEmail");
+          sessionStorage.removeItem("access_token");
+          sessionStorage.removeItem("userRole");
+          sessionStorage.removeItem("userName");
+          sessionStorage.removeItem("userEmail");
 
           // Clear auth cookies used by middleware/proxy
           document.cookie = "access_token=; Path=/; Max-Age=0";

@@ -9,7 +9,11 @@ export default function HeaderTitle() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedRole = localStorage.getItem("userRole");
+      let storedRole = sessionStorage.getItem("userRole");
+      if (!storedRole) {
+        storedRole = localStorage.getItem("userRole");
+        if (storedRole) sessionStorage.setItem("userRole", storedRole);
+      }
       if (storedRole) setRole(storedRole);
     }
   }, []);
@@ -19,6 +23,10 @@ export default function HeaderTitle() {
     title = "Doctor Dashboard";
   } else if (role === "nurse" || pathname.startsWith("/nurse")) {
     title = "Nurse Dashboard";
+  } else if (role === "laboratorian" || pathname.startsWith("/laboratory-entry")) {
+    title = "Laboratorian Dashboard";
+  } else if (role === "receptionist" || pathname.startsWith("/reception")) {
+    title = "Receptionist Dashboard";
   }
 
   return (

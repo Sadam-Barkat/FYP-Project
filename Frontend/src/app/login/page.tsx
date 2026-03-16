@@ -34,15 +34,26 @@ export default function LoginPage() {
 
       const role = data.user?.role ?? "admin";
       const userEmail = (data.user?.email ?? "").toString().trim().toLowerCase();
-      // Reception → /reception; laboratorian has no redirect (use URL /laboratory-entry when backend is ready)
+      // Reception → /reception; Laboratorian (lab@hospital.com) → /laboratory-entry
       let effectiveRole = role;
       if (userEmail === "reception@hospital.com") effectiveRole = "receptionist";
       else if (userEmail === "lab@hospital.com") effectiveRole = "laboratorian";
 
       if (typeof window !== "undefined") {
-        // Store in localStorage for existing client-side checks
-        localStorage.setItem("access_token", data.access_token ?? "");
+        const firstName = (data.user?.first_name ?? "").toString().trim();
+        const lastName = (data.user?.last_name ?? "").toString().trim();
+        const displayName = [firstName, lastName].filter(Boolean).join(" ") || (data.user?.email ?? "").toString();
+
+        const token = data.access_token ?? "";
+        localStorage.setItem("access_token", token);
         localStorage.setItem("userRole", effectiveRole);
+        localStorage.setItem("userName", displayName);
+        localStorage.setItem("userEmail", (data.user?.email ?? "").toString().trim());
+        // Per-tab auth: token + role so each tab keeps its own login (nurse in tab 1, doctor in tab 2, etc.)
+        sessionStorage.setItem("access_token", token);
+        sessionStorage.setItem("userRole", effectiveRole);
+        sessionStorage.setItem("userName", displayName);
+        sessionStorage.setItem("userEmail", (data.user?.email ?? "").toString().trim());
 
         // Also store in cookies so Next.js middleware/proxy can read auth state
         const maxAge = 60 * 30; // 30 minutes
@@ -54,6 +65,7 @@ export default function LoginPage() {
       else if (effectiveRole === "doctor") router.push("/doctor");
       else if (effectiveRole === "nurse") router.push("/nurse");
       else if (effectiveRole === "receptionist") router.push("/reception");
+      else if (effectiveRole === "laboratorian") router.push("/laboratory-entry");
       else router.push("/admin");
     } catch (err) {
       console.error("Login error", err);

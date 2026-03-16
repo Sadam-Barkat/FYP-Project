@@ -1,10 +1,11 @@
-import { Bell, UserCircle } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import ExportPDFButton from "@/components/layout/ExportPDFButton";
 import LogoutButton from "@/components/layout/LogoutButton";
 import HeaderTitle from "@/components/layout/HeaderTitle";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import LiveClock from "@/components/layout/LiveClock";
+import NavbarProfileButton from "@/components/layout/NavbarProfileButton";
+import NavbarNotificationButton from "@/components/layout/NavbarNotificationButton";
 
 export default function DashboardLayout({
   children,
@@ -25,8 +26,8 @@ export default function DashboardLayout({
             <LiveClock />
             
             <div className="flex items-center space-x-4 text-gray-700 dark:text-gray-300">
-              <button className="hover:text-[#0066cc] dark:hover:text-[#60a5fa]"><Bell size={20} /></button>
-              <button className="hover:text-[#0066cc] dark:hover:text-[#60a5fa]"><UserCircle size={20} /></button>
+              <NavbarNotificationButton />
+              <NavbarProfileButton />
               <ThemeToggle />
             </div>
             

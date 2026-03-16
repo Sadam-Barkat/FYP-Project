@@ -11,6 +11,11 @@ export default function ExportPDFButton() {
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
 
+  // Show export only on admin and doctor dashboards (analytics); hide on nurse, receptionist, laboratorian
+  const showExport =
+    pathname?.startsWith("/admin") || pathname?.startsWith("/doctor");
+  if (!showExport) return null;
+
   const handleExport = async () => {
     try {
       setLoading(true);

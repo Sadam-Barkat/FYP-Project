@@ -1,62 +1,132 @@
 "use client";
 
-import { useState } from "react";
-import { TestTube2, ClipboardList, User, Clock, CheckCircle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown } from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type LabStatus = "pending" | "completed";
 
-interface LabEntry {
+interface PatientOption {
   id: number;
-  patientId: string;
-  patientName: string;
-  testCategory: string;
-  testName: string;
-  status: LabStatus;
-  resultSummary: string;
-  createdAt: string;
+  name: string;
+  age: number;
 }
 
-const mockPatients = [
-  { id: "P-1001", name: "Ali Raza", age: 45 },
-  { id: "P-1002", name: "Ayesha Khan", age: 32 },
-  { id: "P-1003", name: "Ahmed Hassan", age: 28 },
-  { id: "P-1004", name: "Fatima Noor", age: 55 },
-  { id: "P-1005", name: "Sara Mahmood", age: 38 },
-];
+interface CategoryOption {
+  id: number;
+  name: string;
+}
 
-const mockCategories = [
-  "Blood Test (CBC)",
-  "Lipid Profile",
-  "Liver Function",
-  "Urinalysis",
-  "COVID-19 PCR",
-  "Renal Function",
-  "Thyroid Panel",
-];
-
-// Dummy daily tests for selected patient (pre-filled for design)
-const dummyDailyTests: LabEntry[] = [
-  { id: 1, patientId: "P-1001", patientName: "Ali Raza", testCategory: "Blood Test (CBC)", testName: "CBC", status: "completed", resultSummary: "Normal", createdAt: new Date().toISOString().slice(0, 10) + "T09:30:00.000Z" },
-  { id: 2, patientId: "P-1001", patientName: "Ali Raza", testCategory: "Liver Function", testName: "LFT", status: "pending", resultSummary: "Pending", createdAt: new Date().toISOString().slice(0, 10) + "T10:15:00.000Z" },
-  { id: 3, patientId: "P-1001", patientName: "Ali Raza", testCategory: "Urinalysis", testName: "Urine R/E", status: "completed", resultSummary: "Normal", createdAt: new Date().toISOString().slice(0, 10) + "T11:00:00.000Z" },
-];
+interface LabEntry {
+  id: number;
+  patient_id: number;
+  patient_name: string;
+  test_category: string;
+  test_name: string;
+  status: LabStatus;
+  result_summary: string;
+  collected_at: string;
+}
 
 export default function LaboratoryEntryPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
-  const [testCategory, setTestCategory] = useState<string>(mockCategories[0]);
-  const [testName, setTestName] = useState<string>("CBC");
-  const [status, setStatus] = useState<LabStatus>("pending");
-  const [resultSummary, setResultSummary] = useState<string>("");
-  const [entries, setEntries] = useState<LabEntry[]>(dummyDailyTests);
+  const [patients, setPatients] = useState<PatientOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [entries, setEntries] = useState<LabEntry[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingResults, setLoadingResults] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedPatient = mockPatients.find((p) => p.id === selectedPatientId);
+  const selectedPatient = patients.find((p) => String(p.id) === selectedPatientId);
+  const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
+  const patientDropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (patientDropdownRef.current && !patientDropdownRef.current.contains(e.target as Node)) {
+        setPatientDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const [testCategoryId, setTestCategoryId] = useState<number>(0);
+  const [testName, setTestName] = useState<string>("");
+  const [status, setStatus] = useState<LabStatus>("pending");
+  const [resultSummary, setResultSummary] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingPatients(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/laboratorian/patients`);
+        if (!res.ok) throw new Error("Failed to load patients");
+        const data = await res.json();
+        if (!cancelled) setPatients(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (!cancelled) setError("Failed to load patients. Is the backend running?");
+      } finally {
+        if (!cancelled) setLoadingPatients(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadingCategories(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/laboratorian/categories`);
+        if (!res.ok) throw new Error("Failed to load categories");
+        const data = await res.json();
+        if (!cancelled) {
+          const list = Array.isArray(data) ? data : [];
+          setCategories(list);
+          if (list.length > 0) setTestCategoryId((prev) => (list.some((c) => c.id === prev) ? prev : list[0].id));
+        }
+      } catch (e) {
+        if (!cancelled) setError("Failed to load categories.");
+      } finally {
+        if (!cancelled) setLoadingCategories(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const fetchResults = useCallback(async () => {
+    if (!selectedPatientId) {
+      setEntries([]);
+      return;
+    }
+    setLoadingResults(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/laboratorian/patients/${selectedPatientId}/results?date=${selectedDate}`
+      );
+      if (!res.ok) throw new Error("Failed to load results");
+      const data = await res.json();
+      setEntries(Array.isArray(data) ? data : []);
+    } catch {
+      setEntries([]);
+    } finally {
+      setLoadingResults(false);
+    }
+  }, [selectedPatientId, selectedDate]);
+
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!selectedPatient) {
@@ -69,35 +139,41 @@ export default function LaboratoryEntryPage() {
     }
 
     setSubmitting(true);
-    const now = new Date();
-    const createdAt = new Date(
-      `${selectedDate}T${now.toTimeString().slice(0, 8)}`
-    ).toISOString();
+    try {
+      const now = new Date();
+      const collectedAt = new Date(
+        `${selectedDate}T${now.toTimeString().slice(0, 8)}`
+      ).toISOString();
 
-    setEntries((prev) => [
-      {
-        id: prev.length + 1,
-        patientId: selectedPatient.id,
-        patientName: selectedPatient.name,
-        testCategory,
-        testName: testName.trim(),
-        status,
-        resultSummary: resultSummary.trim() || "Pending interpretation",
-        createdAt,
-      },
-      ...prev,
-    ]);
+      const res = await fetch(`${API_BASE}/api/laboratorian/results`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: selectedPatient.id,
+          lab_category_id: testCategoryId,
+          test_name: testName.trim(),
+          status,
+          result_summary: resultSummary.trim() || "Pending interpretation",
+          collected_at: collectedAt,
+        }),
+      });
 
-    setSubmitting(false);
-    setResultSummary("");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail ?? "Failed to save lab test");
+      }
+
+      setTestName("");
+      setResultSummary("");
+      await fetchResults();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save lab test.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const entriesForSelectedPatient = selectedPatientId
-    ? entries.filter((e) => e.patientId === selectedPatientId)
-    : [];
-  const entriesForSelectedDate = entriesForSelectedPatient.filter(
-    (e) => e.createdAt.slice(0, 10) === selectedDate
-  );
+  const entriesForSelectedDate = entries;
 
   const pendingCount = entriesForSelectedDate.filter(
     (e) => e.status === "pending"
@@ -140,22 +216,62 @@ export default function LaboratoryEntryPage() {
           <User className="text-[#0066cc]" size={20} />
           Step 1 — Select patient
         </h3>
-        <div>
+        <div ref={patientDropdownRef} className="relative w-full max-w-md">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Patient
           </label>
-          <select
-            value={selectedPatientId}
-            onChange={(e) => setSelectedPatientId(e.target.value)}
-            className="w-full max-w-md border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+          <button
+            type="button"
+            onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
+            disabled={loadingPatients}
+            className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-md px-3 py-2.5 text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
           >
-            <option value="">— Select a patient —</option>
-            {mockPatients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.id} — {p.name} (Age {p.age})
-              </option>
-            ))}
-          </select>
+            <span className="truncate">
+              {selectedPatient
+                ? `#${selectedPatient.id} — ${selectedPatient.name} (Age ${selectedPatient.age})`
+                : "— Select a patient —"}
+            </span>
+            <ChevronDown size={18} className="shrink-0 text-gray-500" />
+          </button>
+          {/* List opens below the bar */}
+          {patientDropdownOpen && (
+            <ul
+              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto py-1"
+              role="listbox"
+            >
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPatientId("");
+                    setPatientDropdownOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50"
+                  role="option"
+                >
+                  — Select a patient —
+                </button>
+              </li>
+              {patients.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPatientId(String(p.id));
+                      setPatientDropdownOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${selectedPatientId === String(p.id) ? "bg-blue-50 text-[#0066cc]" : "text-gray-800"}`}
+                    role="option"
+                  >
+                    #{p.id} — {p.name} (Age {p.age})
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {loadingPatients && (
+            <p className="text-sm text-gray-500 mt-1">Loading patients…</p>
+          )}
         </div>
       </div>
 
@@ -219,13 +335,15 @@ export default function LaboratoryEntryPage() {
                       Test Category
                     </label>
                     <select
-                      value={testCategory}
-                      onChange={(e) => setTestCategory(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      value={categories.length === 0 ? "" : testCategoryId}
+                      onChange={(e) => setTestCategoryId(Number(e.target.value))}
+                      disabled={loadingCategories || categories.length === 0}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
                     >
-                      {mockCategories.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      <option value="">{loadingCategories ? "Loading…" : "No categories"}</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
                         </option>
                       ))}
                     </select>
@@ -276,7 +394,7 @@ export default function LaboratoryEntryPage() {
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || categories.length === 0}
                   className="inline-flex items-center justify-center px-4 py-2.5 rounded-md bg-[#0066cc] text-white text-sm font-medium hover:bg-[#0052a3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Saving..." : "Add daily test"}
@@ -288,7 +406,11 @@ export default function LaboratoryEntryPage() {
               <h3 className="font-semibold text-gray-800 mb-4">
                 Daily tests — {selectedPatient.name} ({selectedDate})
               </h3>
-              {entriesForSelectedDate.length === 0 ? (
+              {loadingResults ? (
+                <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+                  Loading…
+                </div>
+              ) : entriesForSelectedDate.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
                   No tests recorded for this patient on this date yet.
                 </div>
@@ -306,7 +428,7 @@ export default function LaboratoryEntryPage() {
                     <tbody>
                       {entriesForSelectedDate.map((entry) => {
                         const timeLabel = new Date(
-                          entry.createdAt
+                          entry.collected_at
                         ).toLocaleTimeString(undefined, {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -323,9 +445,9 @@ export default function LaboratoryEntryPage() {
                           >
                             <td className="py-2 pr-2 text-gray-800">
                               <span className="text-xs text-gray-400 block">
-                                {entry.testCategory}
+                                {entry.test_category}
                               </span>
-                              {entry.testName}
+                              {entry.test_name}
                             </td>
                             <td className="py-2 pr-2">
                               <span
@@ -337,7 +459,7 @@ export default function LaboratoryEntryPage() {
                               </span>
                             </td>
                             <td className="py-2 pr-2 text-gray-700">
-                              {entry.resultSummary}
+                              {entry.result_summary}
                             </td>
                             <td className="py-2 text-right text-gray-500">
                               {timeLabel}

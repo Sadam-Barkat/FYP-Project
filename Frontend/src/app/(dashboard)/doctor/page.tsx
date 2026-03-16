@@ -1,17 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { assignedPatients, DoctorPatient } from "@/lib/mockData";
-import { AlertTriangle, Activity, HeartPulse, RefreshCcw } from "lucide-react";
+import { AlertTriangle, Activity, HeartPulse, RefreshCcw, Loader2 } from "lucide-react";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import { getAuthHeaders } from "@/lib/auth";
 
-function getSeverityScore(status: DoctorPatient['status']) {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+function useDoctorDisplayName() {
+  const [name, setName] = useState("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setName(
+      sessionStorage.getItem("userName") || localStorage.getItem("userName") || ""
+    );
+  }, []);
+  return name;
+}
+
+type PatientStatus = "Normal" | "Critical" | "Emergency";
+
+function getSeverityScore(status: PatientStatus) {
   if (status === "Emergency") return 3;
   if (status === "Critical") return 2;
   return 1;
 }
 
-function getStatusClasses(status: DoctorPatient['status']) {
+function getStatusClasses(status: PatientStatus) {
   switch (status) {
     case "Normal":
       return "bg-[#10b981]/10 text-[#10b981]";
@@ -24,61 +40,114 @@ function getStatusClasses(status: DoctorPatient['status']) {
   }
 }
 
+interface AssignedPatient {
+  id: number;
+  name: string;
+  age: number;
+}
+
 export default function DoctorDashboardPage() {
-  const [patients, setPatients] = useState<DoctorPatient[]>(assignedPatients);
+  const [patients, setPatients] = useState<AssignedPatient[]>([]);
+  const [latestCondition, setLatestCondition] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const userDisplayName = useDoctorDisplayName();
 
-  // Sort by severity on each render
-  const sortedPatients = useMemo(
-    () =>
-      [...patients].sort((a, b) =>
-        getSeverityScore(b.status) - getSeverityScore(a.status)
-      ),
-    [patients]
-  );
-
-  // Fake real-time updates (every 10s tweak a random patient)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPatients(prev => {
-        const clone = [...prev];
-        if (!clone.length) return clone;
-        const index = Math.floor(Math.random() * clone.length);
-        const current = clone[index];
-        const order: DoctorPatient['status'][] = ["Normal", "Critical", "Emergency"];
-        const currentIdx = order.indexOf(current.status);
-        const nextIdx = Math.min(order.length - 1, currentIdx + 1);
-        clone[index] = {
-          ...current,
-          status: order[nextIdx],
-          lastUpdated: "Just now",
-        };
-        return clone;
+  const fetchPatients = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/doctor/patients`, {
+        headers: getAuthHeaders(),
       });
-    }, 10000);
-
-    return () => clearInterval(interval);
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Please log in again.");
+        throw new Error("Failed to load assigned patients.");
+      }
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      setPatients(list);
+      if (list.length === 0) {
+        setLatestCondition({});
+        return;
+      }
+      const conditionMap: Record<number, string> = {};
+      await Promise.all(
+        list.slice(0, 30).map(async (p: AssignedPatient) => {
+          try {
+            const vRes = await fetch(
+              `${API_BASE}/api/doctor/patients/${p.id}/vitals`,
+              { headers: getAuthHeaders() }
+            );
+            if (!vRes.ok) return;
+            const vitals = await vRes.json();
+            const latest = Array.isArray(vitals) ? vitals[0] : null;
+            if (latest?.condition_level)
+              conditionMap[p.id] = latest.condition_level;
+          } catch {
+            // ignore per-patient failure
+          }
+        })
+      );
+      setLatestCondition((prev) => ({ ...prev, ...conditionMap }));
+    } catch {
+      setPatients([]);
+      setLatestCondition({});
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  useRealtimeEvent("vitals_updated", () => {
+    fetchPatients();
+  });
+  useRealtimeEvent("patient_discharged", () => {
+    fetchPatients();
+  });
 
   const handleManualRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setPatients([...assignedPatients]);
-      setIsRefreshing(false);
-    }, 600);
+    fetchPatients();
   };
+
+  const sortedPatients = useMemo(
+    () =>
+      [...patients].sort((a, b) => {
+        const statusA = (latestCondition[a.id] || "Normal") as PatientStatus;
+        const statusB = (latestCondition[b.id] || "Normal") as PatientStatus;
+        return getSeverityScore(statusB) - getSeverityScore(statusA);
+      }),
+    [patients, latestCondition]
+  );
+
+  const hasEmergency = sortedPatients.some(
+    (p) => (latestCondition[p.id] || "").toLowerCase() === "emergency"
+  );
 
   return (
     <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-semibold text-[#1e40af]">My Patients Overview</h2>
-          <p className="text-sm text-gray-500 mt-1">Prioritized view of your assigned patients based on AI condition.</p>
+          <h2 className="text-3xl font-semibold text-[#1e40af] dark:text-[#60a5fa]">
+            My Patients Overview
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Prioritized view of your assigned patients. Updates in real time when nurses record vitals.
+          </p>
+          {userDisplayName && (
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+              Logged in as{" "}
+              <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/doctor/analytics"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#e6f2ff] text-[#0066cc] text-sm font-medium hover:bg-[#d0e6ff] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#e6f2ff] text-[#0066cc] text-sm font-medium hover:bg-[#d0e6ff] transition-colors dark:bg-[#1e3a5f] dark:text-[#60a5fa]"
           >
             <Activity size={16} />
             View My Analytics
@@ -86,82 +155,90 @@ export default function DoctorDashboardPage() {
           <button
             type="button"
             onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
+            disabled={isRefreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
-            <RefreshCcw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-            {isRefreshing ? 'Refreshing' : 'Reset View'}
+            <RefreshCcw size={16} className={isRefreshing ? "animate-spin" : ""} />
+            {isRefreshing ? "Refreshing" : "Refresh"}
           </button>
         </div>
       </div>
 
-      {/* Live alert banner if any emergency */}
-      {sortedPatients.some(p => p.status === 'Emergency') && (
-        <div className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <div className="p-2 rounded-full bg-[#fee2e2] text-[#ef4444]">
+      {loading && (
+        <div className="flex items-center justify-center py-12 gap-2 text-gray-500">
+          <Loader2 size={20} className="animate-spin" />
+          Loading assigned patients...
+        </div>
+      )}
+
+      {!loading && patients.length === 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center text-gray-500 dark:text-gray-400">
+          No patients assigned to you. The list updates when reception assigns new patients.
+        </div>
+      )}
+
+      {hasEmergency && !loading && (
+        <div className="bg-[#fef2f2] dark:bg-red-900/20 border border-[#fecaca] dark:border-red-800 rounded-xl p-4 flex items-center gap-3 shadow-sm">
+          <div className="p-2 rounded-full bg-[#fee2e2] dark:bg-red-900/40 text-[#ef4444]">
             <AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-[#b91c1c]">Emergency patients detected</p>
-            <p className="text-xs text-[#7f1d1d]">Patients marked as Emergency are surfaced at the top for immediate attention.</p>
+            <p className="text-sm font-semibold text-[#b91c1c] dark:text-red-300">
+              Emergency patients detected
+            </p>
+            <p className="text-xs text-[#7f1d1d] dark:text-red-200/80">
+              Patients marked as Emergency are at the top for immediate attention.
+            </p>
           </div>
         </div>
       )}
 
-      {/* Patient cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {sortedPatients.map((patient) => (
-          <Link
-            key={patient.id}
-            href={`/doctor/patients/${patient.id}`}
-            className="group bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#1e40af]/30 transition-all flex flex-col justify-between min-h-[180px]"
-          >
-            <div className="p-5 flex-1 flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs text-gray-400 font-mono">{patient.id}</p>
-                  <h3 className="text-base font-semibold text-gray-900 mt-1">{patient.name}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{patient.age} yrs · {patient.gender === 'M' ? 'Male' : 'Female'}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusClasses(patient.status)}`}>
-                  {patient.status}
-                </span>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between text-xs text-gray-600 mt-1">
-                <div>
-                  <p className="font-medium text-gray-700">Bed {patient.bed}</p>
-                  <p className="text-[11px]">{patient.ward}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <HeartPulse size={14} className="text-[#ef4444]" />
-                    <span className="font-medium">HR {patient.lastVitals.heartRate}</span>
+      {!loading && sortedPatients.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {sortedPatients.map((patient) => {
+            const status = (latestCondition[patient.id] || "Normal") as PatientStatus;
+            return (
+              <Link
+                key={patient.id}
+                href={`/doctor/patients/${patient.id}`}
+                className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-[#1e40af]/30 dark:hover:border-[#60a5fa]/30 transition-all flex flex-col justify-between min-h-[160px]"
+              >
+                <div className="p-5 flex-1 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                        #{patient.id}
+                      </p>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mt-1">
+                        {patient.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {patient.age} yrs
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusClasses(status)}`}
+                    >
+                      {status}
+                    </span>
                   </div>
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="font-medium">SpO2 {patient.lastVitals.spo2}%</span>
-                    <span className="text-[11px]">BP {patient.lastVitals.bloodPressure}</span>
+                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg px-3 py-2 mt-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Vitals updated by nurse. View details for full history and discharge.
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {patient.alerts.length > 0 && (
-                <div className="flex items-start gap-2 mt-2">
-                  <Activity size={14} className="text-[#f59e0b] mt-0.5 shrink-0" />
-                  <p className="text-xs text-gray-600 leading-snug">
-                    {patient.alerts[0]}{patient.alerts.length > 1 ? ' +' + (patient.alerts.length - 1) + ' more' : ''}
-                  </p>
+                <div className="px-5 py-3 border-t border-gray-50 dark:border-gray-700 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-gray-900/30 rounded-b-xl">
+                  <span>Assigned patient</span>
+                  <span className="group-hover:text-[#1e40af] dark:group-hover:text-[#60a5fa] font-medium transition-colors">
+                    View details →
+                  </span>
                 </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-[11px] text-gray-500 bg-gray-50/50 rounded-b-xl">
-              <span>Last update: {patient.lastUpdated}</span>
-              <span className="group-hover:text-[#1e40af] font-medium transition-colors">View details →</span>
-            </div>
-          </Link>
-        ))}
-      </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
