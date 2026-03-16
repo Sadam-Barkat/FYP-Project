@@ -49,6 +49,12 @@ export default function LoginPage() {
         localStorage.setItem("userRole", effectiveRole);
         localStorage.setItem("userName", displayName);
         localStorage.setItem("userEmail", (data.user?.email ?? "").toString().trim());
+         // Persist numeric user id for role-specific features (e.g. doctor notifications)
+        if (data.user?.id != null) {
+          const idStr = String(data.user.id);
+          localStorage.setItem("userId", idStr);
+          sessionStorage.setItem("userId", idStr);
+        }
         // Per-tab auth: token + role so each tab keeps its own login (nurse in tab 1, doctor in tab 2, etc.)
         sessionStorage.setItem("access_token", token);
         sessionStorage.setItem("userRole", effectiveRole);

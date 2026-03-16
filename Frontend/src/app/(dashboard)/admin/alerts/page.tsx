@@ -36,14 +36,9 @@ function severityToUiType(severity: string): "danger" | "warning" | "info" {
 function formatTimeAgo(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? "" : "s"} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-  return d.toLocaleDateString();
+  // Show the exact local time when the alert was created,
+  // to match the doctor's notification behaviour.
+  return d.toLocaleString();
 }
 
 export default function AlertsPage() {
@@ -68,8 +63,6 @@ export default function AlertsPage() {
 
   useEffect(() => {
     fetchOverview();
-    const interval = setInterval(fetchOverview, 15000);
-    return () => clearInterval(interval);
   }, [fetchOverview]);
 
   useRealtimeEvent("vitals_updated", () => {
@@ -161,7 +154,7 @@ export default function AlertsPage() {
           </span>
         </div>
 
-        <div className="space-y-4">
+        <div className="max-h-[480px] overflow-y-auto space-y-4 pr-1">
           {alerts.length === 0 && !isLoading ? (
             <p className="text-center text-gray-500 py-8">No active alerts currently.</p>
           ) : (

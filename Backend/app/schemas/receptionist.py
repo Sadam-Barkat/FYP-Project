@@ -34,6 +34,13 @@ class PatientCreate(BaseModel):
     blood_group: Optional[str] = Field(default=None)
     doctor_id: int = Field(..., description="User ID of the assigned doctor")
     nurse_id: int = Field(..., description="User ID of the assigned nurse")
+    admit_now: bool = Field(
+        default=True,
+        description=(
+            "If true, automatically create an admission and assign an available bed. "
+            "Drives the Occupied Beds / Available Beds cards."
+        ),
+    )
 
 
 class PatientCreatedResponse(BaseModel):

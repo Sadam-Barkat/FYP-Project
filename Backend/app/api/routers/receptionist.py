@@ -4,7 +4,7 @@ Receptionist API: list doctors, list nurses, and register new patients with doct
 All endpoints are under /api/receptionist.
 """
 
-from datetime import date
+from datetime import date, datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.websocket_manager import manager as ws_manager
 from app.database import get_db
 from app.models.assignments import DoctorAssignment, NursePatientAssignment
+from app.models.admission import Admission
+from app.models.bed import Bed, BedStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.schemas.receptionist import (
@@ -91,7 +93,20 @@ async def create_patient(
 ) -> PatientCreatedResponse:
     """
     Register a new patient and assign one doctor and one nurse.
-    Creates Patient, DoctorAssignment, and NursePatientAssignment with status 'active'.
+
+    Always creates:
+    - Patient
+    - DoctorAssignment (status 'active')
+    - NursePatientAssignment (status 'active')
+
+    If body.admit_now is true, also:
+    - Finds the first available bed
+    - Creates an Admission pointing to that bed
+    - Marks the bed as occupied
+
+    This drives the Patients & Beds overview cards:
+    - Total Patients (count of Patient)
+    - Occupied Beds / Available Beds (based on Admission + Bed.status)
     """
     try:
         today = date.today()
@@ -142,6 +157,33 @@ async def create_patient(
             status="active",
         )
         db.add(nurse_assignment)
+
+        # Optionally admit the patient immediately and assign a bed.
+        if body.admit_now:
+            # Pick the first available bed; there may be many available rows,
+            # so we limit to 1 to avoid "Multiple rows were found" errors.
+            bed_result = await db.execute(
+                select(Bed)
+                .where(Bed.status == BedStatus.available)
+                .order_by(Bed.id)
+                .limit(1)
+            )
+            bed = bed_result.scalar_one_or_none()
+            if bed is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No available beds to assign for this patient.",
+                )
+
+            admission = Admission(
+                patient_id=patient.id,
+                bed_id=bed.id,
+                admission_date=datetime.utcnow(),
+                reason_for_admission=None,
+            )
+            db.add(admission)
+
+            bed.status = BedStatus.occupied
 
         await db.commit()
         await db.refresh(patient)

@@ -14,6 +14,7 @@ from app.models.alert import Alert, AlertSeverity
 from app.models.patient import Patient
 from app.models.admission import Admission
 from app.models.bed import Bed
+from app.models.assignments import DoctorAssignment
 
 router = APIRouter(prefix="/api", tags=["alerts"])
 
@@ -26,8 +27,13 @@ async def _fetch_recent_alerts_feed(
     db: AsyncSession,
     limit: int = FEED_LIMIT,
     since_hours: int = FEED_HOURS,
+    doctor_id: int | None = None,
 ) -> List[Dict[str, Any]]:
-    """Fetch recent alerts (e.g. last 24h) for the live feed. Department from patient's current admission."""
+    """
+    Fetch recent alerts (e.g. last 24h) for the live feed.
+    If doctor_id is provided, restrict to alerts for patients currently assigned to that doctor.
+    Department comes from the patient's current admission (bed.ward) when available.
+    """
     since = datetime.utcnow() - timedelta(hours=since_hours)
     stmt = (
         select(
@@ -54,6 +60,16 @@ async def _fetch_recent_alerts_feed(
         .order_by(Alert.created_at.desc())
         .limit(limit)
     )
+    if doctor_id is not None:
+        # Only include alerts for patients currently assigned to this doctor.
+        stmt = stmt.join(
+            DoctorAssignment,
+            and_(
+                DoctorAssignment.patient_id == Alert.patient_id,
+                DoctorAssignment.doctor_id == doctor_id,
+                DoctorAssignment.status == "active",
+            ),
+        )
     result = await db.execute(stmt)
     rows = result.all()
 
@@ -76,7 +92,10 @@ async def _fetch_recent_alerts_feed(
 
 
 @router.get("/alerts-overview")
-async def get_alerts_overview(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+async def get_alerts_overview(
+    doctor_id: int | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
     """
     Real-time Alerts & Monitoring. No date filter — current state only.
     Critical/warning counts = live unresolved; feed = recent alerts (e.g. last 24h).
@@ -154,7 +173,12 @@ async def get_alerts_overview(db: AsyncSession = Depends(get_db)) -> Dict[str, A
         avg_response_time_prev_minutes = round(float(avg_prev), 1) if avg_prev is not None else 0.0
 
         # ---- Live feed: recent alerts (last 24h) — nurse/action-triggered alerts show here ----
-        feed = await _fetch_recent_alerts_feed(db, limit=FEED_LIMIT, since_hours=FEED_HOURS)
+        feed = await _fetch_recent_alerts_feed(
+            db,
+            limit=FEED_LIMIT,
+            since_hours=FEED_HOURS,
+            doctor_id=doctor_id,
+        )
 
         return {
             "critical_emergencies": critical_emergencies,

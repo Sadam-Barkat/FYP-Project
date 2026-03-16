@@ -84,6 +84,7 @@ export default function ReceptionPage() {
   const [bloodGroup, setBloodGroup] = useState("");
   const [doctorId, setDoctorId] = useState("");
   const [nurseId, setNurseId] = useState("");
+  const [admitNow, setAdmitNow] = useState(true);
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [nurses, setNurses] = useState<NurseOption[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
@@ -162,6 +163,7 @@ export default function ReceptionPage() {
           blood_group: bloodGroup.trim() || null,
           doctor_id: docId,
           nurse_id: nurId,
+          admit_now: admitNow,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -177,6 +179,7 @@ export default function ReceptionPage() {
       setBloodGroup("");
       setDoctorId("");
       setNurseId("");
+      setAdmitNow(true);
       setMessageModalTitle("Success");
       setMessageModalMessage(`Patient "${patientName}" has been added successfully.`);
       setMessageModalVariant("success");
@@ -256,6 +259,29 @@ export default function ReceptionPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
                   placeholder="e.g. +92 300 1234567"
                 />
+              </div>
+              <div className="sm:col-span-2 flex items-center justify-between gap-4 mt-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Admit now & assign bed
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    When enabled, a bed is assigned immediately and Patients & Beds occupancy updates.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAdmitNow((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    admitNow ? "bg-[#0066cc]" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                      admitNow ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </button>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
