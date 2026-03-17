@@ -4,7 +4,8 @@ import type { NextRequest } from "next/server";
 const TOKEN_COOKIE = "access_token";
 const ROLE_COOKIE = "userRole";
 
-export function middleware(request: NextRequest) {
+// Next.js 16 proxy entry point (replacement for deprecated middleware.ts)
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
   const role = request.cookies.get(ROLE_COOKIE)?.value;
@@ -34,6 +35,17 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*", "/doctor/:path*", "/nurse", "/nurse/:path*", "/reception", "/reception/:path*", "/laboratory-entry", "/laboratory-entry/:path*", "/login"],
+  matcher: [
+    "/",
+    "/admin/:path*",
+    "/doctor/:path*",
+    "/nurse",
+    "/nurse/:path*",
+    "/reception",
+    "/reception/:path*",
+    "/laboratory-entry",
+    "/laboratory-entry/:path*",
+    "/login",
+  ],
 };
 
