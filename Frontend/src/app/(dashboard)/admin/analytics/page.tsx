@@ -33,21 +33,25 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const CONDITION_COLORS = ["#22c55e", "#f97316", "#ef4444"];
 
-function TooltipActualForecast({
-  active,
-  payload,
-  label,
-  formatActual = (v: number) => String(v),
-  formatForecast = (v: number) => String(v),
-}: {
+function TooltipActualForecast(props: {
   formatActual?: (v: number) => string;
   formatForecast?: (v: number) => string;
-  active?: boolean;
-  payload?: readonly { name?: string; value?: number | null; payload?: Record<string, unknown> }[];
-  label?: string | number;
-  // allow extra props from recharts Tooltip `content` without fighting types
+  // Recharts passes many fields; keep this intentionally permissive for build safety.
   [key: string]: unknown;
 }) {
+  const {
+    active,
+    payload,
+    label,
+    formatActual = (v: number) => String(v),
+    formatForecast = (v: number) => String(v),
+  } = props as {
+    active?: boolean;
+    payload?: readonly { name?: string; value?: number | null; payload?: Record<string, unknown> }[];
+    label?: string | number;
+    formatActual?: (v: number) => string;
+    formatForecast?: (v: number) => string;
+  };
   if (!active || !payload?.length || label == null) return null;
   // Use series value by name so both Actual and Forecast show regardless of which line is hovered
   const actualEntry = payload.find((p) => p.name === "Actual");
