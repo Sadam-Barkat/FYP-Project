@@ -40,11 +40,13 @@ function TooltipActualForecast({
   formatActual = (v: number) => String(v),
   formatForecast = (v: number) => String(v),
 }: {
-  active?: boolean;
-  payload?: { name?: string; value?: number | null; payload?: Record<string, unknown> }[];
-  label?: string;
   formatActual?: (v: number) => string;
   formatForecast?: (v: number) => string;
+  active?: boolean;
+  payload?: readonly { name?: string; value?: number | null; payload?: Record<string, unknown> }[];
+  label?: string | number;
+  // allow extra props from recharts Tooltip `content` without fighting types
+  [key: string]: unknown;
 }) {
   if (!active || !payload?.length || label == null) return null;
   // Use series value by name so both Actual and Forecast show regardless of which line is hovered

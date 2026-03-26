@@ -249,8 +249,9 @@ export default function PatientDetailPage() {
     fetchPatientAndVitals();
   }, [fetchPatientAndVitals]);
 
-  useRealtimeEvent("vitals_updated", (payload: { patient_id?: number }) => {
-    if (payload?.patient_id === patientId) fetchPatientAndVitals();
+  useRealtimeEvent("vitals_updated", (payload) => {
+    const p = payload as { patient_id?: number } | undefined;
+    if (p?.patient_id === patientId) fetchPatientAndVitals();
   });
 
   const openDischargeConfirm = () => {
