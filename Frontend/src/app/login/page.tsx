@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://fyp-project-production-8c05.up.railway.app/";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://fyp-project-production-8c05.up.railway.app";
 
 export default function LoginPage() {
   const router = useRouter();
