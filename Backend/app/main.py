@@ -58,7 +58,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update this to ["http://localhost:3000"] in production
+    allow_origins=["https://fyp-project-ecmf90mgp-sadam-barkats-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
