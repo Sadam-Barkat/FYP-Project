@@ -4,7 +4,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE_RAW = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Safety: if env accidentally includes `/api` (e.g. `.../api`), we would otherwise call `/api/api/...` and get 404.
+const API_BASE = API_BASE_RAW.replace(/\/+$/, "").replace(/\/api\/?$/, "");
 
 function ResetPasswordForm() {
   const router = useRouter();
