@@ -4,10 +4,13 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+import os
+from sqlalchemy import text, select, func
 
 from app.core.websocket_manager import manager as ws_manager
-from app.database import engine
+from app.database import engine, SessionLocal
+from app.core.security import get_password_hash
+from app.models.user import User, UserRole
 from app.api.routers import (
     auth,
     overview,
@@ -33,6 +36,44 @@ async def lifespan(app: FastAPI):
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         print("Database connection OK.")
+
+        # Optional production-safe seeding for deployments:
+        # If you deploy against a fresh Neon database (no local seed data),
+        # login will return "Invalid email or password" because the user row doesn't exist.
+        # Set these env vars on Render to auto-create (only if missing):
+        # - SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD
+        # - (optional) SEED_DOCTOR_EMAIL, SEED_DOCTOR_PASSWORD
+        # - (optional) SEED_NURSE_EMAIL, SEED_NURSE_PASSWORD
+        seed_admin_email = (os.getenv("SEED_ADMIN_EMAIL") or "").strip().lower()
+        seed_admin_password = (os.getenv("SEED_ADMIN_PASSWORD") or "").strip()
+        seed_doctor_email = (os.getenv("SEED_DOCTOR_EMAIL") or "").strip().lower()
+        seed_doctor_password = (os.getenv("SEED_DOCTOR_PASSWORD") or "").strip()
+        seed_nurse_email = (os.getenv("SEED_NURSE_EMAIL") or "").strip().lower()
+        seed_nurse_password = (os.getenv("SEED_NURSE_PASSWORD") or "").strip()
+
+        async with SessionLocal() as db:
+            async def ensure_user(email: str, password: str, role: UserRole, first: str, last: str) -> None:
+                if not email or not password:
+                    return
+                r = await db.execute(select(User).where(func.lower(User.email) == email))
+                existing = r.scalar_one_or_none()
+                if existing:
+                    return
+                db.add(
+                    User(
+                        email=email,
+                        hashed_password=get_password_hash(password),
+                        role=role,
+                        first_name=first,
+                        last_name=last,
+                        is_active=True,
+                    )
+                )
+
+            await ensure_user(seed_admin_email, seed_admin_password, UserRole.admin, "Admin", "User")
+            await ensure_user(seed_doctor_email, seed_doctor_password, UserRole.doctor, "Doctor", "User")
+            await ensure_user(seed_nurse_email, seed_nurse_password, UserRole.nurse, "Nurse", "User")
+            await db.commit()
     except Exception as e:
         err_msg = str(e).strip()
         if "getaddrinfo" in err_msg or "11001" in err_msg:
