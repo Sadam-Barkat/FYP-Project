@@ -99,7 +99,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://fyp-project-ecmf90mgp-sadam-barkats-projects.vercel.app"],
+    allow_origins=["https://fyp-project-livid.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
