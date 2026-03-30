@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const API_BASE_RAW = process.env.NEXT_PUBLIC_API_URL ?? "https://fyp-project-production-8c05.up.railway.app";
+const API_BASE_RAW = process.env.NEXT_PUBLIC_API_URL ?? "https://fyp-project-production-61f7.up.railway.app";
 // Safety: if env accidentally includes `/api` (e.g. `.../api`), we would otherwise call `/api/api/...` and get 404.
 const API_BASE = API_BASE_RAW.replace(/\/+$/, "").replace(/\/api\/?$/, "");
 

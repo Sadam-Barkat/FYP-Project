@@ -29,7 +29,8 @@ type AnalyticsForecasts = {
   total_beds: number;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_RAW = process.env.NEXT_PUBLIC_API_URL || "https://fyp-project-production-61f7.up.railway.app";
+const API_BASE = API_BASE_RAW.replace(/\/+$/, "").replace(/\/api\/?$/, "");
 
 const CONDITION_COLORS = ["#22c55e", "#f97316", "#ef4444"];
 
