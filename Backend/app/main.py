@@ -99,7 +99,9 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
+    # Production + previews on Vercel (preflight OPTIONS must pass)
     allow_origins=["https://fyp-project-livid.vercel.app"],
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
