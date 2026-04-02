@@ -16,7 +16,8 @@ import jwt
 from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 
 DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-livid.vercel.app"
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", DEFAULT_FRONTEND_BASE_URL)
+# Allow either var name (Railway/Render envs vary). FRONTEND_BASE_URL wins if valid.
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL") or os.getenv("PUBLIC_FRONTEND_URL") or DEFAULT_FRONTEND_BASE_URL
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")

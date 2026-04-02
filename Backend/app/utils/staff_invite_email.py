@@ -13,7 +13,8 @@ from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 import jwt
 
 DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-livid.vercel.app"
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", DEFAULT_FRONTEND_BASE_URL)
+# Allow either var name (Railway/Render envs vary). FRONTEND_BASE_URL wins if valid.
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL") or os.getenv("PUBLIC_FRONTEND_URL") or DEFAULT_FRONTEND_BASE_URL
 
 
 def _get_frontend_base_url() -> str:
