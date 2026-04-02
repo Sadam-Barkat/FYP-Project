@@ -15,7 +15,8 @@ import jwt
 
 from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://fyp-project-livid.vercel.app")
+DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-livid.vercel.app"
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", DEFAULT_FRONTEND_BASE_URL)
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -111,7 +112,9 @@ async def send_password_reset_email(email: str) -> str:
         },
         expires_delta=expires,
     )
-    base = FRONTEND_BASE_URL.rstrip("/")
+    base = (FRONTEND_BASE_URL or "").strip().rstrip("/")
+    if not base or "localhost" in base or base.startswith("http://127.0.0.1"):
+        base = DEFAULT_FRONTEND_BASE_URL
     if base.endswith("/api"):
         base = base[:-4]
     reset_url = f"{base}/reset-password?token={token}"

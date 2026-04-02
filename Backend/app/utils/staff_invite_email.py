@@ -12,7 +12,24 @@ from app.models.user import UserRole
 from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 import jwt
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://fyp-project-livid.vercel.app")
+DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-livid.vercel.app"
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", DEFAULT_FRONTEND_BASE_URL)
+
+
+def _get_frontend_base_url() -> str:
+    """
+    Decide which frontend base URL to use for emails.
+    In deployments, people often accidentally keep FRONTEND_BASE_URL=localhost,
+    which makes emailed links unusable. If we detect localhost, we fallback.
+    """
+    base = (FRONTEND_BASE_URL or "").strip().rstrip("/")
+    if not base:
+        return DEFAULT_FRONTEND_BASE_URL
+    if "localhost" in base or base.startswith("http://127.0.0.1"):
+        return DEFAULT_FRONTEND_BASE_URL
+    if base.endswith("/api"):
+        base = base[:-4]
+    return base
 
 # Gmail SMTP (from env)
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
@@ -126,9 +143,7 @@ async def send_staff_invitation_email(email: str, staff_type: str) -> Tuple[str,
         },
         expires_delta=expires,
     )
-    base = FRONTEND_BASE_URL.rstrip("/")
-    if base.endswith("/api"):
-        base = base[:-4]
+    base = _get_frontend_base_url()
     signup_url = f"{base}/staff-signup?token={token}"
 
     html = _build_staff_invite_html(signup_url, staff_type)
