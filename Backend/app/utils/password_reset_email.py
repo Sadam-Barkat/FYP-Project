@@ -15,7 +15,7 @@ import jwt
 
 from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://fyp-project-livid.vercel.app")
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -112,6 +112,8 @@ async def send_password_reset_email(email: str) -> str:
         expires_delta=expires,
     )
     base = FRONTEND_BASE_URL.rstrip("/")
+    if base.endswith("/api"):
+        base = base[:-4]
     reset_url = f"{base}/reset-password?token={token}"
     html = _build_password_reset_html(reset_url)
     subject = "Reset your password – Real Time Intelligent Dashboard"

@@ -12,7 +12,7 @@ from app.models.user import UserRole
 from app.core.security import create_access_token, SECRET_KEY, ALGORITHM
 import jwt
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://fyp-project-livid.vercel.app")
 
 # Gmail SMTP (from env)
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
@@ -127,6 +127,8 @@ async def send_staff_invitation_email(email: str, staff_type: str) -> Tuple[str,
         expires_delta=expires,
     )
     base = FRONTEND_BASE_URL.rstrip("/")
+    if base.endswith("/api"):
+        base = base[:-4]
     signup_url = f"{base}/staff-signup?token={token}"
 
     html = _build_staff_invite_html(signup_url, staff_type)
