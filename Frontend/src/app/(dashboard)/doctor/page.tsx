@@ -128,10 +128,10 @@ export default function DoctorDashboardPage() {
   );
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-3xl font-semibold text-[#1e40af] dark:text-[#60a5fa]">
+          <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
             My Patients Overview
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -144,10 +144,10 @@ export default function DoctorDashboardPage() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-2 xs:flex-row xs:flex-wrap sm:w-auto sm:items-center sm:gap-3">
           <Link
             href="/doctor/analytics"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#e6f2ff] text-[#0066cc] text-sm font-medium hover:bg-[#d0e6ff] transition-colors dark:bg-[#1e3a5f] dark:text-[#60a5fa]"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#e6f2ff] px-4 py-2.5 text-sm font-medium text-[#0066cc] transition-colors hover:bg-[#d0e6ff] dark:bg-[#1e3a5f] dark:text-[#60a5fa]"
           >
             <Activity size={16} />
             View My Analytics
@@ -156,7 +156,7 @@ export default function DoctorDashboardPage() {
             type="button"
             onClick={handleManualRefresh}
             disabled={isRefreshing || loading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
           >
             <RefreshCcw size={16} className={isRefreshing ? "animate-spin" : ""} />
             {isRefreshing ? "Refreshing" : "Refresh"}

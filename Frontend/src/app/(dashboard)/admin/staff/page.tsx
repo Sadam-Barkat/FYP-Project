@@ -463,18 +463,18 @@ export default function StaffAndPatientsPage() {
   const [activeTab, setActiveTab] = useState<"staff" | "patients">("staff");
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="text-center mb-4">
-        <h2 className="text-3xl font-semibold text-[#0066cc] dark:text-[#60a5fa]">User Management</h2>
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+      <div className="mb-4 text-center">
+        <h2 className="text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl">User Management</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Invite staff (doctors, nurses, laboratorian, receptionist) and view or remove patients.</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="-mx-1 flex overflow-x-auto border-b border-gray-200 px-1 dark:border-gray-700 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => setActiveTab("staff")}
-          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+          className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "staff"
               ? "border-[#0066cc] text-[#0066cc] dark:border-[#60a5fa] dark:text-[#60a5fa]"
               : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -485,7 +485,7 @@ export default function StaffAndPatientsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("patients")}
-          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+          className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "patients"
               ? "border-[#0066cc] text-[#0066cc] dark:border-[#60a5fa] dark:text-[#60a5fa]"
               : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -1011,7 +1011,7 @@ function StaffTab() {
       )}
 
       {filtered.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Showing {(page - 1) * STAFF_PER_PAGE + 1}–{Math.min(page * STAFF_PER_PAGE, filtered.length)} of {filtered.length}
           </p>
@@ -1208,7 +1208,7 @@ function PatientsTab() {
       )}
 
       {filtered.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Showing {(page - 1) * PATIENTS_PER_PAGE + 1}–{Math.min(page * PATIENTS_PER_PAGE, filtered.length)} of {filtered.length}
           </p>

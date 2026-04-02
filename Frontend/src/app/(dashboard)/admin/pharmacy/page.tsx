@@ -137,7 +137,7 @@ export default function PharmacyPage() {
     })) ?? [];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-semibold text-[#0066cc]">
           Pharmacy Overview

@@ -298,7 +298,7 @@ export default function PatientDetailPage() {
 
   if (error || !patient) {
     return (
-      <div id="dashboard-content" className="w-full max-w-7xl mx-auto">
+      <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-600 dark:text-gray-300">{error || "Patient not found."}</p>
           <button
@@ -337,9 +337,9 @@ export default function PatientDetailPage() {
     }));
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
-        <div className="flex items-center gap-4">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+      <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 dark:border-gray-700 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <button
             onClick={() => router.back()}
             className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -347,27 +347,27 @@ export default function PatientDetailPage() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{patient.name}</h2>
+            <h2 className="truncate text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">{patient.name}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               ID: {patient.id} • {patient.age} yrs
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           <button
             onClick={openDischargeConfirm}
             disabled={discharging}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60 sm:w-auto"
           >
             {discharging ? <Loader2 size={16} className="animate-spin" /> : null}
             Discharge Patient
           </button>
           <div
-            className={`px-5 py-2.5 rounded-xl border-2 flex items-center gap-3 shadow-sm ${getStatusClasses(status)}`}
+            className={`flex items-center gap-3 rounded-xl border-2 px-4 py-2 shadow-sm sm:px-5 sm:py-2.5 ${getStatusClasses(status)}`}
           >
-            <div className="w-3 h-3 rounded-full bg-current" />
-            <span className="font-bold text-lg">{status} Condition</span>
+            <div className="h-3 w-3 shrink-0 rounded-full bg-current" />
+            <span className="text-base font-bold sm:text-lg">{status} Condition</span>
           </div>
         </div>
       </div>
@@ -384,7 +384,7 @@ export default function PatientDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
         <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center relative overflow-hidden">
           <div className="absolute top-0 w-full h-1 bg-red-400" />
           <HeartPulse className="text-red-400 mb-2" size={28} />

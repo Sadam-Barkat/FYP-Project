@@ -89,10 +89,10 @@ export default function PatientsBedsPage() {
   const criticalConditionCases = overview?.critical_condition_cases ?? 0;
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-4 gap-4">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="text-center md:text-left">
-          <h2 className="text-3xl font-semibold text-[#0066cc]">
+          <h2 className="text-2xl font-semibold text-[#0066cc] sm:text-3xl">
             Patients & Beds Overview
           </h2>
           {isLoading && (
@@ -106,7 +106,7 @@ export default function PatientsBedsPage() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
           <label
             className="text-sm text-gray-600"
             htmlFor="patients-beds-date"
@@ -124,7 +124,7 @@ export default function PatientsBedsPage() {
       </div>
 
       {/* Top Row Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
         {/* Total Patients */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#6366f1] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <Users

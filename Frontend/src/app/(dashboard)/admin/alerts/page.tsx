@@ -93,7 +93,7 @@ export default function AlertsPage() {
   const alerts = overview?.alerts_feed ?? [];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-semibold text-[#0066cc]">Alerts & Monitoring</h2>
       </div>

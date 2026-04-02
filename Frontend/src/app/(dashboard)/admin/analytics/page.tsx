@@ -100,9 +100,9 @@ export default function AnalyticsPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-semibold text-[#0066cc]">Analytics & Forecasts</h2>
+      <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-semibold text-[#0066cc] sm:text-3xl">Analytics & Forecasts</h2>
         </div>
         <p className="text-sm text-gray-500">Loading predictive trends...</p>
       </div>
@@ -111,9 +111,9 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-semibold text-[#0066cc]">Analytics & Forecasts</h2>
+      <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-semibold text-[#0066cc] sm:text-3xl">Analytics & Forecasts</h2>
         </div>
         <p className="text-sm text-red-500">{error}</p>
       </div>
@@ -141,10 +141,10 @@ export default function AnalyticsPage() {
   ].filter((d) => d.value > 0);
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-semibold text-[#0066cc]">Analytics & Forecasts</h2>
-        <p className="text-sm text-gray-500 mt-1">Predictive trends from hospital data</p>
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
+      <div className="mb-8 text-center">
+        <h2 className="text-2xl font-semibold text-[#0066cc] sm:text-3xl">Analytics & Forecasts</h2>
+        <p className="mt-1 text-sm text-gray-500">Predictive trends from hospital data</p>
       </div>
 
       {/* Summary cards */}
@@ -166,8 +166,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Admission trend + forecast */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Admissions — Trend & Forecast</h3>
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <h3 className="mb-4 font-semibold text-gray-800">Admissions — Trend & Forecast</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <LineChart data={admissionCombined} margin={{ top: 8, right: 8, bottom: 8, left: -8 }}>
@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue trend + forecast */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
         <h3 className="font-semibold text-gray-800 mb-4">Revenue — Trend & Forecast (PKR)</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -213,7 +213,7 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bed occupancy trend + forecast */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4">Bed Occupancy % — Trend & Forecast</h3>
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Condition distribution */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
           <h3 className="font-semibold text-gray-800 mb-4">Condition Distribution (Vitals)</h3>
           <div className="h-56 w-full">
             {conditionPie.length > 0 ? (
@@ -271,7 +271,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Alert trend */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
         <h3 className="font-semibold text-gray-800 mb-4">Alert Trend (Last 7 Days)</h3>
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>

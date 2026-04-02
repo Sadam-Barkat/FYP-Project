@@ -37,17 +37,17 @@ export default function DoctorAnalyticsPage() {
   ];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       {/* Header */}
-      <div className="flex items-start gap-4 border-b border-gray-200 pb-4">
+      <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-start sm:gap-4">
         <button 
           onClick={() => router.back()}
-          className="p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors mt-1"
+          className="mt-0 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 sm:mt-1"
         >
           <ArrowLeft size={20} />
         </button>
-        <div>
-          <h2 className="text-3xl font-semibold text-[#1e40af]">My Performance Analytics</h2>
+        <div className="min-w-0">
+          <h2 className="text-2xl font-semibold text-[#1e40af] sm:text-3xl">My Performance Analytics</h2>
           <p className="text-sm text-gray-500 mt-1">Overview of treated patients and metrics.</p>
         </div>
       </div>

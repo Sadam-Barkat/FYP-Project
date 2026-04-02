@@ -79,7 +79,7 @@ export default function BillingFinancePage() {
   const revenueTrend = overview?.revenue_vs_expenses ?? [];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
         <h2 className="text-3xl font-semibold text-[#0066cc] text-center md:text-left">
           Billing & Finance Overview

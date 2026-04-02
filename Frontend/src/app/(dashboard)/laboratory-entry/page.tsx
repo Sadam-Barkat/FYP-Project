@@ -185,7 +185,7 @@ export default function LaboratoryEntryPage() {
   return (
     <div
       id="dashboard-content"
-      className="w-full max-w-6xl mx-auto space-y-6 py-6"
+      className="dashboard-page-shell max-w-6xl py-4 sm:py-6"
     >
       <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 mb-4">
         <div className="text-center md:text-left">

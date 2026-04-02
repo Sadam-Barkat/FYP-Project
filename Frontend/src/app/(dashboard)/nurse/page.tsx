@@ -355,9 +355,9 @@ export default function NurseDashboardPage() {
   };
 
   return (
-    <div id="dashboard-content" className="w-full max-w-4xl mx-auto space-y-6 pb-12 transition-colors">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-4xl pb-8 transition-colors sm:pb-12">
       <div>
-        <h2 className="text-3xl font-semibold text-[#1e40af] dark:text-[#60a5fa]">
+        <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
           Record Patient Vitals
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -371,7 +371,7 @@ export default function NurseDashboardPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50 sm:p-6">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Select Patient (assigned to you)
           </label>
@@ -398,7 +398,7 @@ export default function NurseDashboardPage() {
         </div>
 
         {selectedPatient && (
-          <div className="p-6 pt-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="border-b border-gray-100 bg-white p-4 pt-3 dark:border-gray-800 dark:bg-gray-900 sm:p-6 sm:pt-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
               Selected patient
             </p>
@@ -414,7 +414,7 @@ export default function NurseDashboardPage() {
           </div>
         )}
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
@@ -517,7 +517,7 @@ export default function NurseDashboardPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3 transition-colors">
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 transition-colors dark:border-gray-800 xs:flex-row xs:items-center xs:justify-end">
               <button
                 type="button"
                 onClick={handleReset}

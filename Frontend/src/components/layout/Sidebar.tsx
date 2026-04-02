@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { 
-  Home, BedSingle, Pill, TestTube2, DollarSign, 
-  Users, Bell, LineChart, Menu, Activity, UserCog
-} from "lucide-react";
+import { Menu } from "lucide-react";
+import { ADMIN_NAV_ITEMS, shouldShowAdminSidebar } from "@/config/dashboard-nav";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -24,33 +22,9 @@ export default function Sidebar() {
     }
   }, []);
 
-  const adminNavItems = [
-    { name: "Dashboard", href: "/admin", icon: Home },
-    { name: "Patients & Beds", href: "/admin/patients-beds", icon: BedSingle },
-    { name: "Pharmacy", href: "/admin/pharmacy", icon: Pill },
-    { name: "Laboratory", href: "/admin/laboratory", icon: TestTube2 },
-    { name: "Billing & Finance", href: "/admin/billing-finance", icon: DollarSign },
-    { name: "HR & Staff", href: "/admin/hr-staff", icon: Users },
-    { name: "Alerts & Monitoring", href: "/admin/alerts", icon: Bell },
-    { name: "Analytics & Forecasts", href: "/admin/analytics", icon: LineChart },
-    { name: "User Management", href: "/admin/user-management", icon: UserCog },
-  ];
+  const navItems = ADMIN_NAV_ITEMS;
 
-  const doctorNavItems = [
-    { name: "My Patients", href: "/doctor", icon: Users },
-    { name: "My Analytics", href: "/doctor/analytics", icon: LineChart },
-    { name: "Alerts", href: "/doctor/alerts", icon: Bell },
-  ];
-
-  const nurseNavItems = [
-    { name: "Vitals Entry", href: "/nurse", icon: Activity },
-    { name: "My Ward", href: "/nurse/ward", icon: BedSingle },
-  ];
-
-  const navItems = role === "doctor" ? doctorNavItems : role === "nurse" ? nurseNavItems : adminNavItems;
-
-  // Hide the entire sidebar for Doctor, Nurse, Receptionist, and Laboratorian roles or routes
-  if (role === "doctor" || pathname.startsWith("/doctor") || role === "nurse" || pathname.startsWith("/nurse") || role === "receptionist" || pathname.startsWith("/reception") || role === "laboratorian" || pathname.startsWith("/laboratory-entry")) {
+  if (!shouldShowAdminSidebar(role, pathname)) {
     return null;
   }
 

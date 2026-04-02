@@ -83,7 +83,7 @@ export default function LaboratoryPage() {
     overview?.weekly_result_trends ?? [];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-6 gap-4">
         <div className="text-center md:text-left">
           <h2 className="text-3xl font-semibold text-[#0066cc]">

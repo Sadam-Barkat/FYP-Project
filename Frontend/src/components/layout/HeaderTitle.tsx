@@ -30,7 +30,7 @@ export default function HeaderTitle() {
   }
 
   return (
-    <h1 className="text-xl font-semibold text-[#0066cc] dark:text-[#60a5fa] transition-colors">
+    <h1 className="min-w-0 truncate text-base font-semibold text-[#0066cc] transition-colors dark:text-[#60a5fa] sm:text-lg md:text-xl">
       {title}
     </h1>
   );

@@ -103,11 +103,11 @@ export default function AdminDashboard() {
   const bedOccupancyByDept = overview?.bed_occupancy_by_department ?? [];
 
   return (
-    <div id="dashboard-content" className="w-full max-w-7xl mx-auto space-y-6">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       {/* Title */}
-      <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-4 gap-4">
+      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="text-center md:text-left">
-          <h2 className="text-3xl font-semibold text-[#0088cc]">Hospital Overview</h2>
+          <h2 className="text-2xl font-semibold text-[#0088cc] sm:text-3xl">Hospital Overview</h2>
           {isLoading && (
             <p className="mt-2 text-sm text-gray-500" data-hide-in-pdf>Loading hospital overview...</p>
           )}
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
             <p className="mt-2 text-sm text-red-500" data-hide-in-pdf>{error}</p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
           <label className="text-sm text-gray-600" htmlFor="overview-date">
             Select date
           </label>

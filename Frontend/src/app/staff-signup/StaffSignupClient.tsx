@@ -128,8 +128,8 @@ export default function StaffSignupClient() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f7fa] px-4 py-8">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-md border border-gray-100 p-8">
+    <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[#f4f7fa] px-4 py-8">
+      <div className="w-full max-w-xl rounded-2xl border border-gray-100 bg-white p-6 shadow-md sm:p-8">
         <h1 className="text-2xl font-semibold text-[#0066cc] mb-2 text-center">
           Staff Signup
         </h1>

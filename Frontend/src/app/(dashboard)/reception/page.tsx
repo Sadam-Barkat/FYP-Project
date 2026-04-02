@@ -195,16 +195,16 @@ export default function ReceptionPage() {
   };
 
   return (
-    <div id="dashboard-content" className="w-full max-w-3xl mx-auto space-y-6 pb-12 transition-colors">
+    <div id="dashboard-content" className="dashboard-page-shell max-w-3xl pb-8 transition-colors sm:pb-12">
       <div>
-        <h2 className="text-3xl font-semibold text-[#0066cc] dark:text-[#60a5fa]">Add New Patient</h2>
+        <h2 className="text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl">Add New Patient</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Register a new patient and assign a doctor and nurse. All fields with * are required.
         </p>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-6">
           {/* Patient details */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-lg font-medium text-gray-800 dark:text-gray-200">
@@ -260,7 +260,7 @@ export default function ReceptionPage() {
                   placeholder="e.g. +92 300 1234567"
                 />
               </div>
-              <div className="sm:col-span-2 flex items-center justify-between gap-4 mt-2">
+              <div className="mt-2 flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Admit now & assign bed
