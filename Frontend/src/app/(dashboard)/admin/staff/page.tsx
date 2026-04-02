@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { UserPlus, Pencil, Trash2, Search, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { UserPlus, Pencil, Trash2, Search, X, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 
 const STAFF_PER_PAGE = 8;
 const PATIENTS_PER_PAGE = 8;
@@ -524,6 +524,7 @@ function StaffTab() {
   const [messageModalTitle, setMessageModalTitle] = useState("Success");
   const [messageModalMessage, setMessageModalMessage] = useState("");
   const [messageModalVariant, setMessageModalVariant] = useState<"success" | "error">("success");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   useEffect(() => {
     if (showAddForm && addEmailInputRef.current) {
@@ -619,6 +620,7 @@ function StaffTab() {
 
   const handleAdd = async () => {
     if (!addEmail.trim()) return;
+    if (inviteLoading) return;
     const isReplacement = replacementForId !== null && replacementForType === addType;
     if (!isReplacement && !canAdd) return;
     // Prevent duplicate email (same email already in staff list for any role)
@@ -633,6 +635,7 @@ function StaffTab() {
       return;
     }
     try {
+      setInviteLoading(true);
       const res = await fetch(`${API_BASE}/api/user-management/staff/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -696,6 +699,8 @@ function StaffTab() {
       setMessageModalTitle("Error");
       setMessageModalMessage(err instanceof Error ? err.message : "Failed to send staff invitation.");
       setMessageModalOpen(true);
+    } finally {
+      setInviteLoading(false);
     }
   };
 
@@ -850,8 +855,14 @@ function StaffTab() {
               <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                 Cancel
               </button>
-              <button type="button" onClick={handleAdd} disabled={!canAdd || !addEmail.trim()} className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3] disabled:opacity-50">
-                Save
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={inviteLoading || !canAdd || !addEmail.trim()}
+                className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3] disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {inviteLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+                {inviteLoading ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
