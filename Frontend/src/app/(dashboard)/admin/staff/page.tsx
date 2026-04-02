@@ -621,6 +621,8 @@ function StaffTab() {
   const handleAdd = async () => {
     if (!addEmail.trim()) return;
     if (inviteLoading) return;
+    const startedAt = Date.now();
+    let closeAfter = false;
     const isReplacement = replacementForId !== null && replacementForType === addType;
     if (!isReplacement && !canAdd) return;
     // Prevent duplicate email (same email already in staff list for any role)
@@ -662,7 +664,7 @@ function StaffTab() {
       ]);
       setAddEmail("");
       setAddType("Doctor");
-      setShowAddForm(false);
+      closeAfter = true;
       setMessageModalVariant("success");
       setMessageModalTitle("Success");
       setMessageModalMessage("Invitation email sent to the staff member.");
@@ -694,13 +696,20 @@ function StaffTab() {
       }
     } catch (err) {
       console.error("Failed to invite staff", err);
-      setShowAddForm(false);
+      closeAfter = true;
       setMessageModalVariant("error");
       setMessageModalTitle("Error");
       setMessageModalMessage(err instanceof Error ? err.message : "Failed to send staff invitation.");
       setMessageModalOpen(true);
     } finally {
+      // Ensure the user sees the loading feedback even on fast networks.
+      const elapsed = Date.now() - startedAt;
+      const minMs = 600;
+      if (elapsed < minMs) {
+        await new Promise((r) => setTimeout(r, minMs - elapsed));
+      }
       setInviteLoading(false);
+      if (closeAfter) setShowAddForm(false);
     }
   };
 
@@ -796,7 +805,7 @@ function StaffTab() {
       {showAddForm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-          onClick={() => setShowAddForm(false)}
+          onClick={() => { if (!inviteLoading) setShowAddForm(false); }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-staff-title"
@@ -809,8 +818,9 @@ function StaffTab() {
               <h3 id="add-staff-title" className="text-lg font-semibold text-gray-800 dark:text-gray-200">Invite staff</h3>
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
-                className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                onClick={() => { if (!inviteLoading) setShowAddForm(false); }}
+                disabled={inviteLoading}
+                className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Close"
               >
                 <X size={20} />
@@ -830,7 +840,8 @@ function StaffTab() {
                   placeholder="Email address to send invitation"
                   value={addEmail}
                   onChange={(e) => setAddEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700"
+                  disabled={inviteLoading}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -838,7 +849,8 @@ function StaffTab() {
                 <select
                   value={addType}
                   onChange={(e) => setAddType(e.target.value as StaffType)}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700"
+                  disabled={inviteLoading}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {STAFF_TYPES.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -852,7 +864,12 @@ function StaffTab() {
               )}
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
-              <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+              <button
+                type="button"
+                onClick={() => { if (!inviteLoading) setShowAddForm(false); }}
+                disabled={inviteLoading}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Cancel
               </button>
               <button
