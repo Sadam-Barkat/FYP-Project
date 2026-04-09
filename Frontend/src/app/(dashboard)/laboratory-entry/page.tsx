@@ -46,6 +46,17 @@ export default function LaboratoryEntryPage() {
   const selectedPatient = patients.find((p) => String(p.id) === selectedPatientId);
   const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
   const patientDropdownRef = useRef<HTMLDivElement>(null);
+  const [patientSearch, setPatientSearch] = useState("");
+  const patientSearchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!patientDropdownOpen) return;
+    // Reset search each time the dropdown is opened
+    setPatientSearch("");
+    // Focus search input for quick typing
+    const t = window.setTimeout(() => patientSearchRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [patientDropdownOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -56,6 +67,17 @@ export default function LaboratoryEntryPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const filteredPatients = patients.filter((p) => {
+    const q = patientSearch.trim().toLowerCase();
+    if (!q) return true;
+    const idStr = String(p.id);
+    return (
+      idStr.includes(q) ||
+      p.name.toLowerCase().includes(q) ||
+      String(p.age).includes(q)
+    );
+  });
 
   const [testCategoryId, setTestCategoryId] = useState<number>(0);
   const [testName, setTestName] = useState<string>("");
@@ -236,9 +258,19 @@ export default function LaboratoryEntryPage() {
           {/* List opens below the bar */}
           {patientDropdownOpen && (
             <ul
-              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto py-1"
+              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
               role="listbox"
             >
+              <li className="sticky top-0 z-10 bg-white border-b border-gray-100 p-2">
+                <input
+                  ref={patientSearchRef}
+                  type="search"
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Search patient by name or ID..."
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                />
+              </li>
               <li>
                 <button
                   type="button"
@@ -252,7 +284,12 @@ export default function LaboratoryEntryPage() {
                   — Select a patient —
                 </button>
               </li>
-              {patients.map((p) => (
+              {filteredPatients.length === 0 && (
+                <li className="px-3 py-2 text-sm text-gray-500">
+                  No patients match your search.
+                </li>
+              )}
+              {filteredPatients.map((p) => (
                 <li key={p.id}>
                   <button
                     type="button"
