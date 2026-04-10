@@ -18,12 +18,14 @@ from app.models.admission import Admission
 from app.models.bed import Bed, BedStatus
 from app.models.patient import Patient
 from app.models.user import User, UserRole
+from app.utils.patient_assignment_email import send_patient_assignment_email
 from app.schemas.receptionist import (
     DoctorOption,
     NurseOption,
     PatientCreate,
     PatientCreatedResponse,
 )
+import asyncio
 
 router = APIRouter(prefix="/api/receptionist", tags=["receptionist"])
 
@@ -113,9 +115,10 @@ async def create_patient(
 
         # Validate doctor exists and is a doctor
         doctor_result = await db.execute(
-            select(User.id).where(User.id == body.doctor_id, User.role == UserRole.doctor)
+            select(User).where(User.id == body.doctor_id, User.role == UserRole.doctor)
         )
-        if not doctor_result.scalar_one_or_none():
+        doctor_user = doctor_result.scalar_one_or_none()
+        if not doctor_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or inactive doctor selected.",
@@ -123,9 +126,10 @@ async def create_patient(
 
         # Validate nurse exists and is a nurse
         nurse_result = await db.execute(
-            select(User.id).where(User.id == body.nurse_id, User.role == UserRole.nurse)
+            select(User).where(User.id == body.nurse_id, User.role == UserRole.nurse)
         )
-        if not nurse_result.scalar_one_or_none():
+        nurse_user = nurse_result.scalar_one_or_none()
+        if not nurse_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or inactive nurse selected.",
@@ -187,6 +191,27 @@ async def create_patient(
 
         await db.commit()
         await db.refresh(patient)
+
+        # Notify assigned doctor and nurse via email (non-blocking; patient creation must succeed even if email fails)
+        async def _notify(to_user: User, role_label: str) -> None:
+            try:
+                await send_patient_assignment_email(
+                    to_email=to_user.email,
+                    recipient_name=f"{to_user.first_name} {to_user.last_name}".strip(),
+                    recipient_role_label=role_label,
+                    patient_name=patient.name,
+                    patient_age=patient.age,
+                    patient_gender=patient.gender,
+                    patient_blood_group=patient.blood_group,
+                    patient_contact=patient.contact,
+                    patient_address=patient.address,
+                )
+            except Exception:
+                # Intentionally swallow errors to avoid breaking the main receptionist workflow.
+                pass
+
+        asyncio.create_task(_notify(doctor_user, "Doctor"))
+        asyncio.create_task(_notify(nurse_user, "Nurse"))
 
         await ws_manager.broadcast({"type": "patients_updated"})
 
