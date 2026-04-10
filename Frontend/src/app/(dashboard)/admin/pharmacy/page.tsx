@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Pill,
   AlertCircle,
@@ -8,6 +8,10 @@ import {
   PackageX,
 } from "lucide-react";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 import {
   ResponsiveContainer,
   CartesianGrid,
@@ -54,41 +58,44 @@ export default function PharmacyPage() {
   const [overview, setOverview] = useState<PharmacyOverview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const alive = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchOverview = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const res = await fetch(`${API_BASE}/api/pharmacy-overview`);
-        if (!res.ok) {
-          throw new Error("Failed to load pharmacy overview");
-        }
-        const data: PharmacyOverview = await res.json();
-        if (isMounted) {
-          setOverview(data);
-        }
-      } catch {
-        if (isMounted) {
-          setError("Failed to load data");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchOverview();
-    const interval = setInterval(fetchOverview, 30000); // refresh every 30s
-
+    alive.current = true;
     return () => {
-      isMounted = false;
-      clearInterval(interval);
+      alive.current = false;
     };
   }, []);
+
+  const fetchOverview = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch(`${API_BASE}/api/pharmacy-overview`);
+      if (!res.ok) {
+        throw new Error("Failed to load pharmacy overview");
+      }
+      const data: PharmacyOverview = await res.json();
+      if (!alive.current) return;
+      setOverview(data);
+    } catch {
+      if (alive.current) {
+        setError("Failed to load data");
+      }
+    } finally {
+      if (alive.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOverview();
+    const interval = setInterval(fetchOverview, 30000);
+    return () => clearInterval(interval);
+  }, [fetchOverview]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const totalMedications = overview?.total_medicines ?? 0;
   const lowStockItems = overview?.low_stock_items ?? 0;

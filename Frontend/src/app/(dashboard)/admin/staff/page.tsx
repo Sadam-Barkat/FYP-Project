@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { UserPlus, Pencil, Trash2, Search, X, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 
 const STAFF_PER_PAGE = 8;
 const PATIENTS_PER_PAGE = 8;
@@ -525,6 +529,14 @@ function StaffTab() {
   const [messageModalMessage, setMessageModalMessage] = useState("");
   const [messageModalVariant, setMessageModalVariant] = useState<"success" | "error">("success");
   const [inviteLoading, setInviteLoading] = useState(false);
+  const staffTabAlive = useRef(true);
+
+  useEffect(() => {
+    staffTabAlive.current = true;
+    return () => {
+      staffTabAlive.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (showAddForm && addEmailInputRef.current) {
@@ -533,57 +545,56 @@ function StaffTab() {
   }, [showAddForm]);
 
   // Load staff from backend (skip admin handled server-side).
-  useEffect(() => {
-    let cancelled = false;
-    const loadStaff = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const res = await fetch(`${API_BASE}/api/user-management/staff`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail ?? "Failed to load staff.");
-        }
-        const data: {
-          id: number;
-          email: string;
-          staff_type: StaffType;
-          name: string | null;
-          age: number | null;
-          phone: string | null;
-          address: string | null;
-          gender: string | null;
-          department?: string | null;
-          active_patients?: number;
-        }[] = await res.json();
-        if (cancelled) return;
-        const mapped: StaffMember[] = data.map((item) => ({
-          id: String(item.id),
-          email: item.email,
-          type: item.staff_type,
-          name: item.name,
-          age: item.age,
-          phone: item.phone,
-          address: item.address,
-          gender: item.gender,
-          department: item.department ?? null,
-          activePatients: item.active_patients ?? 0,
-        }));
-        setStaff(mapped);
-      } catch (err) {
-        console.error("Failed to load staff", err);
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load staff.");
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
+  const loadStaff = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch(`${API_BASE}/api/user-management/staff`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { detail?: string }).detail ?? "Failed to load staff.");
       }
-    };
-    loadStaff();
-    return () => {
-      cancelled = true;
-    };
+      const data: {
+        id: number;
+        email: string;
+        staff_type: StaffType;
+        name: string | null;
+        age: number | null;
+        phone: string | null;
+        address: string | null;
+        gender: string | null;
+        department?: string | null;
+        active_patients?: number;
+      }[] = await res.json();
+      if (!staffTabAlive.current) return;
+      const mapped: StaffMember[] = data.map((item) => ({
+        id: String(item.id),
+        email: item.email,
+        type: item.staff_type,
+        name: item.name,
+        age: item.age,
+        phone: item.phone,
+        address: item.address,
+        gender: item.gender,
+        department: item.department ?? null,
+        activePatients: item.active_patients ?? 0,
+      }));
+      setStaff(mapped);
+    } catch (err) {
+      console.error("Failed to load staff", err);
+      if (staffTabAlive.current) {
+        setError(err instanceof Error ? err.message : "Failed to load staff.");
+      }
+    } finally {
+      if (staffTabAlive.current) setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStaff();
+  }, [loadStaff]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, loadStaff);
 
   const filtered = useMemo(() => {
     const s = search.toLowerCase();
@@ -1052,6 +1063,14 @@ function PatientsTab() {
   const [deletePayload, setDeletePayload] = useState<{ id: string; name: string } | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const patientsTabAlive = useRef(true);
+
+  useEffect(() => {
+    patientsTabAlive.current = true;
+    return () => {
+      patientsTabAlive.current = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const s = search.toLowerCase();
@@ -1069,43 +1088,42 @@ function PatientsTab() {
     setCurrentPage(1);
   }, [search]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchPatients = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const res = await fetch(`${API_BASE}/api/user-management/patients`);
-        if (!res.ok) {
-          throw new Error("Failed to load patients");
-        }
-        const data: BackendPatient[] = await res.json();
-        if (cancelled) return;
-        const mapped: PatientCard[] = data.map((p) => ({
-          id: String(p.id),
-          name: p.name,
-          age: p.age,
-          gender: p.gender,
-          contact: p.contact ?? "",
-          address: p.address ?? undefined,
-        }));
-        setPatients(mapped);
-      } catch (err) {
-        console.error("Failed to load patients", err);
-        if (!cancelled) {
-          setError("Failed to load patients from server.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+  const fetchPatients = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch(`${API_BASE}/api/user-management/patients`);
+      if (!res.ok) {
+        throw new Error("Failed to load patients");
       }
-    };
-    fetchPatients();
-    return () => {
-      cancelled = true;
-    };
+      const data: BackendPatient[] = await res.json();
+      if (!patientsTabAlive.current) return;
+      const mapped: PatientCard[] = data.map((p) => ({
+        id: String(p.id),
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        contact: p.contact ?? "",
+        address: p.address ?? undefined,
+      }));
+      setPatients(mapped);
+    } catch (err) {
+      console.error("Failed to load patients", err);
+      if (patientsTabAlive.current) {
+        setError("Failed to load patients from server.");
+      }
+    } finally {
+      if (patientsTabAlive.current) {
+        setIsLoading(false);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchPatients);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PATIENTS_PER_PAGE));
   const page = Math.min(currentPage, totalPages);

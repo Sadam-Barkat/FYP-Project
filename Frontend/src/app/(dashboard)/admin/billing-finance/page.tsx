@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DollarSign, FileText, AlertCircle, Banknote } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 
 type Invoice = {
   invoice_id: string;
@@ -44,12 +48,12 @@ export default function BillingFinancePage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOverview = async (dateValue: string) => {
+  const fetchOverview = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const url = `${API_BASE}/api/billing-finance-overview?date=${dateValue}`;
+      const url = `${API_BASE}/api/billing-finance-overview?date=${selectedDate}`;
       const res = await fetch(url);
 
       if (!res.ok) {
@@ -58,23 +62,25 @@ export default function BillingFinancePage() {
 
       const data: BillingFinanceOverview = await res.json();
       setOverview(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching billing & finance overview:", err);
-      setError(err.message ?? "Failed to load data");
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   useEffect(() => {
-    fetchOverview(selectedDate);
+    fetchOverview();
 
     const interval = setInterval(() => {
-      fetchOverview(selectedDate);
+      fetchOverview();
     }, 30000); // refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [fetchOverview]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const invoices = overview?.recent_invoices ?? [];
   const revenueTrend = overview?.revenue_vs_expenses ?? [];

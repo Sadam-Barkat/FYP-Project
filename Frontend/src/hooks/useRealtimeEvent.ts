@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 /**
  * Shared WebSocket for real-time dashboard updates.
  * One connection per app; multiple components can subscribe to different event types.
- * Backend sends JSON: { type: "laboratory_updated" | "patients_updated" | "vitals_updated" | "patient_discharged" | "nurse_patient_updated" | "overview_updated", ... }
+ * Backend sends JSON: { type: "laboratory_updated" | "patients_updated" | "vitals_updated" | "patient_discharged" | ... }
  */
 function getWsUrl(): string {
   if (typeof window === "undefined") return "";
@@ -15,11 +15,29 @@ function getWsUrl(): string {
 }
 
 let socket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 const listeners: Record<string, Set<(payload: unknown) => void>> = {};
+
+function hasAnyListeners(): boolean {
+  return Object.values(listeners).some((s) => s.size > 0);
+}
+
+function scheduleReconnect(): void {
+  if (typeof window === "undefined") return;
+  if (reconnectTimer != null) return;
+  reconnectTimer = window.setTimeout(() => {
+    reconnectTimer = null;
+    if (!hasAnyListeners()) return;
+    if (socket?.readyState === WebSocket.OPEN) return;
+    socket = null;
+    ensureConnected();
+  }, 1500);
+}
 
 function ensureConnected(): void {
   if (typeof window === "undefined") return;
   if (socket?.readyState === WebSocket.OPEN) return;
+  if (socket?.readyState === WebSocket.CONNECTING) return;
   const url = getWsUrl();
   if (!url) return;
   socket = new WebSocket(url);
@@ -36,31 +54,59 @@ function ensureConnected(): void {
   };
   socket.onclose = () => {
     socket = null;
+    scheduleReconnect();
+  };
+  socket.onerror = () => {
+    // onclose will run and schedule reconnect
   };
 }
 
+/** Event types the backend broadcasts today; subscribe on admin pages for live refresh. */
+export const ADMIN_DASHBOARD_REALTIME_EVENTS = [
+  "vitals_updated",
+  "patient_discharged",
+  "patients_updated",
+  "laboratory_updated",
+] as const;
+
+export type AdminDashboardRealtimeEvent =
+  (typeof ADMIN_DASHBOARD_REALTIME_EVENTS)[number];
+
 /**
- * Subscribe to a real-time event from the backend WebSocket.
- * When the backend broadcasts { type: eventType }, onEvent is called.
- * Use for: laboratory_updated, patients_updated, vitals_updated, patient_discharged, nurse_patient_updated, overview_updated.
+ * Subscribe to one or more WebSocket event types. When the backend broadcasts a matching
+ * `{ type }`, onEvent runs. Pass `ADMIN_DASHBOARD_REALTIME_EVENTS` to refresh admin pages on
+ * nurse vitals, doctor discharge, reception patient changes, or lab updates.
  */
 export function useRealtimeEvent(
-  eventType: string,
+  eventType: string | readonly string[],
   onEvent: (payload?: unknown) => void
 ): void {
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
 
+  const typesKey =
+    typeof eventType === "string"
+      ? eventType
+      : [...eventType].join("\0");
+
   useEffect(() => {
-    if (typeof window === "undefined" || !eventType) return;
+    if (typeof window === "undefined") return;
+    const typesList =
+      typeof eventType === "string" ? [eventType] : [...eventType];
+    if (typesList.length === 0 || typesList.some((t) => !t)) return;
+
     ensureConnected();
     const stableCb = (payload?: unknown) => {
       onEventRef.current?.(payload);
     };
-    if (!listeners[eventType]) listeners[eventType] = new Set();
-    listeners[eventType].add(stableCb);
+    for (const t of typesList) {
+      if (!listeners[t]) listeners[t] = new Set();
+      listeners[t].add(stableCb);
+    }
     return () => {
-      listeners[eventType]?.delete(stableCb);
+      for (const t of typesList) {
+        listeners[t]?.delete(stableCb);
+      }
     };
-  }, [eventType]);
+  }, [eventType, typesKey]);
 }

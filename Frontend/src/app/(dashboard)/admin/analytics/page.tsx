@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -17,6 +17,10 @@ import {
   Cell,
 } from "recharts";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 
 type AnalyticsForecasts = {
   admission_trend: { date: string; count: number }[];
@@ -75,29 +79,38 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsForecasts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const alive = useRef(true);
 
   useEffect(() => {
-    let cancelled = false;
-    async function fetchData() {
-      try {
-        setError(null);
-        const res = await fetch(`${API_BASE}/api/analytics-forecasts`);
-        if (!res.ok) throw new Error("Failed to load analytics");
-        const json: AnalyticsForecasts = await res.json();
-        if (!cancelled) setData(json);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    fetchData();
-    const interval = setInterval(fetchData, 60000);
+    alive.current = true;
     return () => {
-      cancelled = true;
-      clearInterval(interval);
+      alive.current = false;
     };
   }, []);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE}/api/analytics-forecasts`);
+      if (!res.ok) throw new Error("Failed to load analytics");
+      const json: AnalyticsForecasts = await res.json();
+      if (!alive.current) return;
+      setData(json);
+    } catch (e) {
+      if (!alive.current) return;
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      if (alive.current) setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchData);
 
   if (isLoading && !data) {
     return (

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 import {
   BedSingle,
   DollarSign,
@@ -88,9 +91,7 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [fetchOverview]);
 
-  useRealtimeEvent("vitals_updated", () => {
-    fetchOverview();
-  });
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const totalBeds = overview?.total_beds ?? 0;
   const active = overview?.active_patients;

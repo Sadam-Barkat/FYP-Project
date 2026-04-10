@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { BedSingle, UserPlus, UserMinus, AlertTriangle, Users } from "lucide-react";
-import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   BarChart,
@@ -74,7 +77,7 @@ export default function PatientsBedsPage() {
     fetchOverview();
   }, [fetchOverview]);
 
-  useRealtimeEvent("patients_updated", fetchOverview);
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const bedsData: BedOccupancyDepartment[] =
     overview?.bed_occupancy_by_department ?? [];

@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { TestTube2, CheckCircle, Clock, AlertTriangle } from "lucide-react";
-import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   BarChart,
@@ -71,7 +74,7 @@ export default function LaboratoryPage() {
     fetchOverview();
   }, [fetchOverview]);
 
-  useRealtimeEvent("laboratory_updated", fetchOverview);
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const pendingTests = overview?.pending_tests ?? 0;
   const completedToday = overview?.completed_today ?? 0;

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, UserX, Clock, Stethoscope } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
+import {
+  ADMIN_DASHBOARD_REALTIME_EVENTS,
+  useRealtimeEvent,
+} from "@/hooks/useRealtimeEvent";
 
 type StaffRow = {
   name: string;
@@ -45,12 +49,12 @@ export default function HRStaffPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOverview = async (dateValue: string) => {
+  const fetchOverview = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const res = await fetch(`${API_BASE}/api/hr-staff-overview?date=${dateValue}`);
+      const res = await fetch(`${API_BASE}/api/hr-staff-overview?date=${selectedDate}`);
       if (!res.ok) {
         throw new Error(`Failed to load HR & Staff data (status ${res.status})`);
       }
@@ -67,23 +71,25 @@ export default function HRStaffPage() {
           late: point.leave,
         })) ?? [];
       setChartData(mappedTrend);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching HR & Staff overview:", err);
-      setError(err.message ?? "Failed to load data");
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   useEffect(() => {
-    fetchOverview(selectedDate);
+    fetchOverview();
 
     const interval = setInterval(() => {
-      fetchOverview(selectedDate);
+      fetchOverview();
     }, 30000); // refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [fetchOverview]);
+
+  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
 
   const staffData = overview?.live_staff_status ?? [];
   const onDutyCount = overview?.staff_on_duty ?? 0;
