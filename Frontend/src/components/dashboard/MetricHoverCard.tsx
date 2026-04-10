@@ -1,18 +1,28 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
+export type TooltipAlign = "center" | "start" | "end";
+
+const alignClasses: Record<TooltipAlign, string> = {
+  center: "left-1/2 -translate-x-1/2",
+  start: "left-4 translate-x-0",
+  end: "right-4 left-auto translate-x-0",
+};
+
 export function InfoTooltip({
   title,
   children,
   className = "w-[260px]",
+  align = "center",
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  align?: TooltipAlign;
 }) {
   return (
     <div
-      className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 ${className}`}
+      className={`pointer-events-none absolute top-full z-[100] mt-2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 ${alignClasses[align]} ${className}`}
       role="tooltip"
       aria-label={title}
     >
@@ -45,6 +55,7 @@ type MetricKpiCardProps = {
   showChevron?: boolean;
   chevronClassName?: string;
   tooltipClassName?: string;
+  tooltipAlign?: TooltipAlign;
 };
 
 export function MetricKpiCard({
@@ -59,6 +70,7 @@ export function MetricKpiCard({
   showChevron = true,
   chevronClassName = "text-gray-300 mt-4",
   tooltipClassName,
+  tooltipAlign = "center",
 }: MetricKpiCardProps) {
   return (
     <div
@@ -78,7 +90,7 @@ export function MetricKpiCard({
           aria-hidden
         />
       ) : null}
-      <InfoTooltip title={tooltipTitle} className={tooltipClassName}>
+      <InfoTooltip title={tooltipTitle} className={tooltipClassName} align={tooltipAlign}>
         {tooltipContent}
       </InfoTooltip>
     </div>
@@ -92,6 +104,7 @@ type CompactMetricCardProps = {
   tooltipTitle: string;
   tooltipContent: ReactNode;
   tooltipClassName?: string;
+  tooltipAlign?: TooltipAlign;
 };
 
 /** Horizontal KPI strip (e.g. laboratory entry summaries). */
@@ -102,6 +115,7 @@ export function CompactMetricCard({
   tooltipTitle,
   tooltipContent,
   tooltipClassName,
+  tooltipAlign = "center",
 }: CompactMetricCardProps) {
   return (
     <div
@@ -109,7 +123,11 @@ export function CompactMetricCard({
     >
       {left}
       {rightIcon}
-      <InfoTooltip title={tooltipTitle} className={tooltipClassName ?? "w-[240px]"}>
+      <InfoTooltip
+        title={tooltipTitle}
+        className={tooltipClassName ?? "w-[240px]"}
+        align={tooltipAlign}
+      >
         {tooltipContent}
       </InfoTooltip>
     </div>

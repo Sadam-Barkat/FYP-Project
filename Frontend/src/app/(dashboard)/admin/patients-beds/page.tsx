@@ -126,8 +126,9 @@ export default function PatientsBedsPage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
-        {/* Total Patients */}
+        {/* Total Patients — tooltips align start so they are not clipped by main overflow-x-hidden / sidebar edge */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#6366f1]"
           icon={<Users className="absolute top-4 left-4 text-[#6366f1]" size={24} />}
           label="Total Patients"
@@ -145,6 +146,7 @@ export default function PatientsBedsPage() {
 
         {/* Total Beds */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#22c55e]"
           icon={<BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
           label="Total Capacity"
@@ -162,6 +164,7 @@ export default function PatientsBedsPage() {
 
         {/* Occupied Beds */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#f97316]"
           icon={<UserPlus className="absolute top-4 left-4 text-[#f97316]" size={24} />}
           label="Occupied Beds"
@@ -184,6 +187,7 @@ export default function PatientsBedsPage() {
 
         {/* Available Beds */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#22c55e]"
           icon={<UserMinus className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
           label="Available Beds"
@@ -200,6 +204,7 @@ export default function PatientsBedsPage() {
 
         {/* Emergency Cases */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#ef4444]"
           icon={
             <AlertTriangle
@@ -228,6 +233,7 @@ export default function PatientsBedsPage() {
 
         {/* Critical Condition */}
         <MetricKpiCard
+          tooltipAlign="start"
           borderLeftClass="border-l-4 border-l-[#f59e0b]"
           icon={
             <AlertTriangle
