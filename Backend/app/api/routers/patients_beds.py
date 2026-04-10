@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import Date, and_, cast, func, or_, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.websocket_manager import broadcast_admin_data_changed
 from app.database import get_db
 from app.models.bed import Bed, BedStatus
 from app.models.admission import Admission
@@ -299,6 +300,7 @@ async def delete_user_management_patient(
         await db.execute(delete(Admission).where(Admission.patient_id == patient_id))
         await db.execute(delete(Patient).where(Patient.id == patient_id))
         await db.commit()
+        await broadcast_admin_data_changed("patient_deleted")
     except HTTPException:
         # Re-raise explicit HTTP errors
         raise

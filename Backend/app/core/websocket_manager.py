@@ -1,12 +1,12 @@
 """
 WebSocket connection manager for real-time updates.
 
-Broadcast event types (for future use across the app):
-- laboratory_updated: new lab result added (admin lab page, etc.)
-- patient_discharged: doctor discharged patient (admin dashboard, nurse list)
-- vital_updated: nurse added/updated vital (doctor, admin)
-- nurse_patient_updated: patient assignment or treatment (nurse list refresh)
-- overview_updated: general admin overview refresh
+Broadcast event types:
+- admin_data_changed: any mutation that should refresh admin dashboards (single event; use `source` for debugging)
+- laboratory_updated: lab entry (doctor/lab UIs may still listen)
+- patient_discharged: doctor discharged patient
+- vitals_updated: nurse recorded vitals
+- patients_updated: reception registered/updated patient flow
 """
 import asyncio
 import json
@@ -50,3 +50,8 @@ class ConnectionManager:
 
 # Single global instance for the app
 manager = ConnectionManager()
+
+
+async def broadcast_admin_data_changed(source: str = "unknown") -> None:
+    """Tell all connected clients to refetch admin dashboard aggregates and lists."""
+    await manager.broadcast({"type": "admin_data_changed", "source": source})

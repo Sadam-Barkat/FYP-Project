@@ -16,6 +16,7 @@ from app.models.clinical import Appointment, Visit, Prescription, TreatmentPlan
 from app.models.laboratory_extra import LabRequest
 from app.models.analytics import Categorization
 from app.models.system import AuditLog
+from app.core.websocket_manager import broadcast_admin_data_changed
 from app.core.security import create_access_token, get_password_hash, SECRET_KEY, ALGORITHM
 from app.schemas.hr_staff import StaffInviteRequest, StaffSignupRequest, StaffUpdateRequest
 from app.utils.staff_invite_email import (
@@ -342,6 +343,7 @@ async def invite_staff(
         inv = StaffInvitation(email_lower=email_clean, staff_type=payload.staff_type)
         db.add(inv)
         await db.commit()
+        await broadcast_admin_data_changed("staff_invite")
 
         # Generate token, build signup URL, and send email
         token, signup_url = await send_staff_invitation_email(
@@ -490,6 +492,7 @@ async def update_user_management_staff_member(
                 staff.name = new_full_name
 
         await db.commit()
+        await broadcast_admin_data_changed("staff_update")
         return {"message": "Staff updated.", "user_id": user_id}
     except HTTPException:
         raise
@@ -616,6 +619,7 @@ async def delete_user_management_staff_member(
         await db.execute(delete(User).where(User.id == user_id))
 
         await db.commit()
+        await broadcast_admin_data_changed("staff_delete")
     except HTTPException:
         raise
     except Exception as exc:
@@ -684,6 +688,7 @@ async def complete_staff_signup(
         await db.execute(delete(StaffInvitation).where(StaffInvitation.email_lower == email.strip().lower()))
 
         await db.commit()
+        await broadcast_admin_data_changed("staff_signup")
         return {
             "message": "Staff signup completed.",
             "email": email,

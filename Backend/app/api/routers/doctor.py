@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.websocket_manager import manager as ws_manager
+from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.admission import Admission
 from app.models.assignments import DoctorAssignment, NursePatientAssignment
@@ -178,6 +178,7 @@ async def discharge_patient(
         "type": "patient_discharged",
         "patient_id": patient_id,
     })
+    await broadcast_admin_data_changed("doctor_discharge")
 
     return DischargeResponse(
         message="Patient discharged successfully. Admin and nurse dashboards will update in real time.",

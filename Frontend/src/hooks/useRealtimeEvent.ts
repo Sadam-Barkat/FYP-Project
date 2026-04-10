@@ -5,7 +5,8 @@ import { useEffect, useRef } from "react";
 /**
  * Shared WebSocket for real-time dashboard updates.
  * One connection per app; multiple components can subscribe to different event types.
- * Backend sends JSON: { type: "laboratory_updated" | "patients_updated" | "vitals_updated" | "patient_discharged" | ... }
+ * Backend sends JSON: { type: string, ... }. Admin dashboards subscribe to `admin_data_changed`
+ * (emitted after any hospital data mutation). Doctor/nurse UIs may subscribe to `vitals_updated`, etc.
  */
 function getWsUrl(): string {
   if (typeof window === "undefined") return "";
@@ -61,21 +62,18 @@ function ensureConnected(): void {
   };
 }
 
-/** Event types the backend broadcasts today; subscribe on admin pages for live refresh. */
-export const ADMIN_DASHBOARD_REALTIME_EVENTS = [
-  "vitals_updated",
-  "patient_discharged",
-  "patients_updated",
-  "laboratory_updated",
-] as const;
+/**
+ * Single WebSocket event after any backend change that should refresh admin KPIs/lists
+ * (nurse vitals, doctor discharge, reception patient, lab entry, HR/staff, alerts, patient delete).
+ */
+export const ADMIN_DASHBOARD_REALTIME_EVENTS = ["admin_data_changed"] as const;
 
 export type AdminDashboardRealtimeEvent =
   (typeof ADMIN_DASHBOARD_REALTIME_EVENTS)[number];
 
 /**
  * Subscribe to one or more WebSocket event types. When the backend broadcasts a matching
- * `{ type }`, onEvent runs. Pass `ADMIN_DASHBOARD_REALTIME_EVENTS` to refresh admin pages on
- * nurse vitals, doctor discharge, reception patient changes, or lab updates.
+ * `{ type }`, onEvent runs. Pass `ADMIN_DASHBOARD_REALTIME_EVENTS` for admin dashboard refetch.
  */
 export function useRealtimeEvent(
   eventType: string | readonly string[],

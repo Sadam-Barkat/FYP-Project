@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.websocket_manager import manager as ws_manager
+from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.assignments import DoctorAssignment, NursePatientAssignment
 from app.models.admission import Admission
@@ -214,6 +214,7 @@ async def create_patient(
         asyncio.create_task(_notify(nurse_user, "Nurse"))
 
         await ws_manager.broadcast({"type": "patients_updated"})
+        await broadcast_admin_data_changed("reception_patient")
 
         return PatientCreatedResponse(
             id=patient.id,

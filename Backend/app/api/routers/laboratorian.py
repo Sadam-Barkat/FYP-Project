@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import cast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.websocket_manager import manager as ws_manager
+from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.laboratory import LaboratoryResult
 from app.models.laboratory_extra import LabCategory
@@ -206,6 +206,7 @@ async def create_lab_result(
         await db.refresh(entry)
 
         await ws_manager.broadcast({"type": "laboratory_updated"})
+        await broadcast_admin_data_changed("laboratory_entry")
 
         return LabEntryResponse(
             id=entry.id,

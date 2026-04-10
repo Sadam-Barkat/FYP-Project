@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSoc
 from sqlalchemy import Date, and_, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.websocket_manager import broadcast_admin_data_changed
 from app.database import get_db, SessionLocal
 from app.models.alert import Alert, AlertSeverity
 from app.models.patient import Patient
@@ -208,6 +209,7 @@ async def acknowledge_alert(
     alert.is_resolved = True
     alert.updated_at = datetime.utcnow()
     await db.commit()
+    await broadcast_admin_data_changed("alert_acknowledged")
     return {"id": alert_id, "is_resolved": True}
 
 

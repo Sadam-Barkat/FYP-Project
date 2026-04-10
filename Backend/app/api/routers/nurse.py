@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.websocket_manager import manager as ws_manager
+from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.alert import Alert, AlertSeverity
 from app.models.assignments import NursePatientAssignment
@@ -184,6 +184,7 @@ async def create_patient_vital(
         "patient_id": patient_id,
         "condition_level": condition_level,
     })
+    await broadcast_admin_data_changed("nurse_vitals")
     return VitalRecordResponse(
         id=vital.id,
         patient_id=vital.patient_id,
