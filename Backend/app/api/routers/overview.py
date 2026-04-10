@@ -11,6 +11,7 @@ from app.models.admission import Admission
 from app.models.billing import Billing, BillingStatus
 from app.models.staff import Staff
 from app.models.alert import Alert, AlertSeverity
+from app.models.hr import Attendance, AttendanceStatus
 
 router = APIRouter(prefix="/api", tags=["overview"])
 
@@ -83,22 +84,51 @@ async def get_hospital_overview(
         todays_revenue = float(todays_revenue_result.scalar_one() or 0.0)
 
         # ---- doctors_on_duty ----
-        # shift_start / shift_end stored as strings; naïve comparison assuming "HH:MM" 24h format
-        current_time_str = now.strftime("%H:%M")
-        doctors_on_duty_result = await db.execute(
-            select(func.count())
+        # Prefer date-based attendance when available so the date filter changes this value.
+        # Staff.role in this project is often a job title (e.g. "Cardiologist"), so we treat doctors as:
+        # - name starts with "Dr" OR role contains "doctor" (case-insensitive).
+        doctors_on_duty: int = 0
+        doctors_attendance_result = await db.execute(
+            select(func.count(func.distinct(Staff.id)))
             .select_from(Staff)
+            .join(Attendance, Attendance.staff_id == Staff.id)
             .where(
                 and_(
-                    Staff.role == "doctor",
-                    Staff.shift_start.is_not(None),
-                    Staff.shift_end.is_not(None),
-                    Staff.shift_start <= current_time_str,
-                    Staff.shift_end >= current_time_str,
+                    Attendance.date == base_date,
+                    Attendance.status == AttendanceStatus.present,
+                    or_(
+                        func.lower(Staff.name).like("dr.%"),
+                        func.lower(Staff.name).like("dr %"),
+                        func.lower(Staff.role).like("%doctor%"),
+                    ),
                 )
             )
         )
-        doctors_on_duty = doctors_on_duty_result.scalar_one() or 0
+        doctors_on_duty = int(doctors_attendance_result.scalar_one() or 0)
+
+        # Fallback: if there is no attendance data for the selected date, use shift window against "now"
+        # (keeps production behavior for today's live view).
+        if doctors_on_duty == 0 and base_date == now.date():
+            current_time_str = now.strftime("%H:%M")
+            doctors_on_duty_result = await db.execute(
+                select(func.count())
+                .select_from(Staff)
+                .where(
+                    and_(
+                        or_(
+                            func.lower(Staff.name).like("dr.%"),
+                            func.lower(Staff.name).like("dr %"),
+                            func.lower(Staff.role).like("%doctor%"),
+                            func.lower(Staff.role) == "doctor",
+                        ),
+                        Staff.shift_start.is_not(None),
+                        Staff.shift_end.is_not(None),
+                        Staff.shift_start <= current_time_str,
+                        Staff.shift_end >= current_time_str,
+                    )
+                )
+            )
+            doctors_on_duty = int(doctors_on_duty_result.scalar_one() or 0)
 
         # ---- emergency_cases (critical-severity alerts on selected date) ----
         emergency_cases_result = await db.execute(
