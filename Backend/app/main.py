@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -96,11 +97,22 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS configuration
+# CORS: Vercel production + preview URLs (*.vercel.app). Add custom domains via Railway:
+# CORS_EXTRA_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+def _cors_allow_origins() -> list[str]:
+    origins = ["https://fyp-project-livid.vercel.app"]
+    extra = (os.getenv("CORS_EXTRA_ORIGINS") or "").strip()
+    if extra:
+        for part in extra.split(","):
+            p = part.strip()
+            if p:
+                origins.append(p)
+    return origins
+
+
 app.add_middleware(
     CORSMiddleware,
-    # Production + previews on Vercel (preflight OPTIONS must pass)
-    allow_origins=["https://fyp-project-livid.vercel.app"],
+    allow_origins=_cors_allow_origins(),
     allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
@@ -134,7 +146,14 @@ async def websocket_realtime(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            raw = await websocket.receive_text()
+            # Keepalive for Vercel browser → Railway: reverse proxies often drop idle sockets.
+            try:
+                msg = json.loads(raw)
+                if isinstance(msg, dict) and msg.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+            except json.JSONDecodeError:
+                pass
     except WebSocketDisconnect:
         pass
     finally:

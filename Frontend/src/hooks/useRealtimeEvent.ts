@@ -7,17 +7,47 @@ import { useEffect, useRef } from "react";
  * One connection per app; multiple components can subscribe to different event types.
  * Backend sends JSON: { type: string, ... }. Admin dashboards subscribe to `admin_data_changed`
  * (emitted after any hospital data mutation). Doctor/nurse UIs may subscribe to `vitals_updated`, etc.
+ *
+ * FastAPI mounts the socket at `/ws` on the API origin (not under `/api`). `getWsUrl()` strips a
+ * trailing `/api` from `NEXT_PUBLIC_API_URL` when present. Override with `NEXT_PUBLIC_WS_URL` if needed.
  */
 function getWsUrl(): string {
   if (typeof window === "undefined") return "";
-  const base =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-  return base.replace(/^http/, "ws") + "/ws";
+
+  const explicit = process.env.NEXT_PUBLIC_WS_URL?.trim();
+  if (explicit) {
+    const u = explicit.replace(/\/+$/, "");
+    return u.endsWith("/ws") ? u : `${u}/ws`;
+  }
+
+  let base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").trim();
+  base = base.replace(/\/+$/, "").replace(/\/api\/?$/i, "");
+
+  try {
+    const url = new URL(base);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    url.pathname = "/ws";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
 }
 
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let pingTimer: ReturnType<typeof setInterval> | null = null;
 const listeners: Record<string, Set<(payload: unknown) => void>> = {};
+
+const PING_MS = 25_000;
+
+function clearWsPing(): void {
+  if (pingTimer != null) {
+    clearInterval(pingTimer);
+    pingTimer = null;
+  }
+}
 
 function hasAnyListeners(): boolean {
   return Object.values(listeners).some((s) => s.size > 0);
@@ -42,6 +72,14 @@ function ensureConnected(): void {
   const url = getWsUrl();
   if (!url) return;
   socket = new WebSocket(url);
+  socket.onopen = () => {
+    clearWsPing();
+    pingTimer = window.setInterval(() => {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "ping" }));
+      }
+    }, PING_MS);
+  };
   socket.onmessage = (e) => {
     try {
       const d = JSON.parse(e.data) as { type?: string };
@@ -54,6 +92,7 @@ function ensureConnected(): void {
     }
   };
   socket.onclose = () => {
+    clearWsPing();
     socket = null;
     scheduleReconnect();
   };
