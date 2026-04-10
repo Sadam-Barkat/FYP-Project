@@ -21,6 +21,7 @@ SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int((os.getenv("SMTP_PORT") or "587"))
+EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Real-Time-inteligence-dashboard")
 
 
 def _get_frontend_base_url() -> str:
@@ -120,7 +121,8 @@ def _send_smtp_sync(to_email: str, subject: str, html_body: str) -> None:
     password = (SMTP_PASSWORD or "").replace(" ", "").strip()
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = SMTP_EMAIL
+    msg["From"] = f"{EMAIL_FROM_NAME} <{SMTP_EMAIL}>"
+    msg["Reply-To"] = SMTP_EMAIL
     msg["To"] = to_email
     msg.attach(MIMEText(html_body, "html", "utf-8"))
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
