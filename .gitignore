@@ -1,0 +1,21 @@
+# Python / Backend (monorepo root)
+Backend/venv/
+Backend/**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Frontend
+Frontend/node_modules/
+Frontend/.next/
+Frontend/out/
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
