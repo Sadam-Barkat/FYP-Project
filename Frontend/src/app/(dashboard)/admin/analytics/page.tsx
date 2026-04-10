@@ -16,6 +16,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 
 type AnalyticsForecasts = {
   admission_trend: { date: string; count: number }[];
@@ -149,20 +150,49 @@ export default function AnalyticsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-4">
-          <p className="text-gray-600 text-sm font-medium">Total Beds</p>
-          <p className="text-2xl font-bold text-[#3b82f6]">{data.total_beds}</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-4">
-          <p className="text-gray-600 text-sm font-medium">Normal (Vitals)</p>
-          <p className="text-2xl font-bold text-[#22c55e]">{data.condition_distribution.normal}</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-4">
-          <p className="text-gray-600 text-sm font-medium">Critical / Emergency</p>
-          <p className="text-2xl font-bold text-[#f97316]">
-            {data.condition_distribution.critical + data.condition_distribution.emergency}
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={null}
+          label="Total Beds"
+          value={<p className="text-2xl font-bold text-[#3b82f6] mt-2">{data.total_beds}</p>}
+          tooltipTitle="Definition"
+          tooltipContent={<TooltipRow label="Meaning" value="Total hospital bed capacity" />}
+          minHeightClass="min-h-[120px]"
+          showChevron={false}
+        />
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={null}
+          label="Normal (Vitals)"
+          value={
+            <p className="text-2xl font-bold text-[#22c55e] mt-2">
+              {data.condition_distribution.normal}
+            </p>
+          }
+          tooltipTitle="Definition"
+          tooltipContent={<TooltipRow label="Normal" value="Stable vitals classification" />}
+          minHeightClass="min-h-[120px]"
+          showChevron={false}
+        />
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={null}
+          label="Critical / Emergency"
+          value={
+            <p className="text-2xl font-bold text-[#f97316] mt-2">
+              {data.condition_distribution.critical + data.condition_distribution.emergency}
+            </p>
+          }
+          tooltipTitle="Breakdown"
+          tooltipContent={
+            <>
+              <TooltipRow label="Critical" value={data.condition_distribution.critical} />
+              <TooltipRow label="Emergency" value={data.condition_distribution.emergency} />
+            </>
+          }
+          minHeightClass="min-h-[120px]"
+          showChevron={false}
+        />
       </div>
 
       {/* Admission trend + forecast */}

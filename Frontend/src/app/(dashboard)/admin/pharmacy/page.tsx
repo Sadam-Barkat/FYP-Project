@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   PackageX,
 } from "lucide-react";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   ResponsiveContainer,
   CartesianGrid,
@@ -156,57 +157,95 @@ export default function PharmacyPage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Pill className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Total Medications</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={<Pill className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Total Medications"
+          value={
             <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
               {totalMedications.toLocaleString()}
             </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">In inventory</p>
-        </div>
+          }
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">In inventory</p>}
+          tooltipTitle="Inventory scope"
+          tooltipContent={
+            <>
+              <TooltipRow label="Low stock items" value={lowStockItems} />
+              <TooltipRow label="Critical shortage" value={criticalItems} />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <CheckCircle2 className="absolute top-4 left-4 text-[#22c55e]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Healthy Stock</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<CheckCircle2 className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Healthy Stock"
+          value={
             <h3 className="text-4xl font-bold text-[#22c55e] mt-3">
               {Math.round(healthyPercentage)}%
             </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Above reorder level</p>
-        </div>
+          }
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Above reorder level</p>}
+          tooltipTitle="How it is calculated"
+          tooltipContent={
+            <>
+              <TooltipRow
+                label="Formula"
+                value={<span className="font-semibold">(total - low) / total</span>}
+              />
+              <TooltipRow label="Total meds" value={totalMedications} />
+              <TooltipRow label="Low stock" value={lowStockItems} />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <PackageX className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Low Stock Items</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
-              {lowStockItems}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 text-[#f97316] font-medium">
-            Needs reorder
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<PackageX className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Low Stock Items"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{lowStockItems}</h3>}
+          footnote={
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-[#f97316] font-medium">
+              Needs reorder
+            </p>
+          }
+          tooltipTitle="Quick guidance"
+          tooltipContent={
+            <>
+              <TooltipRow label="Low threshold" value="≤ 10" />
+              <TooltipRow label="Critical threshold" value="≤ 3" />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertCircle className="absolute top-4 left-4 text-[#ef4444]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Critical Shortage</p>
-            <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
-              {criticalItems}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-1 text-red-500 font-medium">
-            Action required immediately
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Expiring soon: {expiringSoon}, Stock value: PKR{" "}
-            {Math.round(totalStockValue).toLocaleString()}
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#ef4444]"
+          icon={<AlertCircle className="absolute top-4 left-4 text-[#ef4444]" size={24} />}
+          label="Critical Shortage"
+          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3">{criticalItems}</h3>}
+          footnote={
+            <>
+              <p className="text-xs text-gray-500 mt-1 text-red-500 font-medium">
+                Action required immediately
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">
+                Expiring soon: {expiringSoon}, Stock value: PKR{" "}
+                {Math.round(totalStockValue).toLocaleString()}
+              </p>
+            </>
+          }
+          tooltipTitle="At-a-glance details"
+          tooltipContent={
+            <>
+              <TooltipRow label="Critical items" value={criticalItems} />
+              <TooltipRow label="Expiring soon" value={expiringSoon} />
+              <TooltipRow
+                label="Stock value"
+                value={`PKR ${Math.round(totalStockValue).toLocaleString()}`}
+              />
+            </>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">

@@ -8,8 +8,8 @@ import {
   UserSquare2,
   AlertTriangle,
   TrendingUp,
-  ChevronDown,
 } from "lucide-react";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   ResponsiveContainer,
   LineChart,
@@ -22,36 +22,6 @@ import {
   Bar,
   Legend,
 } from "recharts";
-
-function InfoTooltip({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[260px] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
-      role="tooltip"
-      aria-label={title}
-    >
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-        {title}
-      </p>
-      <div className="space-y-1">{children}</div>
-    </div>
-  );
-}
-
-function TooltipRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-semibold text-gray-900">{value}</span>
-    </div>
-  );
-}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -164,152 +134,180 @@ export default function AdminDashboard() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Beds */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
-          <BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Total Beds</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          minHeightClass="min-h-[180px]"
+          icon={<BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Total Beds"
+          value={
             <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
               {totalBeds}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="Bed capacity snapshot">
-            <TooltipRow label="Occupied" value={occupiedBeds} />
-            <TooltipRow label="Available" value={availableBeds} />
-            <p className="pt-1 text-xs text-gray-500">
-              Hover cards to see quick details (PowerBI-style).
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="Bed capacity snapshot"
+          tooltipContent={
+            <>
+              <TooltipRow label="Occupied" value={occupiedBeds} />
+              <TooltipRow label="Available" value={availableBeds} />
+              <p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
+                Hover cards to see quick details (PowerBI-style).
+              </p>
+            </>
+          }
+        />
 
         {/* Active Patients (compact; details on hover) */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
-          <UserSquare2 className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Active Patients</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          minHeightClass="min-h-[180px]"
+          icon={<UserSquare2 className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Active Patients"
+          value={
             <h3 className="text-4xl font-bold text-[#f97316] mt-3">
               {active?.total ?? 0}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="Active patients by department">
-            <TooltipRow label="ICU" value={active?.icu ?? 0} />
-            <TooltipRow label="Emergency" value={active?.emergency ?? 0} />
-            <TooltipRow label="General" value={active?.general_ward ?? 0} />
-            <TooltipRow label="Cardiology" value={active?.cardiology ?? 0} />
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="Active patients by department"
+          tooltipContent={
+            <>
+              <TooltipRow label="ICU" value={active?.icu ?? 0} />
+              <TooltipRow label="Emergency" value={active?.emergency ?? 0} />
+              <TooltipRow label="General" value={active?.general_ward ?? 0} />
+              <TooltipRow label="Cardiology" value={active?.cardiology ?? 0} />
+            </>
+          }
+        />
 
         {/* Today's Revenue */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
-          <DollarSign className="absolute top-4 left-4 text-[#eab308]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Today&apos;s Revenue</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          minHeightClass="min-h-[180px]"
+          icon={<DollarSign className="absolute top-4 left-4 text-[#eab308]" size={24} />}
+          label="Today&apos;s Revenue"
+          value={
             <h3 className="text-3xl font-bold text-[#eab308] mt-3">
               PKR{" "}
               {Math.round(todaysRevenue).toLocaleString("en-PK", {
                 maximumFractionDigits: 0,
               })}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="Revenue details">
-            <TooltipRow label="Selected date" value={selectedDate} />
-            <TooltipRow
-              label="Exact"
-              value={`PKR ${todaysRevenue.toLocaleString("en-PK", {
-                maximumFractionDigits: 2,
-              })}`}
-            />
-            <p className="pt-1 text-xs text-gray-500">
-              Total of paid invoices for the selected day.
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="Revenue details"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow
+                label="Exact"
+                value={`PKR ${todaysRevenue.toLocaleString("en-PK", {
+                  maximumFractionDigits: 2,
+                })}`}
+              />
+              <p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
+                Total of paid invoices for the selected day.
+              </p>
+            </>
+          }
+        />
 
         {/* Doctors on Duty */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
-          <UserSquare2 className="absolute top-4 left-4 text-[#14b8a6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Doctors on Duty</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          minHeightClass="min-h-[180px]"
+          icon={<UserSquare2 className="absolute top-4 left-4 text-[#14b8a6]" size={24} />}
+          label="Doctors on Duty"
+          value={
             <h3 className="text-4xl font-bold text-[#14b8a6] mt-3">
               {doctorsOnDuty}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="What this means">
-            <TooltipRow label="Selected date" value={selectedDate} />
-            <p className="text-xs text-gray-500">
-              Count of doctors marked present (attendance) for the selected date.
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="What this means"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Count of doctors marked present (attendance) for the selected date.
+              </p>
+            </>
+          }
+        />
       </div>
 
       {/* Bottom Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Emergency Cases */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle
-            className="absolute top-4 left-4 text-[#ef4444]"
-            fill="#fecaca"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Emergency Cases</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#ef4444]"
+          icon={
+            <AlertTriangle
+              className="absolute top-4 left-4 text-[#ef4444]"
+              fill="#fecaca"
+              size={24}
+            />
+          }
+          label="Emergency Cases"
+          value={
             <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
               {emergencyCases}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="Definition">
-            <TooltipRow label="Selected date" value={selectedDate} />
-            <p className="text-xs text-gray-500">
-              Critical-severity alerts created on this day.
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="Definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Critical-severity alerts created on this day.
+              </p>
+            </>
+          }
+        />
 
         {/* Critical Condition */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle
-            className="absolute top-4 left-4 text-[#f59e0b]"
-            fill="#fef3c7"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Critical Condition</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f59e0b]"
+          icon={
+            <AlertTriangle
+              className="absolute top-4 left-4 text-[#f59e0b]"
+              fill="#fef3c7"
+              size={24}
+            />
+          }
+          label="Critical Condition"
+          value={
             <h3 className="text-4xl font-bold text-[#f59e0b] mt-3">
               {criticalConditionCases}
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="Definition">
-            <TooltipRow label="Selected date" value={selectedDate} />
-            <p className="text-xs text-gray-500">
-              High-severity alerts created on this day.
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="Definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                High-severity alerts created on this day.
+              </p>
+            </>
+          }
+        />
 
         {/* ICU Occupancy */}
-        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#a855f7] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <TrendingUp className="absolute top-4 left-4 text-[#a855f7]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">ICU Occupancy</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#a855f7]"
+          icon={<TrendingUp className="absolute top-4 left-4 text-[#a855f7]" size={24} />}
+          label="ICU Occupancy"
+          value={
             <h3 className="text-4xl font-bold text-[#a855f7] mt-3">
               {Math.round(icuOccupancy)}%
             </h3>
-          </div>
-          <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
-          <InfoTooltip title="ICU utilization">
-            <TooltipRow label="Selected date" value={selectedDate} />
-            <p className="text-xs text-gray-500">
-              ICU occupied beds ÷ total ICU beds for the selected day.
-            </p>
-          </InfoTooltip>
-        </div>
+          }
+          tooltipTitle="ICU utilization"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                ICU occupied beds ÷ total ICU beds for the selected day.
+              </p>
+            </>
+          }
+        />
 
         {/* Empty slots to match layout visually if needed, or charts can go here */}
         <div className="lg:col-span-2 hidden lg:block"></div>

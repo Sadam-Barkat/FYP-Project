@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, Bell, Clock, Activity } from "lucide-react";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 
 type AlertFeedItem = {
   id: number;
@@ -107,41 +108,74 @@ export default function AlertsPage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle className="absolute top-4 left-4 text-[#ef4444]" fill="#fecaca" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Critical Emergencies</p>
-            <h3 className="text-4xl font-bold text-[#ef4444] mt-3 animate-pulse">{critical_emergencies}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">Requires immediate action</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#ef4444]"
+          icon={<AlertTriangle className="absolute top-4 left-4 text-[#ef4444]" fill="#fecaca" size={24} />}
+          label="Critical Emergencies"
+          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3 animate-pulse">{critical_emergencies}</h3>}
+          footnote={<p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">Requires immediate action</p>}
+          tooltipTitle="What is counted"
+          tooltipContent={
+            <>
+              <TooltipRow label="Severity" value="critical" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Critical emergencies are alerts flagged as critical and not yet resolved.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Bell className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Active Warnings</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">{active_warnings}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Monitor closely</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<Bell className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Active Warnings"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{active_warnings}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Monitor closely</p>}
+          tooltipTitle="What is counted"
+          tooltipContent={
+            <>
+              <TooltipRow label="Severity" value="high / medium" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Active warnings include high and medium severity alerts.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Clock className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Avg Response Time</p>
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{avgResponse.toFixed(1)}m</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">{diffStr}</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={<Clock className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Avg Response Time"
+          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{avgResponse.toFixed(1)}m</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">{diffStr}</p>}
+          tooltipTitle="How it is used"
+          tooltipContent={
+            <>
+              <TooltipRow label="Today" value={`${avgResponse.toFixed(1)}m`} />
+              <TooltipRow label="Yesterday" value={avgPrev > 0 ? `${avgPrev.toFixed(1)}m` : "—"} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Response time helps track how quickly alerts are acknowledged.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Activity className="absolute top-4 left-4 text-[#22c55e]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Resolved Today</p>
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">{resolvedToday}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Issues cleared</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<Activity className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Resolved Today"
+          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{resolvedToday}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Issues cleared</p>}
+          tooltipTitle="Definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Resolved" value="acknowledged / cleared" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Resolved today counts alerts marked resolved on the current day.
+              </p>
+            </>
+          }
+        />
       </div>
 
       {/* Main Alerts List */}

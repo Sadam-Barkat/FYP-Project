@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { TestTube2, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   BarChart,
   Bar,
@@ -119,53 +120,81 @@ export default function LaboratoryPage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Clock className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Pending Tests</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
-              {pendingTests}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 animate-pulse">
-            Processing in lab...
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<Clock className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Pending Tests"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{pendingTests}</h3>}
+          footnote={
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 animate-pulse">
+              Processing in lab...
+            </p>
+          }
+          tooltipTitle="Pending definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Pending tests are created but not yet marked completed.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <CheckCircle className="absolute top-4 left-4 text-[#22c55e]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Completed Today</p>
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">
-              {completedToday}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Results delivered</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<CheckCircle className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Completed Today"
+          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{completedToday}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Results delivered</p>}
+          tooltipTitle="Completed definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Completed tests are those with results recorded on this day.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <TestTube2 className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Active Technicians</p>
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
-              {activeTechnicians}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">On duty currently</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={<TestTube2 className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Active Technicians"
+          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{activeTechnicians}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">On duty currently</p>}
+          tooltipTitle="Staffing"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Active technicians represent lab staff marked on duty.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle className="absolute top-4 left-4 text-[#ef4444]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Critical Results</p>
-            <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
-              {criticalResults}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
-            Require immediate doctor review
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#ef4444]"
+          icon={<AlertTriangle className="absolute top-4 left-4 text-[#ef4444]" size={24} />}
+          label="Critical Results"
+          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3">{criticalResults}</h3>}
+          footnote={
+            <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
+              Require immediate doctor review
+            </p>
+          }
+          tooltipTitle="Why it matters"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Critical results are flagged abnormal and should be reviewed quickly.
+              </p>
+            </>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Users, UserX, Clock, Stethoscope } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 
 type StaffRow = {
   name: string;
@@ -119,41 +120,69 @@ export default function HRStaffPage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Stethoscope className="absolute top-4 left-4 text-[#22c55e]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Staff On Duty</p>
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">{onDutyCount}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Currently active in hospital</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<Stethoscope className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Staff On Duty"
+          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{onDutyCount}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Currently active in hospital</p>}
+          tooltipTitle="On-duty context"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow label="Active shifts" value={activeShifts} />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Clock className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Active Shifts</p>
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{activeShifts}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Across all departments</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={<Clock className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Active Shifts"
+          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{activeShifts}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Across all departments</p>}
+          tooltipTitle="Shift note"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Active shifts reflect currently scheduled working sessions.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <UserX className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Absent Today</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">{absentToday}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Requires cover assignment</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<UserX className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Absent Today"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{absentToday}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Requires cover assignment</p>}
+          tooltipTitle="Absence context"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow label="On leave" value={onLeaveCount} />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#a855f7] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Users className="absolute top-4 left-4 text-[#a855f7]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">On Leave</p>
-            <h3 className="text-4xl font-bold text-[#a855f7] mt-3">{onLeaveCount}</h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Approved vacations/sick leave</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#a855f7]"
+          icon={<Users className="absolute top-4 left-4 text-[#a855f7]" size={24} />}
+          label="On Leave"
+          value={<h3 className="text-4xl font-bold text-[#a855f7] mt-3">{onLeaveCount}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Approved vacations/sick leave</p>}
+          tooltipTitle="Leave note"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Leave includes approved vacation and sick leave entries.
+              </p>
+            </>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">

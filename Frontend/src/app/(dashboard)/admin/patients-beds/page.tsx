@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BedSingle, UserPlus, UserMinus, AlertTriangle, Users } from "lucide-react";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import {
   BarChart,
   Bar,
@@ -126,102 +127,136 @@ export default function PatientsBedsPage() {
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
         {/* Total Patients */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#6366f1] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Users
-            className="absolute top-4 left-4 text-[#6366f1]"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Total Patients</p>
-            <h3 className="text-4xl font-bold text-[#6366f1] mt-3">
-              {totalPatients}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Registered in system</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#6366f1]"
+          icon={<Users className="absolute top-4 left-4 text-[#6366f1]" size={24} />}
+          label="Total Patients"
+          value={<h3 className="text-4xl font-bold text-[#6366f1] mt-3">{totalPatients}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Registered in system</p>}
+          tooltipTitle="Patients snapshot"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow label="Emergency cases" value={emergencyCases} />
+              <TooltipRow label="Critical condition" value={criticalConditionCases} />
+            </>
+          }
+        />
 
         {/* Total Beds */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <BedSingle
-            className="absolute top-4 left-4 text-[#3b82f6]"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Total Capacity</p>
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
-              {totalBeds}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Total hospital beds</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Total Capacity"
+          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{totalBeds}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Total hospital beds</p>}
+          tooltipTitle="Capacity breakdown"
+          tooltipContent={
+            <>
+              <TooltipRow label="Occupied" value={totalOccupied} />
+              <TooltipRow label="Available" value={availableBeds} />
+              <TooltipRow label="Occupancy" value={`${Math.round(occupancyRate)}%`} />
+            </>
+          }
+        />
 
         {/* Occupied Beds */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <UserPlus
-            className="absolute top-4 left-4 text-[#f97316]"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Occupied Beds</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
-              {totalOccupied}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">
-            {Math.round(occupancyRate)}% overall occupancy
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<UserPlus className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Occupied Beds"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{totalOccupied}</h3>}
+          footnote={
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {Math.round(occupancyRate)}% overall occupancy
+            </p>
+          }
+          tooltipTitle="Occupancy note"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Occupancy is computed as occupied ÷ total capacity.
+              </p>
+            </>
+          }
+        />
 
         {/* Available Beds */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <UserMinus
-            className="absolute top-4 left-4 text-[#22c55e]"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Available Beds</p>
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">
-              {availableBeds}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Ready for admission</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<UserMinus className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Available Beds"
+          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{availableBeds}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Ready for admission</p>}
+          tooltipTitle="Availability"
+          tooltipContent={
+            <>
+              <TooltipRow label="Total capacity" value={totalBeds} />
+              <TooltipRow label="Occupied" value={totalOccupied} />
+            </>
+          }
+        />
 
         {/* Emergency Cases */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle
-            className="absolute top-4 left-4 text-[#ef4444]"
-            fill="#fecaca"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Emergency Cases</p>
-            <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
-              {emergencyCases}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
-            High priority
-          </p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#ef4444]"
+          icon={
+            <AlertTriangle
+              className="absolute top-4 left-4 text-[#ef4444]"
+              fill="#fecaca"
+              size={24}
+            />
+          }
+          label="Emergency Cases"
+          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3">{emergencyCases}</h3>}
+          footnote={
+            <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
+              High priority
+            </p>
+          }
+          tooltipTitle="Definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Emergency cases represent patients flagged as urgent for this day.
+              </p>
+            </>
+          }
+        />
 
         {/* Critical Condition */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertTriangle
-            className="absolute top-4 left-4 text-[#f59e0b]"
-            fill="#fef3c7"
-            size={24}
-          />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Critical Condition</p>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f59e0b]"
+          icon={
+            <AlertTriangle
+              className="absolute top-4 left-4 text-[#f59e0b]"
+              fill="#fef3c7"
+              size={24}
+            />
+          }
+          label="Critical Condition"
+          value={
             <h3 className="text-4xl font-bold text-[#f59e0b] mt-3">
               {criticalConditionCases}
             </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4 text-amber-600 font-medium">
-            Monitor closely
-          </p>
-        </div>
+          }
+          footnote={
+            <p className="text-xs text-gray-500 mt-4 text-amber-600 font-medium">
+              Monitor closely
+            </p>
+          }
+          tooltipTitle="Definition"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Critical condition indicates cases needing close monitoring.
+              </p>
+            </>
+          }
+        />
       </div>
 
       {/* Charts Section */}

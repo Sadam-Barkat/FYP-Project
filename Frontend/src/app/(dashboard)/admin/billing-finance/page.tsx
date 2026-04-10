@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { DollarSign, FileText, AlertCircle, Banknote } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 
 type Invoice = {
   invoice_id: string;
@@ -107,49 +108,76 @@ export default function BillingFinancePage() {
 
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <DollarSign className="absolute top-4 left-4 text-[#22c55e]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Today&apos;s Revenue</p>
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">
-              {formatToK(overview?.todays_revenue ?? 0)}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Based on paid invoices</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#22c55e]"
+          icon={<DollarSign className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          label="Today&apos;s Revenue"
+          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{formatToK(overview?.todays_revenue ?? 0)}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Based on paid invoices</p>}
+          tooltipTitle="Revenue details"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow
+                label="Exact"
+                value={`PKR ${(overview?.todays_revenue ?? 0).toLocaleString("en-PK")}`}
+              />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <AlertCircle className="absolute top-4 left-4 text-[#f97316]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Outstanding Balance</p>
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
-              {formatToK(overview?.outstanding_balance ?? 0)}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Pending payments up to this date</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#f97316]"
+          icon={<AlertCircle className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          label="Outstanding Balance"
+          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{formatToK(overview?.outstanding_balance ?? 0)}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Pending payments up to this date</p>}
+          tooltipTitle="Outstanding balance"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow
+                label="Exact"
+                value={`PKR ${(overview?.outstanding_balance ?? 0).toLocaleString("en-PK")}`}
+              />
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <FileText className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Insurance Claims</p>
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
-              {overview?.insurance_claims ?? 0}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">On selected date</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#3b82f6]"
+          icon={<FileText className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          label="Insurance Claims"
+          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{overview?.insurance_claims ?? 0}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">On selected date</p>}
+          tooltipTitle="Claims note"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                This count reflects claim entries created on the selected day.
+              </p>
+            </>
+          }
+        />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#a855f7] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
-          <Banknote className="absolute top-4 left-4 text-[#a855f7]" size={24} />
-          <div className="mt-4 text-center">
-            <p className="text-gray-800 font-medium text-sm">Today&apos;s Expenses</p>
-            <h3 className="text-4xl font-bold text-[#a855f7] mt-3">
-              {formatToK(overview?.todays_expenses ?? 0)}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">Approx. 30% of revenue</p>
-        </div>
+        <MetricKpiCard
+          borderLeftClass="border-l-4 border-l-[#a855f7]"
+          icon={<Banknote className="absolute top-4 left-4 text-[#a855f7]" size={24} />}
+          label="Today&apos;s Expenses"
+          value={<h3 className="text-4xl font-bold text-[#a855f7] mt-3">{formatToK(overview?.todays_expenses ?? 0)}</h3>}
+          footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Approx. 30% of revenue</p>}
+          tooltipTitle="Expenses details"
+          tooltipContent={
+            <>
+              <TooltipRow label="Selected date" value={selectedDate} />
+              <TooltipRow
+                label="Exact"
+                value={`PKR ${(overview?.todays_expenses ?? 0).toLocaleString("en-PK")}`}
+              />
+            </>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">

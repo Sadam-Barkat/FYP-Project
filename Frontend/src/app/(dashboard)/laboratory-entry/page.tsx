@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown, X } from "lucide-react";
+import { CompactMetricCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -370,39 +371,65 @@ export default function LaboratoryEntryPage() {
         <>
           {/* Summary cards for selected patient's daily tests */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Pending Tests
-                </p>
-                <p className="text-3xl font-bold text-[#f97316] mt-1">
-                  {pendingCount}
-                </p>
-              </div>
-              <Clock className="text-[#f97316]" size={26} />
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Completed Tests
-                </p>
-                <p className="text-3xl font-bold text-[#22c55e] mt-1">
-                  {completedCount}
-                </p>
-              </div>
-              <CheckCircle className="text-[#22c55e]" size={26} />
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#3b82f6] p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Total (this patient, day)
-                </p>
-                <p className="text-3xl font-bold text-[#3b82f6] mt-1">
-                  {entriesForSelectedDate.length}
-                </p>
-              </div>
-              <TestTube2 className="text-[#3b82f6]" size={26} />
-            </div>
+            <CompactMetricCard
+              borderLeftClass="border-l-4 border-l-[#f97316]"
+              left={
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Pending Tests
+                  </p>
+                  <p className="text-3xl font-bold text-[#f97316] mt-1">{pendingCount}</p>
+                </div>
+              }
+              rightIcon={<Clock className="text-[#f97316]" size={26} />}
+              tooltipTitle="Pending tests"
+              tooltipContent={
+                <>
+                  <TooltipRow label="Patient" value={selectedPatient.name} />
+                  <TooltipRow label="Selected date" value={selectedDate} />
+                </>
+              }
+            />
+            <CompactMetricCard
+              borderLeftClass="border-l-4 border-l-[#22c55e]"
+              left={
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Completed Tests
+                  </p>
+                  <p className="text-3xl font-bold text-[#22c55e] mt-1">{completedCount}</p>
+                </div>
+              }
+              rightIcon={<CheckCircle className="text-[#22c55e]" size={26} />}
+              tooltipTitle="Completed tests"
+              tooltipContent={
+                <>
+                  <TooltipRow label="Patient" value={selectedPatient.name} />
+                  <TooltipRow label="Selected date" value={selectedDate} />
+                </>
+              }
+            />
+            <CompactMetricCard
+              borderLeftClass="border-l-4 border-l-[#3b82f6]"
+              left={
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Total (this patient, day)
+                  </p>
+                  <p className="text-3xl font-bold text-[#3b82f6] mt-1">
+                    {entriesForSelectedDate.length}
+                  </p>
+                </div>
+              }
+              rightIcon={<TestTube2 className="text-[#3b82f6]" size={26} />}
+              tooltipTitle="Daily total"
+              tooltipContent={
+                <>
+                  <TooltipRow label="Patient" value={selectedPatient.name} />
+                  <TooltipRow label="Selected date" value={selectedDate} />
+                </>
+              }
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
