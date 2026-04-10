@@ -23,6 +23,36 @@ import {
   Legend,
 } from "recharts";
 
+function InfoTooltip({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[260px] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+      role="tooltip"
+      aria-label={title}
+    >
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {title}
+      </p>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
+
+function TooltipRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-gray-500">{label}</span>
+      <span className="font-semibold text-gray-900">{value}</span>
+    </div>
+  );
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 interface ActivePatients {
@@ -102,6 +132,9 @@ export default function AdminDashboard() {
   const admissionTrend = overview?.admission_trend ?? [];
   const bedOccupancyByDept = overview?.bed_occupancy_by_department ?? [];
 
+  const occupiedBeds = bedOccupancyByDept.reduce((acc, r) => acc + (r?.occupied ?? 0), 0);
+  const availableBeds = Math.max(totalBeds - occupiedBeds, 0);
+
   return (
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       {/* Title */}
@@ -132,7 +165,7 @@ export default function AdminDashboard() {
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Beds */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
           <BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />
           <div className="mt-4 text-center">
             <p className="text-gray-800 font-medium text-sm">Total Beds</p>
@@ -141,42 +174,35 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="Bed capacity snapshot">
+            <TooltipRow label="Occupied" value={occupiedBeds} />
+            <TooltipRow label="Available" value={availableBeds} />
+            <p className="pt-1 text-xs text-gray-500">
+              Hover cards to see quick details (PowerBI-style).
+            </p>
+          </InfoTooltip>
         </div>
 
-        {/* Active Patients Details (Expanded) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 min-h-[180px] flex flex-col relative">
-          <h3 className="text-[#22c55e] font-semibold text-lg mb-3">
-            Active Patients Details
-          </h3>
-          <ul className="space-y-1.5 text-sm text-gray-700 flex-1">
-            <li className="flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
-              Total active patients: {active?.total ?? 0}
-            </li>
-            <li className="flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
-              ICU: {active?.icu ?? 0} patients
-            </li>
-            <li className="flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
-              Emergency: {active?.emergency ?? 0} patients
-            </li>
-            <li className="flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
-              General ward: {active?.general_ward ?? 0} patients
-            </li>
-            <li className="flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
-              Cardiology: {active?.cardiology ?? 0} patients
-            </li>
-          </ul>
-          <p className="text-xs text-gray-400 italic text-center mt-2 cursor-pointer hover:text-gray-600" data-hide-in-pdf>
-            Click to collapse
-          </p>
+        {/* Active Patients (compact; details on hover) */}
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f97316] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
+          <UserSquare2 className="absolute top-4 left-4 text-[#f97316]" size={24} />
+          <div className="mt-4 text-center">
+            <p className="text-gray-800 font-medium text-sm">Active Patients</p>
+            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
+              {active?.total ?? 0}
+            </h3>
+          </div>
+          <ChevronDown className="text-gray-300 mt-4" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="Active patients by department">
+            <TooltipRow label="ICU" value={active?.icu ?? 0} />
+            <TooltipRow label="Emergency" value={active?.emergency ?? 0} />
+            <TooltipRow label="General" value={active?.general_ward ?? 0} />
+            <TooltipRow label="Cardiology" value={active?.cardiology ?? 0} />
+          </InfoTooltip>
         </div>
 
         {/* Today's Revenue */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
           <DollarSign className="absolute top-4 left-4 text-[#eab308]" size={24} />
           <div className="mt-4 text-center">
             <p className="text-gray-800 font-medium text-sm">Today&apos;s Revenue</p>
@@ -188,10 +214,22 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="Revenue details">
+            <TooltipRow label="Selected date" value={selectedDate} />
+            <TooltipRow
+              label="Exact"
+              value={`PKR ${todaysRevenue.toLocaleString("en-PK", {
+                maximumFractionDigits: 2,
+              })}`}
+            />
+            <p className="pt-1 text-xs text-gray-500">
+              Total of paid invoices for the selected day.
+            </p>
+          </InfoTooltip>
         </div>
 
         {/* Doctors on Duty */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#22c55e] p-6 relative flex flex-col items-center justify-between min-h-[180px]">
           <UserSquare2 className="absolute top-4 left-4 text-[#14b8a6]" size={24} />
           <div className="mt-4 text-center">
             <p className="text-gray-800 font-medium text-sm">Doctors on Duty</p>
@@ -200,13 +238,19 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="What this means">
+            <TooltipRow label="Selected date" value={selectedDate} />
+            <p className="text-xs text-gray-500">
+              Count of doctors marked present (attendance) for the selected date.
+            </p>
+          </InfoTooltip>
         </div>
       </div>
 
       {/* Bottom Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Emergency Cases */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#ef4444] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <AlertTriangle
             className="absolute top-4 left-4 text-[#ef4444]"
             fill="#fecaca"
@@ -219,10 +263,16 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="Definition">
+            <TooltipRow label="Selected date" value={selectedDate} />
+            <p className="text-xs text-gray-500">
+              Critical-severity alerts created on this day.
+            </p>
+          </InfoTooltip>
         </div>
 
         {/* Critical Condition */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#f59e0b] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <AlertTriangle
             className="absolute top-4 left-4 text-[#f59e0b]"
             fill="#fef3c7"
@@ -235,10 +285,16 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="Definition">
+            <TooltipRow label="Selected date" value={selectedDate} />
+            <p className="text-xs text-gray-500">
+              High-severity alerts created on this day.
+            </p>
+          </InfoTooltip>
         </div>
 
         {/* ICU Occupancy */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#a855f7] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
+        <div className="group bg-white rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-[#a855f7] p-6 relative flex flex-col items-center justify-between min-h-[160px]">
           <TrendingUp className="absolute top-4 left-4 text-[#a855f7]" size={24} />
           <div className="mt-4 text-center">
             <p className="text-gray-800 font-medium text-sm">ICU Occupancy</p>
@@ -247,6 +303,12 @@ export default function AdminDashboard() {
             </h3>
           </div>
           <ChevronDown className="text-gray-300 mt-4 cursor-pointer hover:text-gray-400" size={20} data-hide-in-pdf aria-hidden />
+          <InfoTooltip title="ICU utilization">
+            <TooltipRow label="Selected date" value={selectedDate} />
+            <p className="text-xs text-gray-500">
+              ICU occupied beds ÷ total ICU beds for the selected day.
+            </p>
+          </InfoTooltip>
         </div>
 
         {/* Empty slots to match layout visually if needed, or charts can go here */}
