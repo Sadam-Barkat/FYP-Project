@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown } from "lucide-react";
+import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown, X } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -46,16 +46,14 @@ export default function LaboratoryEntryPage() {
   const selectedPatient = patients.find((p) => String(p.id) === selectedPatientId);
   const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
   const patientDropdownRef = useRef<HTMLDivElement>(null);
-  const [patientSearch, setPatientSearch] = useState("");
-  const patientSearchRef = useRef<HTMLInputElement>(null);
+  const patientInputRef = useRef<HTMLInputElement>(null);
+  const [patientQuery, setPatientQuery] = useState("");
+  const [highlightedPatientIndex, setHighlightedPatientIndex] = useState(0);
 
   useEffect(() => {
     if (!patientDropdownOpen) return;
-    // Reset search each time the dropdown is opened
-    setPatientSearch("");
-    // Focus search input for quick typing
-    const t = window.setTimeout(() => patientSearchRef.current?.focus(), 0);
-    return () => window.clearTimeout(t);
+    // Start from current query; ensure highlight resets so keyboard works.
+    setHighlightedPatientIndex(0);
   }, [patientDropdownOpen]);
 
   useEffect(() => {
@@ -69,7 +67,7 @@ export default function LaboratoryEntryPage() {
   }, []);
 
   const filteredPatients = patients.filter((p) => {
-    const q = patientSearch.trim().toLowerCase();
+    const q = patientQuery.trim().toLowerCase();
     if (!q) return true;
     const idStr = String(p.id);
     return (
@@ -78,6 +76,26 @@ export default function LaboratoryEntryPage() {
       String(p.age).includes(q)
     );
   });
+
+  useEffect(() => {
+    if (!patientDropdownOpen) return;
+    setHighlightedPatientIndex(0);
+  }, [patientQuery, patientDropdownOpen]);
+
+  const selectPatient = (p: PatientOption | null) => {
+    if (!p) {
+      setSelectedPatientId("");
+      setPatientQuery("");
+      setPatientDropdownOpen(false);
+      return;
+    }
+    setSelectedPatientId(String(p.id));
+    setPatientQuery(p.name);
+    setPatientDropdownOpen(false);
+  };
+
+  const patientInputValue =
+    patientDropdownOpen ? patientQuery : selectedPatient ? selectedPatient.name : patientQuery;
 
   const [testCategoryId, setTestCategoryId] = useState<number>(0);
   const [testName, setTestName] = useState<string>("");
@@ -242,68 +260,103 @@ export default function LaboratoryEntryPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Patient
           </label>
-          <button
-            type="button"
-            onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
-            disabled={loadingPatients}
-            className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded-md px-3 py-2.5 text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
-          >
-            <span className="truncate">
-              {selectedPatient
-                ? `#${selectedPatient.id} — ${selectedPatient.name} (Age ${selectedPatient.age})`
-                : "— Select a patient —"}
-            </span>
-            <ChevronDown size={18} className="shrink-0 text-gray-500" />
-          </button>
-          {/* List opens below the bar */}
-          {patientDropdownOpen && (
+          <div className="relative">
+            <input
+              ref={patientInputRef}
+              type="text"
+              value={patientInputValue}
+              onChange={(e) => {
+                setPatientQuery(e.target.value);
+                if (!patientDropdownOpen) setPatientDropdownOpen(true);
+              }}
+              onFocus={() => {
+                if (!loadingPatients) setPatientDropdownOpen(true);
+                if (!selectedPatient) setPatientQuery((q) => q); // keep any typed text
+              }}
+              onKeyDown={(e) => {
+                if (!patientDropdownOpen && (e.key === "ArrowDown" || e.key === "Enter")) {
+                  setPatientDropdownOpen(true);
+                  return;
+                }
+                if (!patientDropdownOpen) return;
+                if (e.key === "Escape") {
+                  setPatientDropdownOpen(false);
+                  return;
+                }
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setHighlightedPatientIndex((i) => Math.min(i + 1, Math.max(filteredPatients.length - 1, 0)));
+                  return;
+                }
+                if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setHighlightedPatientIndex((i) => Math.max(i - 1, 0));
+                  return;
+                }
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const p = filteredPatients[highlightedPatientIndex];
+                  if (p) selectPatient(p);
+                }
+              }}
+              disabled={loadingPatients}
+              placeholder={loadingPatients ? "Loading patients…" : "Search patient by name or ID..."}
+              className="w-full border border-gray-300 rounded-md pl-3 pr-20 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
+              aria-expanded={patientDropdownOpen}
+              aria-autocomplete="list"
+              role="combobox"
+            />
+            {patientInputValue && !loadingPatients && (
+              <button
+                type="button"
+                onClick={() => selectPatient(null)}
+                className="absolute right-10 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                title="Clear selection"
+                aria-label="Clear selection"
+              >
+                <X size={16} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 hover:bg-gray-50"
+              aria-label={patientDropdownOpen ? "Close list" : "Open list"}
+              disabled={loadingPatients}
+            >
+              <ChevronDown size={18} className={patientDropdownOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+            </button>
+          </div>
+
+          {patientDropdownOpen && !loadingPatients && (
             <ul
-              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto"
               role="listbox"
             >
-              <li className="sticky top-0 z-10 bg-white border-b border-gray-100 p-2">
-                <input
-                  ref={patientSearchRef}
-                  type="search"
-                  value={patientSearch}
-                  onChange={(e) => setPatientSearch(e.target.value)}
-                  placeholder="Search patient by name or ID..."
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
-                />
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPatientId("");
-                    setPatientDropdownOpen(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm text-gray-500 hover:bg-gray-50"
-                  role="option"
-                >
-                  — Select a patient —
-                </button>
-              </li>
-              {filteredPatients.length === 0 && (
+              {filteredPatients.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-gray-500">
                   No patients match your search.
                 </li>
+              ) : (
+                filteredPatients.map((p, idx) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHighlightedPatientIndex(idx)}
+                      onClick={() => selectPatient(p)}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
+                        idx === highlightedPatientIndex ? "bg-blue-50" : ""
+                      } ${selectedPatientId === String(p.id) ? "text-[#0066cc] font-medium" : "text-gray-800"}`}
+                      role="option"
+                      aria-selected={selectedPatientId === String(p.id)}
+                    >
+                      <span className="block truncate">
+                        #{p.id} — {p.name} (Age {p.age})
+                      </span>
+                    </button>
+                  </li>
+                ))
               )}
-              {filteredPatients.map((p) => (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedPatientId(String(p.id));
-                      setPatientDropdownOpen(false);
-                    }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${selectedPatientId === String(p.id) ? "bg-blue-50 text-[#0066cc]" : "text-gray-800"}`}
-                    role="option"
-                  >
-                    #{p.id} — {p.name} (Age {p.age})
-                  </button>
-                </li>
-              ))}
             </ul>
           )}
           {loadingPatients && (
