@@ -36,8 +36,9 @@ function getWsUrl(): string {
 }
 
 let socket: WebSocket | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let pingTimer: ReturnType<typeof setInterval> | null = null;
+// Browser timers return `number`; `ReturnType<typeof setTimeout>` can be NodeJS.Timeout and breaks Next.js build.
+let reconnectTimer: number | null = null;
+let pingTimer: number | null = null;
 const listeners: Record<string, Set<(payload: unknown) => void>> = {};
 
 const PING_MS = 25_000;
