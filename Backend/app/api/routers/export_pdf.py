@@ -324,6 +324,44 @@ def _build_alerts_pdf(data: Dict[str, Any], report_date: date) -> BytesIO:
 def _build_analytics_pdf(data: Dict[str, Any], report_date: date) -> BytesIO:
     story, heading_style, body_style = _make_story("Analytics & Forecasts Report", report_date)
     story.append(Paragraph(f"Total beds: {data.get('total_beds', 0)}", body_style))
+    kpi = data.get("kpi") or {}
+    if kpi:
+        story.append(Spacer(1, 6 * mm))
+        story.append(Paragraph("Key indicators (trailing 7 days vs prior week)", heading_style))
+        rt = kpi.get("revenue_trailing_7d_pkr")
+        rp = kpi.get("revenue_prior_7d_pkr")
+        if isinstance(rt, (int, float)) and isinstance(rp, (int, float)):
+            rev_cell = f"{rt:,.0f} / {rp:,.0f}"
+        else:
+            rev_cell = "—"
+        krows = [
+            ["Metric", "Value"],
+            [
+                "Admissions (last 7d / prior 7d)",
+                f"{kpi.get('admissions_trailing_7d', '—')} / {kpi.get('admissions_prior_7d', '—')}",
+            ],
+            ["Revenue PKR (last 7d / prior 7d)", rev_cell],
+            [
+                "Capacity risk score (0–100)",
+                f"{kpi.get('capacity_risk_score_0_100', '—')} ({kpi.get('capacity_risk_label', '')})",
+            ],
+        ]
+        tk = Table(krows, colWidths=[95 * mm, 65 * mm])
+        tk.setStyle(TableStyle(_table_style_header()))
+        story.append(Spacer(1, 3 * mm))
+        story.append(tk)
+    insights = data.get("insights") or []
+    if insights:
+        story.append(Spacer(1, 10 * mm))
+        story.append(Paragraph("Intelligence insights (rule-based)", heading_style))
+        story.append(Spacer(1, 3 * mm))
+        for ins in insights[:6]:
+            title = str(ins.get("title", ""))
+            detail = str(ins.get("detail", ""))
+            sev = str(ins.get("severity", "info"))
+            story.append(Paragraph(f"<b>[{sev.upper()}]</b> {title}", body_style))
+            story.append(Paragraph(detail[:280], body_style))
+            story.append(Spacer(1, 2 * mm))
     cond = data.get("condition_distribution") or {}
     metrics = [
         ["Condition", "Count"],
