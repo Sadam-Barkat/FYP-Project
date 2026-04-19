@@ -100,6 +100,7 @@ async def run() -> None:
                 bill = Billing(
                     patient_id=p.id,
                     amount=round(amt, 2),
+                    description="Demo admission package (seed)",
                     status=BillingStatus.paid,
                     date=discharge_dt - timedelta(hours=random.randint(1, 8)),
                 )

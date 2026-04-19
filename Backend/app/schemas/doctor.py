@@ -8,7 +8,7 @@ and discharging patients (admin dashboard reflects via WebSocket).
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ----- Response schemas -----
@@ -44,5 +44,16 @@ class VitalRecordResponse(BaseModel):
 class DischargeResponse(BaseModel):
     """Response after doctor discharges a patient."""
 
+    message: str
+    patient_id: int
+
+
+class ConsultationCompleteRequest(BaseModel):
+    """Doctor-only care event; no billing amounts."""
+
+    notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class ConsultationCompleteResponse(BaseModel):
     message: str
     patient_id: int

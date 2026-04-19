@@ -84,6 +84,18 @@ async def lifespan(app: FastAPI):
             await ensure_user(seed_admin_email, seed_admin_password, UserRole.admin, "Admin", "User")
             await ensure_user(seed_doctor_email, seed_doctor_password, UserRole.doctor, "Doctor", "User")
             await ensure_user(seed_nurse_email, seed_nurse_password, UserRole.nurse, "Nurse", "User")
+
+            # Single default Billing/Finance account (login: finance@hospital.com / 123) if none exists.
+            fin_count = await db.execute(select(func.count(User.id)).where(User.role == UserRole.finance))
+            if int(fin_count.scalar_one() or 0) == 0:
+                await ensure_user(
+                    "finance@hospital.com",
+                    "123",
+                    UserRole.finance,
+                    "Finance",
+                    "Billing",
+                )
+
             await db.commit()
     except Exception as e:
         err_msg = str(e).strip()

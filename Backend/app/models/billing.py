@@ -14,6 +14,7 @@ class Billing(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str] = mapped_column(String(512), default="", nullable=False)
     status: Mapped[BillingStatus] = mapped_column(Enum(BillingStatus), default=BillingStatus.pending)
     date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

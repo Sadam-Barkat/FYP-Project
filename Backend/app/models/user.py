@@ -8,6 +8,7 @@ class UserRole(str, enum.Enum):
     admin = "admin"
     doctor = "doctor"
     nurse = "nurse"
+    finance = "finance"
 
 class User(Base, TimestampMixin):
     __tablename__ = "users"

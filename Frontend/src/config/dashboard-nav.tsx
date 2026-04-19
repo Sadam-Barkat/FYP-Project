@@ -52,12 +52,17 @@ export const LAB_NAV_ITEMS: DashboardNavItem[] = [
   { name: "Laboratory Entry", href: "/laboratory-entry", icon: TestTube2 },
 ];
 
+export const FINANCE_NAV_ITEMS: DashboardNavItem[] = [
+  { name: "Billing & Finance", href: "/admin/billing-finance", icon: DollarSign },
+];
+
 /** Same route visibility rules as the desktop sidebar: admin sees full admin nav on md+. */
 export function shouldShowAdminSidebar(role: string, pathname: string): boolean {
   if (role === "doctor" || pathname.startsWith("/doctor")) return false;
   if (role === "nurse" || pathname.startsWith("/nurse")) return false;
   if (role === "receptionist" || pathname.startsWith("/reception")) return false;
   if (role === "laboratorian" || pathname.startsWith("/laboratory-entry")) return false;
+  if (role === "finance") return pathname.startsWith("/admin");
   return true;
 }
 
@@ -66,5 +71,6 @@ export function getMobileNavItems(role: string, pathname: string): DashboardNavI
   if (role === "nurse" || pathname.startsWith("/nurse")) return NURSE_NAV_ITEMS;
   if (role === "receptionist" || pathname.startsWith("/reception")) return RECEPTION_NAV_ITEMS;
   if (role === "laboratorian" || pathname.startsWith("/laboratory-entry")) return LAB_NAV_ITEMS;
+  if (role === "finance") return FINANCE_NAV_ITEMS;
   return ADMIN_NAV_ITEMS;
 }

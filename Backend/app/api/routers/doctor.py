@@ -17,12 +17,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.admission import Admission
+from app.models.billing_signal import BillingServiceSignal
 from app.models.assignments import DoctorAssignment, NursePatientAssignment
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.models.vital import Vital
 from app.api.routers.auth import get_current_user
 from app.schemas.doctor import (
+    ConsultationCompleteRequest,
+    ConsultationCompleteResponse,
     DischargeResponse,
     DoctorPatientOption,
     VitalRecordResponse,
@@ -154,11 +157,20 @@ async def discharge_patient(
     now = datetime.utcnow()
 
     # Set discharge_date on any active admission for this patient
-    await db.execute(
+    adm_res = await db.execute(
         update(Admission)
         .where(Admission.patient_id == patient_id, Admission.discharge_date.is_(None))
         .values(discharge_date=now)
     )
+    if getattr(adm_res, "rowcount", None) and adm_res.rowcount > 0:
+        db.add(
+            BillingServiceSignal(
+                patient_id=patient_id,
+                signal_type="discharge",
+                reference_id=None,
+                detail="Patient discharged; finance finalizes bed/services and confirms payment.",
+            )
+        )
 
     # Mark doctor and nurse assignments for this patient as discharged (so they drop off lists)
     await db.execute(
@@ -182,5 +194,37 @@ async def discharge_patient(
 
     return DischargeResponse(
         message="Patient discharged successfully. Admin and nurse dashboards will update in real time.",
+        patient_id=patient_id,
+    )
+
+
+@router.post(
+    "/patients/{patient_id}/consultation-complete",
+    response_model=ConsultationCompleteResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def record_consultation_complete(
+    patient_id: int,
+    body: ConsultationCompleteRequest = ConsultationCompleteRequest(),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_doctor),
+) -> ConsultationCompleteResponse:
+    """
+    Record that a consultation occurred (care event only). Billing amounts are added in Finance.
+    """
+    await _ensure_patient_assigned_to_doctor(current_user.id, patient_id, db)
+    detail = (body.notes or "").strip() or "Consultation completed; finance may add consultation fee."
+    db.add(
+        BillingServiceSignal(
+            patient_id=patient_id,
+            signal_type="consultation_completed",
+            reference_id=current_user.id,
+            detail=detail[:512],
+        )
+    )
+    await db.commit()
+    await broadcast_admin_data_changed("doctor_consultation")
+    return ConsultationCompleteResponse(
+        message="Consultation recorded. Finance can add the consultation charge when ready.",
         patient_id=patient_id,
     )

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.websocket_manager import broadcast_admin_data_changed, manager as ws_manager
 from app.database import get_db
 from app.models.laboratory import LaboratoryResult
+from app.models.billing_signal import BillingServiceSignal
 from app.models.laboratory_extra import LabCategory
 from app.models.patient import Patient
 from app.schemas.laboratorian import (
@@ -202,6 +203,16 @@ async def create_lab_result(
             collected_at=collected,
         )
         db.add(entry)
+        await db.flush()
+        if status_val == "completed":
+            db.add(
+                BillingServiceSignal(
+                    patient_id=body.patient_id,
+                    signal_type="lab_completed",
+                    reference_id=entry.id,
+                    detail=f"Lab test completed: {test_name_stored}"[:512],
+                )
+            )
         await db.commit()
         await db.refresh(entry)
 

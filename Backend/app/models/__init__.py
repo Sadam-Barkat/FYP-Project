@@ -8,6 +8,7 @@ from .alert import Alert
 from .pharmacy import PharmacyStock
 from .laboratory import LaboratoryResult
 from .billing import Billing
+from .billing_signal import BillingServiceSignal
 from .staff import Staff
 
 from .organization import Department, WardDetail

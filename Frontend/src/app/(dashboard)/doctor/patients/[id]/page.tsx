@@ -187,6 +187,7 @@ export default function PatientDetailPage() {
   const [vitals, setVitals] = useState<VitalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [discharging, setDischarging] = useState(false);
+  const [consultRecording, setConsultRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dischargeConfirmOpen, setDischargeConfirmOpen] = useState(false);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
@@ -257,6 +258,37 @@ export default function PatientDetailPage() {
 
   const openDischargeConfirm = () => {
     if (patient) setDischargeConfirmOpen(true);
+  };
+
+  const handleConsultationComplete = async () => {
+    if (!patient) return;
+    setConsultRecording(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/doctor/patients/${patientId}/consultation-complete`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ notes: null }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof data.detail === "string" ? data.detail : "Failed to record consultation.");
+      }
+      setMessageModalTitle("Recorded");
+      setMessageModalMessage(
+        typeof data.message === "string"
+          ? data.message
+          : "Consultation recorded for billing. Finance will add the fee.",
+      );
+      setMessageModalVariant("success");
+      setMessageModalOpen(true);
+    } catch (e) {
+      setMessageModalTitle("Error");
+      setMessageModalMessage(e instanceof Error ? e.message : "Failed to record consultation.");
+      setMessageModalVariant("error");
+      setMessageModalOpen(true);
+    } finally {
+      setConsultRecording(false);
+    }
   };
 
   const handleDischargeConfirm = async () => {
@@ -356,6 +388,16 @@ export default function PatientDetailPage() {
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+          <button
+            type="button"
+            onClick={handleConsultationComplete}
+            disabled={consultRecording}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#0066cc] bg-white px-4 py-2.5 text-sm font-medium text-[#0066cc] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:border-blue-400 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 sm:w-auto"
+            title="Care event only — no charges. Finance adds the consultation fee."
+          >
+            {consultRecording ? <Loader2 size={16} className="animate-spin" /> : null}
+            Consultation complete
+          </button>
           <button
             onClick={openDischargeConfirm}
             disabled={discharging}

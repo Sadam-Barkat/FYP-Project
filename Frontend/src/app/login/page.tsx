@@ -35,10 +35,11 @@ export default function LoginPage() {
 
       const role = data.user?.role ?? "admin";
       const userEmail = (data.user?.email ?? "").toString().trim().toLowerCase();
-      // Reception → /reception; Laboratorian (lab@hospital.com) → /laboratory-entry
+      // Reception → /reception; Laboratorian (lab@hospital.com) → /laboratory-entry; Finance → billing only
       let effectiveRole = role;
       if (userEmail === "reception@hospital.com") effectiveRole = "receptionist";
       else if (userEmail === "lab@hospital.com") effectiveRole = "laboratorian";
+      else if (role === "finance" || userEmail === "finance@hospital.com") effectiveRole = "finance";
 
       if (typeof window !== "undefined") {
         const firstName = (data.user?.first_name ?? "").toString().trim();
@@ -73,6 +74,7 @@ export default function LoginPage() {
       else if (effectiveRole === "nurse") router.push("/nurse");
       else if (effectiveRole === "receptionist") router.push("/reception");
       else if (effectiveRole === "laboratorian") router.push("/laboratory-entry");
+      else if (effectiveRole === "finance") router.push("/admin/billing-finance");
       else router.push("/admin");
     } catch (err) {
       console.error("Login error", err);

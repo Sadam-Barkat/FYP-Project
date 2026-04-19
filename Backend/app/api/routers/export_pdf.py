@@ -24,7 +24,7 @@ from app.api.routers.overview import get_hospital_overview
 from app.api.routers.patients_beds import get_patients_beds_overview
 from app.api.routers.pharmacy import get_pharmacy_overview
 from app.api.routers.laboratory import get_laboratory_overview
-from app.api.routers.billing_finance import get_billing_finance_overview
+from app.api.routers.billing_finance import compute_billing_finance_overview
 from app.api.routers.hr_staff import get_hr_staff_overview
 from app.api.routers.alerts_overview import get_alerts_overview
 from app.api.routers.analytics_forecasts import get_analytics_forecasts
@@ -430,7 +430,7 @@ async def get_dashboard_pdf(
             buffer = _build_laboratory_pdf(data, base_date)
             filename = f"Laboratory_{base_date.isoformat()}.pdf"
         elif page == "billing-finance":
-            data = await get_billing_finance_overview(date_param=base_date, db=db)
+            data = await compute_billing_finance_overview(db, base_date)
             buffer = _build_billing_finance_pdf(data, base_date)
             filename = f"Billing_Finance_{base_date.isoformat()}.pdf"
         elif page == "hr-staff":
