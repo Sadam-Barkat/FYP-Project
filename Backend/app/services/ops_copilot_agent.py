@@ -57,8 +57,9 @@ When you finalize, your structured output MUST include:
 - what_changed: concrete, metric-backed summary
 - why_it_matters: operational impact in plain language
 - recommended_actions: 3–6 specific, actionable steps (not generic "monitor only")
-- evidence_links: each item has label and href; href MUST start with /admin/ and point to relevant areas
-  (e.g. /admin, /admin/patients-beds, /admin/alerts, /admin/analytics, /admin/billing-finance, /admin/ops-copilot)
+- evidence_links: each item has label and href; use ONLY these paths (do not invent new routes like
+  /admin/patient-acuity): /admin, /admin/patients-beds, /admin/alerts, /admin/analytics, /admin/billing-finance,
+  /admin/ops-copilot, /admin/pharmacy, /admin/laboratory, /admin/hr-staff
 
 Keep the briefing concise, clear, and actionable. Base claims on tool outputs only.
 """
