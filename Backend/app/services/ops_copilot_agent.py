@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import Any, Dict, List
 
 import httpx
 from pydantic import BaseModel, Field, field_validator
+
+from app.core.ops_openai_settings import get_ops_openai_settings
 
 
 class EvidenceLink(BaseModel):
@@ -58,11 +59,14 @@ evidence_links (array of objects with label and href).
 
 
 async def call_openai_for_briefing(signals: Dict[str, Any]) -> Dict[str, Any]:
-    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    settings = get_ops_openai_settings()
+    api_key = (settings.OPENAI_API_KEY or "").strip()
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not set. Add it to your environment (never commit it).")
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Add it to Backend/.env locally or to Railway environment variables."
+        )
 
-    model = (os.getenv("OPENAI_OPS_COPILOT_MODEL") or "gpt-4o-mini").strip()
+    model = (settings.OPENAI_OPS_COPILOT_MODEL or "gpt-4o-mini").strip()
     payload = {
         "model": model,
         "temperature": 0.35,

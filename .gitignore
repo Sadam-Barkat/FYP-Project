@@ -9,10 +9,13 @@ Frontend/node_modules/
 Frontend/.next/
 Frontend/out/
 
-# Secrets & local env
+# Secrets & local env (never commit API keys or DATABASE_URL secrets)
 .env
 .env.*
+Backend/.env
+Backend/.env.*
 !.env.example
+!Backend/.env.example
 
 # OS / editor
 .DS_Store

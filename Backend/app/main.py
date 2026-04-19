@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from dotenv import load_dotenv
-load_dotenv()
+
+# Load Backend/.env explicitly so local runs work regardless of shell cwd.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 import json
 from contextlib import asynccontextmanager

@@ -6,9 +6,10 @@ __pycache__/
 venv/
 .venv/
 
-# Environment variables and secrets
+# Environment variables and secrets (never commit real keys)
 .env
 .env.*
+!.env.example
 
 # Pytest / coverage
 .pytest_cache/
