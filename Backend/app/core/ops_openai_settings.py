@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +23,7 @@ class OpsOpenAISettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_BACKEND_ROOT / ".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
     )
 
@@ -32,3 +34,21 @@ class OpsOpenAISettings(BaseSettings):
 def get_ops_openai_settings() -> OpsOpenAISettings:
     """Fresh read each call so deploy-time / Railway env changes are visible (no stale cache)."""
     return OpsOpenAISettings()
+
+
+def resolve_openai_api_key() -> str:
+    """
+    API key for Ops Copilot. Prefer live os.environ (Railway injects here), then pydantic/.env.
+    Case-insensitive env fallback helps with rare mis-typed variable names in hosting UIs.
+    """
+    direct = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    if direct:
+        return direct
+    for k, v in os.environ.items():
+        if k.upper() == "OPENAI_API_KEY" and (v or "").strip():
+            return str(v).strip()
+    return (get_ops_openai_settings().OPENAI_API_KEY or "").strip()
+
+
+def openai_api_key_configured() -> bool:
+    return bool(resolve_openai_api_key())

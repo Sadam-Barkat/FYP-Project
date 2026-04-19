@@ -69,6 +69,8 @@ export default function OpsCopilotPage() {
   const [genLoading, setGenLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  /** null = not checked yet; false = running backend does not see OPENAI_API_KEY */
+  const [openaiEnvOk, setOpenaiEnvOk] = useState<boolean | null>(null);
   const [lastSeenId, setLastSeenId] = useState(0);
   const alive = useRef(true);
 
@@ -89,10 +91,11 @@ export default function OpsCopilotPage() {
     try {
       setError(null);
       const h = authHeaders();
-      const [latestRes, listRes, sumRes] = await Promise.all([
+      const [latestRes, listRes, sumRes, envRes] = await Promise.all([
         fetch(`${API_BASE}/api/ops-copilot/briefings/latest`, { headers: h }),
         fetch(`${API_BASE}/api/ops-copilot/briefings?limit=30`, { headers: h }),
         fetch(`${API_BASE}/api/ops-copilot/daily-summary`, { headers: h }),
+        fetch(`${API_BASE}/api/ops-copilot/openai-env-status`, { headers: h }),
       ]);
       if (latestRes.status === 401 || listRes.status === 401) {
         setError("Please sign in as admin to use Ops Copilot.");
@@ -109,6 +112,12 @@ export default function OpsCopilotPage() {
       if (sumRes.ok) {
         const sj = await sumRes.json();
         if (alive.current) setSummary(sj);
+      }
+      if (envRes.ok) {
+        const ej = await envRes.json();
+        if (alive.current) setOpenaiEnvOk(Boolean(ej.openai_api_key_loaded));
+      } else if (alive.current) {
+        setOpenaiEnvOk(null);
       }
     } catch {
       if (alive.current) setError("Could not load Ops Copilot data.");
@@ -190,6 +199,19 @@ export default function OpsCopilotPage() {
 
   return (
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl space-y-6 pb-10">
+      {openaiEnvOk === false && (
+        <div
+          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
+        >
+          This backend URL (<code className="rounded bg-amber-100/80 px-1">{API_BASE}</code>) does not
+          see <code className="rounded bg-amber-100/80 px-1">OPENAI_API_KEY</code> in its process
+          environment. In Railway, open the <strong>same</strong> service that serves this URL →
+          Variables → add <code className="rounded bg-amber-100/80 px-1">OPENAI_API_KEY</code> (exact
+          name, no spaces) → <strong>Redeploy</strong>. On Vercel, confirm{" "}
+          <code className="rounded bg-amber-100/80 px-1">NEXT_PUBLIC_API_URL</code> matches that service.
+        </div>
+      )}
       {/* Page header strip (matches supervisor mock: strong blue band + title) */}
       <div className="rounded-xl bg-[#0066cc] px-5 py-4 text-white shadow-md sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

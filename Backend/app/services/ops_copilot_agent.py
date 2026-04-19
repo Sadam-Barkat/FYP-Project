@@ -10,7 +10,7 @@ from agents import Agent, Runner
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.ops_openai_settings import get_ops_openai_settings
+from app.core.ops_openai_settings import get_ops_openai_settings, resolve_openai_api_key
 from app.services.ops_copilot_sdk_tools import OPS_COPILOT_TOOLS, OpsCopilotContext
 
 
@@ -102,11 +102,13 @@ async def run_ops_copilot_agent(db: AsyncSession) -> Dict[str, Any]:
     (same shape as the previous direct-API implementation).
     """
     settings = get_ops_openai_settings()
-    # Prefer process env (Railway injects here). pydantic-settings also reads .env for local dev.
-    api_key = (os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY or "").strip()
+    api_key = resolve_openai_api_key()
     if not api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY is not set. Add it to Backend/.env locally or to Railway environment variables."
+            "OPENAI_API_KEY is not set for this server process. "
+            "On Railway: open the service that runs this API (same URL as NEXT_PUBLIC_API_URL on Vercel) → "
+            "Variables → add OPENAI_API_KEY (exact name) → Redeploy. "
+            "GET /api/ops-copilot/openai-env-status (admin) shows whether the running instance sees the key."
         )
 
     model = (settings.OPENAI_OPS_COPILOT_MODEL or "gpt-4o-mini").strip()

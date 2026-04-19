@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy import text, select, func
 
+from app.core.ops_openai_settings import openai_api_key_configured
 from app.core.websocket_manager import manager as ws_manager
 from app.database import engine, SessionLocal
 from app.core.security import get_password_hash
@@ -42,6 +43,10 @@ async def lifespan(app: FastAPI):
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         print("Database connection OK.")
+        print(
+            "Ops Copilot OPENAI_API_KEY visible to this process:",
+            "yes" if openai_api_key_configured() else "no",
+        )
 
         # Optional production-safe seeding for deployments:
         # If you deploy against a fresh Neon database (no local seed data),
