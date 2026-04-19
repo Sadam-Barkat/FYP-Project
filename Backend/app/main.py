@@ -110,7 +110,7 @@ app = FastAPI(
 # CORS: Vercel production + preview URLs (*.vercel.app). Add custom domains via Railway:
 # CORS_EXTRA_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 def _cors_allow_origins() -> list[str]:
-    origins = ["https://fyp-project-livid.vercel.app"]
+    origins = ["https://fyp-project-qc9he0lkr-sadam-barkats-projects.vercel.app"]
     extra = (os.getenv("CORS_EXTRA_ORIGINS") or "").strip()
     if extra:
         for part in extra.split(","):

@@ -14,7 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
 
-DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-livid.vercel.app"
+DEFAULT_FRONTEND_BASE_URL = "https://fyp-project-qc9he0lkr-sadam-barkats-projects.vercel.app"
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL") or os.getenv("PUBLIC_FRONTEND_URL") or DEFAULT_FRONTEND_BASE_URL
 
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
