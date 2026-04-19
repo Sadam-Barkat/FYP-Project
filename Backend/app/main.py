@@ -107,15 +107,27 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: Vercel production + preview URLs (*.vercel.app). Add custom domains via Railway:
-# CORS_EXTRA_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+# CORS: Vercel production + preview (*.vercel.app), optional explicit URLs, Railway envs.
+# - Set FRONTEND_BASE_URL or PUBLIC_FRONTEND_URL on Railway to your live Vercel URL (no code change).
+# - CORS_EXTRA_ORIGINS=https://a.com,https://b.com for extra domains.
+# Note: "Invalid email or password" is a 401 from /api/auth/login (DB/user), not a CORS block
+# (CORS failures usually show as "Failed to fetch" / network errors in the browser).
 def _cors_allow_origins() -> list[str]:
-    origins = ["https://fyp-project-qc9he0lkr-sadam-barkats-projects.vercel.app"]
+    origins = [
+        "https://fyp-project-qc9he0lkr-sadam-barkats-projects.vercel.app",
+        "https://fyp-project-livid.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    for env_name in ("FRONTEND_BASE_URL", "PUBLIC_FRONTEND_URL"):
+        base = (os.getenv(env_name) or "").strip().rstrip("/")
+        if base.startswith("http") and base not in origins:
+            origins.append(base)
     extra = (os.getenv("CORS_EXTRA_ORIGINS") or "").strip()
     if extra:
         for part in extra.split(","):
-            p = part.strip()
-            if p:
+            p = part.strip().rstrip("/")
+            if p.startswith("http") and p not in origins:
                 origins.append(p)
     return origins
 
@@ -123,7 +135,8 @@ def _cors_allow_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_allow_origins(),
-    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
+    # Any Vercel deployment (production, preview, team subdomains).
+    allow_origin_regex=r"^https://[a-zA-Z0-9.-]+\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
