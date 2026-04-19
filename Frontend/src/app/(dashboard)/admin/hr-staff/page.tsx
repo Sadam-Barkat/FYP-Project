@@ -8,6 +8,7 @@ import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type StaffRow = {
   name: string;
@@ -38,7 +39,7 @@ type HrStaffOverview = {
   selected_date: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 export default function HRStaffPage() {
   const [overview, setOverview] = useState<HrStaffOverview | null>(null);

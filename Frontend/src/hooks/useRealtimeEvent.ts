@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { getApiBaseUrl, normalizeApiBaseUrl } from "@/lib/apiBase";
+
 /**
  * Shared WebSocket for real-time dashboard updates.
  * One connection per app; multiple components can subscribe to different event types.
@@ -16,12 +18,11 @@ function getWsUrl(): string {
 
   const explicit = process.env.NEXT_PUBLIC_WS_URL?.trim();
   if (explicit) {
-    const u = explicit.replace(/\/+$/, "");
+    const u = normalizeApiBaseUrl(explicit.replace(/\/+$/, ""));
     return u.endsWith("/ws") ? u : `${u}/ws`;
   }
 
-  let base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").trim();
-  base = base.replace(/\/+$/, "").replace(/\/api\/?$/i, "");
+  const base = getApiBaseUrl();
 
   try {
     const url = new URL(base);

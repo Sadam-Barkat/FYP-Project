@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserPlus, User, Stethoscope, Heart, CheckCircle, AlertTriangle } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 function MessageModal({
   open,
@@ -61,7 +62,7 @@ function MessageModal({
   );
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 interface DoctorOption {
   id: number;

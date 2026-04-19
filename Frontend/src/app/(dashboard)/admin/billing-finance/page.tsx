@@ -8,6 +8,7 @@ import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type Invoice = {
   invoice_id: string;
@@ -33,7 +34,7 @@ type BillingFinanceOverview = {
   selected_date: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 function formatToK(amount: number): string {
   if (!amount || isNaN(amount)) return "0K";

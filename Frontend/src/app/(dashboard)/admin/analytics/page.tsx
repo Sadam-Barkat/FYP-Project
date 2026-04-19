@@ -32,6 +32,7 @@ import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type AdmissionForecastPoint = {
   date: string;
@@ -102,10 +103,7 @@ type AnalyticsForecasts = {
   forecast_engine?: ForecastEngine;
 };
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
-    .replace(/\/+$/, "")
-    .replace(/\/api\/?$/i, "");
+const API_BASE = getApiBaseUrl();
 
 const CONDITION_COLORS = ["#22c55e", "#f97316", "#ef4444"];
 

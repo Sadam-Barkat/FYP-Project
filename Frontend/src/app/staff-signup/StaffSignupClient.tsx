@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+const API_BASE = getApiBaseUrl();
 
 const DEPARTMENTS = [
   "Cardiology",

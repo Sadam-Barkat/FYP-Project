@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, AlertTriangle, Activity, Clock } from "lucide-react";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type AlertFeedItem = {
   id: number;
@@ -17,7 +18,7 @@ type AlertFeedItem = {
   is_resolved: boolean;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 function formatTimeAgo(iso: string | null): string {
   if (!iso) return "—";

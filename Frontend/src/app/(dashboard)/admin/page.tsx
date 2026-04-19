@@ -25,8 +25,9 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 interface ActivePatients {
   total: number;

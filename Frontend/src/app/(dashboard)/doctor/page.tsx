@@ -5,8 +5,9 @@ import Link from "next/link";
 import { AlertTriangle, Activity, HeartPulse, RefreshCcw, Loader2 } from "lucide-react";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import { getAuthHeaders } from "@/lib/auth";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 function useDoctorDisplayName() {
   const [name, setName] = useState("");

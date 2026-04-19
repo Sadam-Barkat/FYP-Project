@@ -14,11 +14,9 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
-    .replace(/\/+$/, "")
-    .replace(/\/api\/?$/i, "");
+const API_BASE = getApiBaseUrl();
 
 type Briefing = {
   id: number;

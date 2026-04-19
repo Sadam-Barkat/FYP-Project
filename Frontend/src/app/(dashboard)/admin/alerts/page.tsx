@@ -7,6 +7,7 @@ import {
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
 import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type AlertFeedItem = {
   id: number;
@@ -29,7 +30,7 @@ type AlertsOverview = {
   alerts_feed: AlertFeedItem[];
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 function severityToUiType(severity: string): "danger" | "warning" | "info" {
   if (severity === "critical") return "danger";

@@ -6,10 +6,12 @@ import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 const STAFF_PER_PAGE = 8;
 const PATIENTS_PER_PAGE = 8;
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+const API_BASE = getApiBaseUrl();
 
 export type StaffType = "Doctor" | "Nurse" | "Laboratorian" | "Receptionist";
 
