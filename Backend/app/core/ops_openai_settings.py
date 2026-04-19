@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,6 +29,6 @@ class OpsOpenAISettings(BaseSettings):
     OPENAI_OPS_COPILOT_MODEL: str = "gpt-4o-mini"
 
 
-@lru_cache
 def get_ops_openai_settings() -> OpsOpenAISettings:
+    """Fresh read each call so deploy-time / Railway env changes are visible (no stale cache)."""
     return OpsOpenAISettings()

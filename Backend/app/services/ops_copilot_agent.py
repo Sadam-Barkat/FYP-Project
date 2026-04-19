@@ -102,7 +102,8 @@ async def run_ops_copilot_agent(db: AsyncSession) -> Dict[str, Any]:
     (same shape as the previous direct-API implementation).
     """
     settings = get_ops_openai_settings()
-    api_key = (settings.OPENAI_API_KEY or "").strip()
+    # Prefer process env (Railway injects here). pydantic-settings also reads .env for local dev.
+    api_key = (os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY or "").strip()
     if not api_key:
         raise RuntimeError(
             "OPENAI_API_KEY is not set. Add it to Backend/.env locally or to Railway environment variables."
