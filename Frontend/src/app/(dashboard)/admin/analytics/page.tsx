@@ -242,6 +242,20 @@ export default function AnalyticsPage() {
 
   useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchData);
 
+  useEffect(() => {
+    if (!data) return;
+    const scrollToHash = () => {
+      const id = window.location.hash.replace(/^#/, "");
+      if (!id) return;
+      requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, [data]);
+
   if (isLoading && !data) {
     return (
       <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
@@ -517,7 +531,10 @@ export default function AnalyticsPage() {
       )}
 
       {/* Ward demand */}
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+      <div
+        id="analytics-ward-demand"
+        className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+      >
         <h3 className="mb-1 font-semibold text-gray-800">Ward demand (admissions, last 7 days)</h3>
         <p className="mb-4 text-xs text-gray-500">
           Shows where new admissions concentrated—useful for staffing and supplies.
@@ -550,7 +567,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Admissions chart */}
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+      <div
+        id="analytics-admissions-forecast"
+        className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+      >
         <h3 className="mb-1 font-semibold text-gray-800">Admissions — actual vs forecast</h3>
         <p className="mb-4 text-xs text-gray-500">
           Dashed line = projected counts; light lines = heuristic uncertainty band.
@@ -582,7 +602,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue */}
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+      <div
+        id="analytics-revenue-forecast"
+        className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+      >
         <h3 className="mb-1 font-semibold text-gray-800">Paid revenue — actual vs forecast (PKR)</h3>
         <p className="mb-4 text-xs text-gray-500">Based on posted paid billings by day.</p>
         <div className="h-72 w-full">
@@ -620,7 +643,10 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <div
+          id="analytics-bed-occupancy-forecast"
+          className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+        >
           <h3 className="mb-1 font-semibold text-gray-800">Bed occupancy % — actual vs forecast</h3>
           <p className="mb-4 text-xs text-gray-500">
             Reference lines at 75% (watch) and 85% (stress). Forecast is operational projection only.
@@ -661,7 +687,10 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <div
+          id="analytics-vitals-condition-mix"
+          className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+        >
           <h3 className="mb-1 font-semibold text-gray-800">Vitals condition mix</h3>
           <p className="mb-4 text-xs text-gray-500">Distribution of latest classified vital records.</p>
           <div className="h-64 w-full">
@@ -695,7 +724,10 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+      <div
+        id="analytics-alerts-trend"
+        className="scroll-mt-24 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6"
+      >
         <h3 className="mb-1 font-semibold text-gray-800">Alert load (last 7 days)</h3>
         <p className="mb-4 text-xs text-gray-500">Critical vs warning-tier alerts created per day.</p>
         <div className="h-56 w-full">

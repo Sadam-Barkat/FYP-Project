@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
@@ -317,8 +318,16 @@ export default function AdminDashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-80 flex flex-col">
-          <p className="font-semibold text-gray-800 mb-2">Patient Admission Trend</p>
+        <Link
+          href="/admin/analytics#analytics-admissions-forecast"
+          className="group flex h-80 flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm outline-none ring-offset-2 transition hover:border-sky-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0066cc]"
+        >
+          <p className="mb-2 font-semibold text-gray-800 group-hover:text-[#0066cc]">
+            Patient Admission Trend
+          </p>
+          <p className="mb-2 text-xs text-gray-500">
+            Opens full admissions vs forecast on Analytics →
+          </p>
           <div className="flex-1 w-full">
             {admissionTrend.length === 0 ? (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">
@@ -342,7 +351,7 @@ export default function AdminDashboard() {
               </ResponsiveContainer>
             )}
           </div>
-        </div>
+        </Link>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-80 flex flex-col">
           <p className="font-semibold text-gray-800 mb-2">Bed Occupancy by Department</p>
           <div className="flex-1 w-full">
