@@ -20,6 +20,7 @@ from .billing_extra import BillItem, Transaction
 from .analytics import Forecast, Categorization, EmergencyLog, ICUDetail
 from .system import AuditLog
 from .staff_invitation import StaffInvitation
+from .ops_briefing import OpsBriefing
 
 # This file imports all models so that Alembic's env.py can load Base.metadata
 # and see all the tables it needs to generate migrations for.

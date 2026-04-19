@@ -19,7 +19,9 @@ export default function HeaderTitle() {
   }, []);
 
   let title = "Admin Dashboard";
-  if (role === "doctor" || pathname.startsWith("/doctor")) {
+  if (pathname.startsWith("/admin/ops-copilot")) {
+    title = "AI Hospital Ops Copilot";
+  } else if (role === "doctor" || pathname.startsWith("/doctor")) {
     title = "Doctor Dashboard";
   } else if (role === "nurse" || pathname.startsWith("/nurse")) {
     title = "Nurse Dashboard";

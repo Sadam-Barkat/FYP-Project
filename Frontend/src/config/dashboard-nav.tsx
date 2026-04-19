@@ -10,6 +10,7 @@ import {
   LineChart,
   Activity,
   UserCog,
+  Bot,
 } from "lucide-react";
 
 /** Shared navigation config for sidebar (admin) and mobile drawer (all roles). */
@@ -28,6 +29,7 @@ export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
   { name: "HR & Staff", href: "/admin/hr-staff", icon: Users },
   { name: "Alerts & Monitoring", href: "/admin/alerts", icon: Bell },
   { name: "Analytics & Forecasts", href: "/admin/analytics", icon: LineChart },
+  { name: "Ops Copilot", href: "/admin/ops-copilot", icon: Bot },
   { name: "User Management", href: "/admin/user-management", icon: UserCog },
 ];
 
