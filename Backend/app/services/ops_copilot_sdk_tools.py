@@ -51,7 +51,9 @@ async def get_revenue_trend(ctx: RunContextWrapper[OpsCopilotContext]) -> dict:
     return await metrics.get_revenue_trend(ctx.context.db, days=7)
 
 
-hospital_metrics = tool_namespace(
+# openai-agents: tool_namespace(...) returns a flat list[FunctionTool] for this SDK version;
+# do not wrap in another list or Agent sees list as a single "tool" and raises Unknown tool type.
+OPS_COPILOT_TOOLS = tool_namespace(
     name="hospital_metrics",
     description=(
         "Live hospital operational metrics: bed occupancy by ward, admission trends, "
@@ -65,5 +67,3 @@ hospital_metrics = tool_namespace(
         get_revenue_trend,
     ],
 )
-
-OPS_COPILOT_TOOLS = [hospital_metrics]

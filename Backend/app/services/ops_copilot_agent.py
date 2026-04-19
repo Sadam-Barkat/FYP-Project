@@ -90,7 +90,7 @@ def _build_agent(model_name: str) -> Agent:
     return Agent(
         name="Hospital Ops Copilot",
         instructions=INSTRUCTIONS,
-        tools=list(OPS_COPILOT_TOOLS),
+        tools=list(OPS_COPILOT_TOOLS),  # flat list[FunctionTool] from tool_namespace
         model=model_name,
         output_type=BriefingLLMOutput,
     )
