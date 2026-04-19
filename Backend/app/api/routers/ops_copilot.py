@@ -17,7 +17,7 @@ from app.models.ops_briefing import OpsBriefing
 from app.models.billing import Billing, BillingStatus
 from app.models.alert import Alert
 from app.services.ops_copilot_tools import collect_all_signals, get_occupancy_by_ward
-from app.services.ops_copilot_agent import call_openai_for_briefing
+from app.services.ops_copilot_agent import run_ops_copilot_agent
 from app.core.websocket_manager import broadcast_admin_data_changed
 
 router = APIRouter(prefix="/api/ops-copilot", tags=["ops_copilot"])
@@ -133,7 +133,7 @@ async def generate_briefing(
 ) -> Dict[str, Any]:
     signals = await collect_all_signals(db)
     try:
-        out = await call_openai_for_briefing(signals)
+        out = await run_ops_copilot_agent(db)
     except RuntimeError as e:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)) from e
 

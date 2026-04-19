@@ -1,14 +1,17 @@
-"""OpenAI-backed briefing generation for Ops Copilot. Requires OPENAI_API_KEY in the environment."""
+"""Hospital Ops Copilot — OpenAI Agents SDK (Runner + tools + structured output)."""
 
 from __future__ import annotations
 
 import json
+import os
 from typing import Any, Dict, List
 
-import httpx
+from agents import Agent, Runner
 from pydantic import BaseModel, Field, field_validator
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.ops_openai_settings import get_ops_openai_settings
+from app.services.ops_copilot_sdk_tools import OPS_COPILOT_TOOLS, OpsCopilotContext
 
 
 class EvidenceLink(BaseModel):
@@ -17,6 +20,8 @@ class EvidenceLink(BaseModel):
 
 
 class BriefingLLMOutput(BaseModel):
+    """Structured briefing returned by the agent (matches DB + frontend contract)."""
+
     title: str = Field(..., min_length=1, max_length=500)
     risk_category: str = Field(default="general", max_length=128)
     what_changed: str = Field(..., min_length=1)
@@ -30,35 +35,72 @@ class BriefingLLMOutput(BaseModel):
         return [a.strip() for a in v if a and a.strip()][:12]
 
 
-SYSTEM_PROMPT = """You are an expert hospital operations analyst assistant embedded in a live admin dashboard.
-You receive a JSON snapshot of operational metrics (bed occupancy by ward, admissions trend, alerts backlog, vitals acuity mix, revenue).
-Your job is to produce ONE concise operational briefing for hospital leadership.
+INSTRUCTIONS = """You are an AI hospital operations assistant.
 
-Rules:
-- Be factual: only infer patterns supported by the numbers provided.
-- Prefer the highest-impact issue (capacity, safety/alerts, revenue, or flow). If multiple are moderate, synthesize.
-- recommended_actions must be specific operational steps (not generic "monitor").
-- evidence_links must point to in-app routes only, using href starting with /admin/...
-  Allowed examples: /admin, /admin/patients-beds, /admin/alerts, /admin/analytics, /admin/billing-finance
-- Output MUST be a single JSON object matching the schema exactly. No markdown, no code fences.
+You analyze real-time hospital operational metrics and detect meaningful operational changes.
+
+Your goal is to generate short structured operational briefings that help hospital administrators make decisions.
+
+Use the hospital_metrics tools to fetch live data. Call the tools you need—at minimum, gather enough
+signal to justify your conclusions (often multiple tools are helpful).
+
+Focus on:
+- capacity risks (overall / ICU / ward hotspots)
+- admission vs discharge imbalance or trend shifts
+- alert workload spikes or unresolved critical backlog
+- patient acuity distribution (vitals classifications)
+- revenue anomalies or week-over-week paid collections shifts
+
+When you finalize, your structured output MUST include:
+- title: a concise headline (e.g. capacity or alert themed)
+- risk_category: short snake_case (capacity|alerts|revenue|flow|general)
+- what_changed: concrete, metric-backed summary
+- why_it_matters: operational impact in plain language
+- recommended_actions: 3–6 specific, actionable steps (not generic "monitor only")
+- evidence_links: each item has label and href; href MUST start with /admin/ and point to relevant areas
+  (e.g. /admin, /admin/patients-beds, /admin/alerts, /admin/analytics, /admin/billing-finance, /admin/ops-copilot)
+
+Keep the briefing concise, clear, and actionable. Base claims on tool outputs only.
 """
 
 
-USER_TEMPLATE = """Here is the current operational snapshot (JSON). Generate the briefing JSON.
+USER_PROMPT = """Generate one current operational briefing for hospital leadership now.
 
-{signals_json}
-
-Return JSON with keys:
-title (string),
-risk_category (short snake_case string e.g. capacity|alerts|revenue|flow|general),
-what_changed (string),
-why_it_matters (string),
-recommended_actions (array of strings, 3-6 items),
-evidence_links (array of objects with label and href).
-"""
+Use tools to retrieve fresh metrics, then output the structured briefing."""
 
 
-async def call_openai_for_briefing(signals: Dict[str, Any]) -> Dict[str, Any]:
+def _briefing_output_to_dict(out: BriefingLLMOutput) -> Dict[str, Any]:
+    links = [link.model_dump() for link in out.evidence_links]
+    if not links:
+        links = [{"label": "Hospital overview", "href": "/admin"}]
+    actions = out.recommended_actions
+    if not actions:
+        actions = ["Review live metrics on the admin dashboard and align staffing with ward demand."]
+    return {
+        "title": out.title,
+        "risk_category": out.risk_category or "general",
+        "what_changed": out.what_changed,
+        "why_it_matters": out.why_it_matters,
+        "recommended_actions": actions,
+        "evidence_links": links,
+    }
+
+
+def _build_agent(model_name: str) -> Agent:
+    return Agent(
+        name="Hospital Ops Copilot",
+        instructions=INSTRUCTIONS,
+        tools=list(OPS_COPILOT_TOOLS),
+        model=model_name,
+        output_type=BriefingLLMOutput,
+    )
+
+
+async def run_ops_copilot_agent(db: AsyncSession) -> Dict[str, Any]:
+    """
+    Run the Ops Copilot agent: tools fetch metrics; agent returns a structured briefing dict
+    (same shape as the previous direct-API implementation).
+    """
     settings = get_ops_openai_settings()
     api_key = (settings.OPENAI_API_KEY or "").strip()
     if not api_key:
@@ -67,44 +109,33 @@ async def call_openai_for_briefing(signals: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     model = (settings.OPENAI_OPS_COPILOT_MODEL or "gpt-4o-mini").strip()
-    payload = {
-        "model": model,
-        "temperature": 0.35,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": USER_TEMPLATE.format(signals_json=json.dumps(signals, indent=2, default=str)),
-            },
-        ],
-    }
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    async with httpx.AsyncClient(timeout=90.0) as client:
-        r = await client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-        if r.status_code != 200:
-            raise RuntimeError(f"OpenAI API error {r.status_code}: {r.text[:500]}")
-        data = r.json()
+    # Agents SDK reads OPENAI_API_KEY from the environment; sync from pydantic-settings / .env.
+    os.environ["OPENAI_API_KEY"] = api_key
+
+    agent = _build_agent(model)
+    run_context = OpsCopilotContext(db=db)
 
     try:
-        content = data["choices"][0]["message"]["content"]
-        parsed = json.loads(content)
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        raise RuntimeError(f"Unexpected OpenAI response shape: {e}") from e
+        result = await Runner.run(
+            agent,
+            USER_PROMPT,
+            context=run_context,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Ops Copilot agent run failed: {e}") from e
 
-    validated = BriefingLLMOutput.model_validate(parsed)
-    links = [link.model_dump() for link in validated.evidence_links]
-    if not links:
-        links = [{"label": "Hospital overview", "href": "/admin"}]
-    actions = validated.recommended_actions
-    if not actions:
-        actions = ["Review live metrics on the admin dashboard and align staffing with ward demand."]
-    return {
-        "title": validated.title,
-        "risk_category": validated.risk_category or "general",
-        "what_changed": validated.what_changed,
-        "why_it_matters": validated.why_it_matters,
-        "recommended_actions": actions,
-        "evidence_links": links,
-    }
+    final = result.final_output
+
+    if isinstance(final, BriefingLLMOutput):
+        return _briefing_output_to_dict(final)
+
+    if isinstance(final, str):
+        try:
+            parsed = json.loads(final)
+            validated = BriefingLLMOutput.model_validate(parsed)
+            return _briefing_output_to_dict(validated)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise RuntimeError(f"Agent returned unparsable briefing: {e}") from e
+
+    raise RuntimeError(f"Unexpected agent output type: {type(final)}")
