@@ -1,380 +1,200 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import {
-  ADMIN_DASHBOARD_REALTIME_EVENTS,
-  useRealtimeEvent,
-} from "@/hooks/useRealtimeEvent";
-import {
-  BedSingle,
-  DollarSign,
-  UserSquare2,
-  AlertTriangle,
-  TrendingUp,
-} from "lucide-react";
-import { MetricKpiCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
-import { getApiBaseUrl } from "@/lib/apiBase";
-
-const API_BASE = getApiBaseUrl();
-
-interface ActivePatients {
-  total: number;
-  icu: number;
-  emergency: number;
-  general_ward: number;
-  cardiology: number;
-}
-
-interface AdmissionTrendPoint {
-  date: string;
-  admissions: number;
-}
-
-interface BedOccupancyDepartment {
-  department: string;
-  occupied: number;
-  total: number;
-}
-
-interface HospitalOverview {
-  total_beds: number;
-  active_patients: ActivePatients;
-  todays_revenue: number;
-  doctors_on_duty: number;
-  emergency_cases: number;
-  critical_condition_cases: number;
-  icu_occupancy: number;
-  admission_trend: AdmissionTrendPoint[];
-  bed_occupancy_by_department: BedOccupancyDepartment[];
-}
+import SummaryPanel from "@/components/command-center/SummaryPanel";
+import KpiCard from "@/components/command-center/KpiCard";
+import InsightPanel from "@/components/command-center/InsightPanel";
 
 export default function AdminDashboard() {
-  const [overview, setOverview] = useState<HospitalOverview | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
-  );
-
-  const fetchOverview = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const query = selectedDate ? `?date=${selectedDate}` : "";
-      const res = await fetch(`${API_BASE}/api/hospital-overview${query}`);
-      if (!res.ok) {
-        throw new Error("Failed to load hospital overview");
-      }
-      const data: HospitalOverview = await res.json();
-      setOverview(data);
-    } catch (err) {
-      setError("Failed to load data");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedDate]);
-
-  useEffect(() => {
-    fetchOverview();
-    const interval = setInterval(fetchOverview, 15000);
-    return () => clearInterval(interval);
-  }, [fetchOverview]);
-
-  useRealtimeEvent(ADMIN_DASHBOARD_REALTIME_EVENTS, fetchOverview);
-
-  const totalBeds = overview?.total_beds ?? 0;
-  const active = overview?.active_patients;
-  const todaysRevenue = overview?.todays_revenue ?? 0;
-  const doctorsOnDuty = overview?.doctors_on_duty ?? 0;
-  const emergencyCases = overview?.emergency_cases ?? 0;
-  const criticalConditionCases = overview?.critical_condition_cases ?? 0;
-  const icuOccupancy = overview?.icu_occupancy ?? 0;
-  const admissionTrend = overview?.admission_trend ?? [];
-  const bedOccupancyByDept = overview?.bed_occupancy_by_department ?? [];
-
-  const occupiedBeds = bedOccupancyByDept.reduce((acc, r) => acc + (r?.occupied ?? 0), 0);
-  const availableBeds = Math.max(totalBeds - occupiedBeds, 0);
-
   return (
-    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
-      {/* Title */}
-      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl font-semibold text-[#0088cc] sm:text-3xl">Hospital Overview</h2>
-          {isLoading && (
-            <p className="mt-2 text-sm text-gray-500" data-hide-in-pdf>Loading hospital overview...</p>
-          )}
-          {error && (
-            <p className="mt-2 text-sm text-red-500" data-hide-in-pdf>{error}</p>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
-          <label className="text-sm text-gray-600" htmlFor="overview-date">
-            Select date
-          </label>
-          <input
-            id="overview-date"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
-          />
-        </div>
-      </div>
-
-      {/* Top Row Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          minHeightClass="min-h-[180px]"
-          icon={<BedSingle className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
-          label="Total Beds"
-          value={
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
-              {totalBeds}
-            </h3>
-          }
-          tooltipTitle="Bed capacity snapshot"
-          tooltipContent={
-            <>
-              <TooltipRow label="Occupied" value={occupiedBeds} />
-              <TooltipRow label="Available" value={availableBeds} />
-              <p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
-                Hover cards to see quick details (PowerBI-style).
-              </p>
-            </>
-          }
-        />
-
-        {/* Active Patients (compact; details on hover) */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#f97316]"
-          minHeightClass="min-h-[180px]"
-          icon={<UserSquare2 className="absolute top-4 left-4 text-[#f97316]" size={24} />}
-          label="Active Patients"
-          value={
-            <h3 className="text-4xl font-bold text-[#f97316] mt-3">
-              {active?.total ?? 0}
-            </h3>
-          }
-          tooltipTitle="Active patients by department"
-          tooltipContent={
-            <>
-              <TooltipRow label="ICU" value={active?.icu ?? 0} />
-              <TooltipRow label="Emergency" value={active?.emergency ?? 0} />
-              <TooltipRow label="General" value={active?.general_ward ?? 0} />
-              <TooltipRow label="Cardiology" value={active?.cardiology ?? 0} />
-            </>
-          }
-        />
-
-        {/* Today's Revenue */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          minHeightClass="min-h-[180px]"
-          icon={<DollarSign className="absolute top-4 left-4 text-[#eab308]" size={24} />}
-          label="Today&apos;s Revenue"
-          value={
-            <h3 className="text-3xl font-bold text-[#eab308] mt-3">
-              PKR{" "}
-              {Math.round(todaysRevenue).toLocaleString("en-PK", {
-                maximumFractionDigits: 0,
-              })}
-            </h3>
-          }
-          tooltipTitle="Revenue details"
-          tooltipContent={
-            <>
-              <TooltipRow label="Selected date" value={selectedDate} />
-              <TooltipRow
-                label="Exact"
-                value={`PKR ${todaysRevenue.toLocaleString("en-PK", {
-                  maximumFractionDigits: 2,
-                })}`}
-              />
-              <p className="pt-1 text-xs text-gray-500 dark:text-gray-400">
-                Total of paid invoices for the selected day.
-              </p>
-            </>
-          }
-        />
-
-        {/* Doctors on Duty */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          minHeightClass="min-h-[180px]"
-          icon={<UserSquare2 className="absolute top-4 left-4 text-[#14b8a6]" size={24} />}
-          label="Doctors on Duty"
-          value={
-            <h3 className="text-4xl font-bold text-[#14b8a6] mt-3">
-              {doctorsOnDuty}
-            </h3>
-          }
-          tooltipTitle="What this means"
-          tooltipContent={
-            <>
-              <TooltipRow label="Selected date" value={selectedDate} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Count of doctors marked present (attendance) for the selected date.
-              </p>
-            </>
-          }
-        />
-      </div>
-
-      {/* Bottom Row Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Emergency Cases */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#ef4444]"
-          icon={
-            <AlertTriangle
-              className="absolute top-4 left-4 text-[#ef4444]"
-              fill="#fecaca"
-              size={24}
-            />
-          }
-          label="Emergency Cases"
-          value={
-            <h3 className="text-4xl font-bold text-[#ef4444] mt-3">
-              {emergencyCases}
-            </h3>
-          }
-          tooltipTitle="Definition"
-          tooltipContent={
-            <>
-              <TooltipRow label="Selected date" value={selectedDate} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Critical-severity alerts created on this day.
-              </p>
-            </>
-          }
-        />
-
-        {/* Critical Condition */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#f59e0b]"
-          icon={
-            <AlertTriangle
-              className="absolute top-4 left-4 text-[#f59e0b]"
-              fill="#fef3c7"
-              size={24}
-            />
-          }
-          label="Critical Condition"
-          value={
-            <h3 className="text-4xl font-bold text-[#f59e0b] mt-3">
-              {criticalConditionCases}
-            </h3>
-          }
-          tooltipTitle="Definition"
-          tooltipContent={
-            <>
-              <TooltipRow label="Selected date" value={selectedDate} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                High-severity alerts created on this day.
-              </p>
-            </>
-          }
-        />
-
-        {/* ICU Occupancy */}
-        <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#a855f7]"
-          icon={<TrendingUp className="absolute top-4 left-4 text-[#a855f7]" size={24} />}
-          label="ICU Occupancy"
-          value={
-            <h3 className="text-4xl font-bold text-[#a855f7] mt-3">
-              {Math.round(icuOccupancy)}%
-            </h3>
-          }
-          tooltipTitle="ICU utilization"
-          tooltipContent={
-            <>
-              <TooltipRow label="Selected date" value={selectedDate} />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                ICU occupied beds ÷ total ICU beds for the selected day.
-              </p>
-            </>
-          }
-        />
-
-        {/* Empty slots to match layout visually if needed, or charts can go here */}
-        <div className="lg:col-span-2 hidden lg:block"></div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <Link
-          href="/admin/analytics#analytics-admissions-forecast"
-          className="group flex h-80 flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm outline-none ring-offset-2 transition hover:border-sky-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#0066cc]"
-        >
-          <p className="mb-2 font-semibold text-gray-800 group-hover:text-[#0066cc]">
-            Patient Admission Trend
+    <div id="dashboard-content" className="mx-auto w-full max-w-[1500px]">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400">Overview</p>
+          <h1 className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100 sm:text-3xl">
+            Hospital Command Center
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            Intelligent operational summary across all modules (placeholders for now).
           </p>
-          <p className="mb-2 text-xs text-gray-500">
-            Opens full admissions vs forecast on Analytics →
-          </p>
-          <div className="flex-1 w-full">
-            {admissionTrend.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                {isLoading ? "Loading chart..." : "No data available"}
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <LineChart data={admissionTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="admissions"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Link>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-80 flex flex-col">
-          <p className="font-semibold text-gray-800 mb-2">Bed Occupancy by Department</p>
-          <div className="flex-1 w-full">
-            {bedOccupancyByDept.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                {isLoading ? "Loading chart..." : "No data available"}
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <BarChart data={bedOccupancyByDept}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="department" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="occupied" name="Occupied" fill="#3b82f6" />
-                  <Bar dataKey="total" name="Total" fill="#94a3b8" />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
         </div>
       </div>
+
+      {/* SECTION A — Executive Intelligence Summary */}
+      <SummaryPanel
+        title="Executive Summary"
+        subtitle="Hospital operational status overview"
+        leftTitle="Key Observations"
+        rightTitle="Recommended Actions"
+        leftItems={[
+          "ICU occupancy increasing steadily",
+          "7 staff absent today may affect response time",
+          "20 system warnings generated today",
+          "Revenue stable but outstanding payments remain high",
+        ]}
+        rightItems={[
+          "Prepare additional ICU bed capacity",
+          "Reassign staff to high-workload departments",
+          "Reorder critical medicines within 24 hours",
+          "Review high-severity alerts and close aging items",
+        ]}
+      />
+
+      {/* SECTION B — Core Hospital KPIs */}
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Core Hospital KPIs</h2>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder values</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <KpiCard title="Bed Occupancy" value="69%" trend={{ tone: "up", text: "+1%" }} description="Across all wards (placeholder)" accent="amber" />
+          <KpiCard title="Active Patients" value="320" trend={{ tone: "flat", text: "0%" }} description="Currently admitted (placeholder)" accent="blue" />
+          <KpiCard title="ICU Occupancy" value="72%" trend={{ tone: "down", text: "-4%" }} description="ICU utilization (placeholder)" accent="violet" />
+          <KpiCard title="Critical Patients" value="18" trend={{ tone: "up", text: "+2" }} description="High severity cases (placeholder)" accent="rose" />
+          <KpiCard title="Today’s Revenue" value="PKR 25,150" trend={{ tone: "flat", text: "Stable" }} description="Paid billings only (placeholder)" accent="green" />
+          <KpiCard title="Staff Available" value="42 / 49" trend={{ tone: "down", text: "7 absent" }} description="On duty now (placeholder)" accent="blue" />
+        </div>
+      </section>
+
+      {/* SECTION C — Capacity + SECTION D — Pharmacy */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <InsightPanel title="Capacity Intelligence" chartLabel="Past 7 days">
+          <p className="font-medium text-gray-900 dark:text-gray-100">Insight (placeholder)</p>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
+            Admissions and discharges stable this week. Emergency utilization is rising faster than other departments.
+          </p>
+        </InsightPanel>
+
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <header className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Pharmacy Intelligence</h3>
+            <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+              Inventory Health: 92%
+            </span>
+          </header>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Inventory Health</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">92%</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Overall stock status</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Low Stock Medicines</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">4</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Below safe threshold</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Critical Shortage</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">2</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Immediate reorder</p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+            2 medicines below safe stock level.
+          </div>
+        </section>
+      </section>
+
+      {/* SECTION E — Clinical Risk + SECTION F — Staff */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <header className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Clinical Risk Intelligence</h3>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
+          </header>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Critical alerts</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">3</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Abnormal lab trends</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">5</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Emergency cases</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">2</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+            Critical patients concentrated in Emergency and ICU. Prioritize review of high-severity alerts.
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <header className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Staff Intelligence</h3>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
+          </header>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Staff on duty</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">22</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Absent staff</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">7</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Shift coverage</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">Good</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+            Coverage sufficient overall; monitor evening shift coverage for Emergency and ICU.
+          </div>
+        </section>
+      </section>
+
+      {/* SECTION G — Financial + SECTION H — Forecast */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <header className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Financial Intelligence</h3>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
+          </header>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Revenue today</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">PKR 25.1k</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Outstanding payments</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">PKR 28k</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Expense ratio</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">41%</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+            Revenue stable but outstanding payments are elevated; prioritize clearing aged pending bills.
+          </div>
+        </section>
+
+        <InsightPanel title="Forecast Intelligence" chartLabel="Next 7 days">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Capacity Risk Score</p>
+              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">6.7 (Moderate)</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Predicted Admissions</p>
+              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">48</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Predicted Occupancy</p>
+              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">67%</p>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+            Moderate capacity risk; expected to increase slightly based on recent intake trends.
+          </p>
+        </InsightPanel>
+      </section>
     </div>
   );
 }
+
