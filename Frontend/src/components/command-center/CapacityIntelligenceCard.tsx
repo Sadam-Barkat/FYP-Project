@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, PieChart } from "lucide-react";
+import { Building2, Activity } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -32,6 +32,7 @@ function InsightDiamond({ color }: { color: string }) {
 
 export default function CapacityIntelligenceCard({ className = "" }: { className?: string }) {
   const [data, setData] = useState<any[]>([]);
+  const [occupancyRate, setOccupancyRate] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +48,8 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
         const json = await res.json();
         if (cancelled) return;
         
+        setOccupancyRate(json.occupancy_rate || 0);
+
         // Format dates for the X-axis
         const trend = (json.admissions_discharges_trend || []).map((item: any) => {
           return {
@@ -69,6 +72,31 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
       clearInterval(interval);
     };
   }, []);
+
+  // Calculate insights dynamically
+  let totalAdm = 0;
+  let totalDis = 0;
+  data.forEach((d) => {
+    totalAdm += d.admissions || 0;
+    totalDis += d.discharges || 0;
+  });
+
+  let insight1 = "Admissions and discharges are relatively balanced this week.";
+  if (totalAdm > totalDis * 1.1 && totalAdm > 0) {
+    insight1 = "Admissions are outpacing discharges this week. Prepare for potential bed shortages.";
+  } else if (totalDis > totalAdm * 1.1 && totalDis > 0) {
+    insight1 = "Discharges exceed admissions, freeing up bed capacity across departments.";
+  }
+
+  let insight2 = "Hospital capacity is within normal operating limits.";
+  let alertText = "Normal Operations";
+  if (occupancyRate > 90) {
+    insight2 = "Critical capacity alert: Operating at near-maximum capacity. Consider diverting non-emergency admissions.";
+    alertText = "Capacity Critical";
+  } else if (occupancyRate > 75) {
+    insight2 = "High capacity utilization. Monitor bed turnover closely to avoid bottlenecks.";
+    alertText = "Capacity Warning";
+  }
 
   return (
     <section
@@ -158,22 +186,22 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
         <div className="mt-4 space-y-3 pt-4 text-[13px] text-gray-700 dark:border-gray-800 dark:text-gray-200 border-t border-dashed border-gray-200">
           <div className="flex gap-3 items-start">
             <InsightDiamond color="#f59e0b" />
-            <p>Admissions and discharge trend placeholder.</p>
+            <p>{insight1}</p>
           </div>
           <div className="flex gap-3 items-start">
             <InsightDiamond color="#10b981" />
-            <p>Department utilization trend insight placeholder.</p>
+            <p>{insight2}</p>
           </div>
         </div>
 
         <div className="mt-auto pt-5">
           <div className="flex flex-wrap items-center gap-2 rounded-xl bg-[#f8fafc] px-4 py-3 text-[13px] text-gray-700 dark:bg-gray-950 dark:text-gray-300">
             <span className="inline-flex items-center gap-2">
-              <PieChart size={16} aria-hidden className="text-[#3b82f6]" />
-              <span className="font-medium">Audit - Alerts:</span>
+              <Activity size={16} aria-hidden className="text-[#3b82f6]" />
+              <span className="font-medium">System Alert:</span>
             </span>
-            <span className="rounded-full bg-[#e2e8f0] px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-              ROSS 3r rest anagett
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${occupancyRate > 75 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-[#e2e8f0] text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
+              {alertText}
             </span>
           </div>
         </div>
