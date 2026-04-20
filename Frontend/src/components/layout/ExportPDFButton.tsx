@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Download } from "lucide-react";
 
@@ -9,11 +9,23 @@ const PDF_EXPORT_ELEMENT_ID = "pdf-export-content";
 
 export default function ExportPDFButton() {
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("admin");
   const pathname = usePathname();
 
-  // Show export only on admin and doctor dashboards (analytics); hide on nurse, receptionist, laboratorian
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let r = sessionStorage.getItem("userRole");
+    if (!r) {
+      r = localStorage.getItem("userRole");
+      if (r) sessionStorage.setItem("userRole", r);
+    }
+    if (r) setRole(r);
+  }, []);
+
+  // Staff roles (nurse, finance, etc.): no admin-style export button
   const showExport =
-    pathname?.startsWith("/admin") || pathname?.startsWith("/doctor");
+    (pathname?.startsWith("/admin") || pathname?.startsWith("/doctor")) &&
+    role !== "finance";
   if (!showExport) return null;
 
   const handleExport = async () => {

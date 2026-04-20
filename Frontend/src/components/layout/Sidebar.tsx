@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
-import { ADMIN_NAV_ITEMS, FINANCE_NAV_ITEMS, shouldShowAdminSidebar } from "@/config/dashboard-nav";
+import { ADMIN_NAV_ITEMS, shouldShowAdminSidebar } from "@/config/dashboard-nav";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -22,7 +22,7 @@ export default function Sidebar() {
     }
   }, []);
 
-  const navItems = role === "finance" ? FINANCE_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  const navItems = ADMIN_NAV_ITEMS;
 
   if (!shouldShowAdminSidebar(role, pathname)) {
     return null;

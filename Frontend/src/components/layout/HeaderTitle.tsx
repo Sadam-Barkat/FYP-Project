@@ -29,6 +29,8 @@ export default function HeaderTitle() {
     title = "Laboratorian Dashboard";
   } else if (role === "receptionist" || pathname.startsWith("/reception")) {
     title = "Receptionist Dashboard";
+  } else if (role === "finance" || pathname.startsWith("/admin/billing-finance")) {
+    title = "Billing & Finance";
   }
 
   return (
