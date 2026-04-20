@@ -56,8 +56,11 @@ async def get_revenue_trend(ctx: RunContextWrapper[OpsCopilotContext]) -> dict:
 OPS_COPILOT_TOOLS = tool_namespace(
     name="hospital_metrics",
     description=(
-        "Live hospital operational metrics: bed occupancy by ward, admission trends, "
-        "alert workload, vitals acuity mix, and paid revenue trends."
+        "Live cross-dashboard hospital metrics for one combined operational briefing. "
+        "Includes: bed & ward occupancy (overall + ICU + per ward), 7-day admission trend with WoW change, "
+        "alert backlog and recent intake, vitals-based acuity mix (normal/critical/emergency), and "
+        "7-day paid revenue trend with WoW change. Call multiple tools to compare capacity, flow, "
+        "alerts, acuity, and billing before summarizing the top operational risks."
     ),
     tools=[
         get_occupancy_by_ward,
