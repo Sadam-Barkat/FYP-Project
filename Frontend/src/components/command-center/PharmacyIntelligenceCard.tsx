@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  ReferenceLine,
 } from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
@@ -56,6 +57,21 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
   // Calculate a fake "health" percentage based on low stock vs total
   const healthPct = totalMedicines > 0 ? Math.max(0, Math.round(((totalMedicines - lowStockItems) / totalMedicines) * 100)) : 100;
   
+  // Dynamic health status
+  let healthStatus = "Good";
+  let healthColorClass = "text-[#16a34a]";
+  let healthBadgeClass = "from-[#3b82f6] to-[#1d4ed8]";
+  
+  if (healthPct < 50) {
+    healthStatus = "Critical";
+    healthColorClass = "text-red-600";
+    healthBadgeClass = "from-red-500 to-red-700";
+  } else if (healthPct < 80) {
+    healthStatus = "Warning";
+    healthColorClass = "text-amber-600";
+    healthBadgeClass = "from-amber-400 to-amber-600";
+  }
+
   // Get top 2 low stock medicines for the display
   const lowStockList = data?.low_stock_medicines || [];
   const med1 = lowStockList[0];
@@ -88,13 +104,13 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
         <div className="flex justify-between items-start">
           <div>
             <p className="text-[15px] font-medium text-gray-700 dark:text-gray-300">
-              Inventory Health: <span className="text-[#16a34a] font-semibold">{loading ? "..." : `${healthPct}%`}</span>
+              Inventory Health: <span className={`${healthColorClass} font-semibold`}>{loading ? "..." : `${healthPct}%`}</span>
             </p>
-            <p className="mt-1 text-[13px] text-gray-600 dark:text-gray-400">Good</p>
+            <p className="mt-1 text-[13px] text-gray-600 dark:text-gray-400">{loading ? "..." : healthStatus}</p>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#3b82f6] to-[#1d4ed8] px-3 py-1 text-white shadow-sm">
+          <div className={`flex items-center gap-1.5 rounded-full bg-gradient-to-b ${healthBadgeClass} px-3 py-1 text-white shadow-sm`}>
             <span className="text-white">✱</span>
-            <span className="text-xs font-medium">Good</span>
+            <span className="text-xs font-medium">{loading ? "..." : healthStatus}</span>
           </div>
         </div>
 
@@ -157,6 +173,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                     contentStyle={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
                     labelStyle={{ display: 'none' }}
                   />
+                  <ReferenceLine y={2} stroke="#cbd5e1" strokeDasharray="3 3" />
                   <Bar dataKey="expiring_count" fill="#22c55e" radius={[2, 2, 0, 0]} name="Expiring" />
                 </BarChart>
               </ResponsiveContainer>
