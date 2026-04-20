@@ -2,6 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { Pill, ThumbsUp } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
 
@@ -52,6 +60,10 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
   const lowStockList = data?.low_stock_medicines || [];
   const med1 = lowStockList[0];
   const med2 = lowStockList[1];
+  
+  // Expiry trend data for the bar chart
+  const expiryTrend = data?.expiry_trend || [];
+  const expiringSoon = data?.expiring_soon || 0;
 
   return (
     <section
@@ -129,30 +141,37 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
             </div>
           </div>
 
-          {/* Fake mini bar chart */}
-          <div className="flex items-end gap-1.5 h-10 ml-4 relative">
-            <div className="absolute top-1/2 left-0 right-0 border-t border-dashed border-gray-300 dark:border-gray-700" />
-            <div className="w-1.5 h-4 bg-[#86efac] z-10" />
-            <div className="w-1.5 h-10 bg-[#22c55e] z-10" />
-            <div className="w-1.5 h-3 bg-[#86efac] z-10" />
-            <div className="w-1.5 h-5 bg-[#22c55e] z-10" />
-            <div className="w-1.5 h-4 bg-[#86efac] z-10" />
-            <div className="w-1.5 h-6 bg-[#22c55e] z-10" />
-            <div className="w-1.5 h-3 bg-[#86efac] z-10" />
-            <div className="w-1.5 h-9 bg-[#22c55e] z-10" />
-            <div className="w-1.5 h-2 bg-[#86efac] z-10" />
-            <div className="w-1.5 h-6 bg-[#22c55e] z-10" />
+          {/* Real mini bar chart for Expiry Trend */}
+          <div className="h-16 w-36 ml-auto relative flex flex-col">
+            {loading && expiryTrend.length === 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-gray-400">
+                Loading...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expiryTrend} margin={{ top: 0, right: 0, left: -30, bottom: -5 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 9, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 9, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickCount={3} />
+                  <Tooltip 
+                    cursor={{ fill: 'transparent' }} 
+                    contentStyle={{ fontSize: '10px', padding: '4px 8px', borderRadius: '4px' }}
+                    labelStyle={{ display: 'none' }}
+                  />
+                  <Bar dataKey="expiring_count" fill="#22c55e" radius={[2, 2, 0, 0]} name="Expiring" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-5">
           <p className="text-[13px] text-gray-700 dark:text-gray-300">
-            Estimated stock-out risk in <span className="text-[#16a34a] font-medium">2 days</span>
+            Expiring soon: <span className="text-[#16a34a] font-medium">{expiringSoon} medicines</span>
           </p>
           <div className="mt-3 flex gap-2 items-start">
             <Diamond className="bg-[#f59e0b]" />
             <p className="text-[12px] text-gray-600 dark:text-gray-400">
-              Reorder critical medicines within 24 hours.
+              Review expiring inventory and reorder critical medicines within 24 hours.
             </p>
           </div>
         </div>
@@ -160,7 +179,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
         <div className="mt-auto pt-5">
           <div className="flex items-center gap-3 rounded-xl bg-[#f8fafc] px-4 py-3 text-[12px] text-gray-700 dark:bg-gray-950 dark:text-gray-300">
             <ThumbsUp size={14} className="text-[#3b82f6]" />
-            <span>Keep-futail shiaping within 24 hours.</span>
+            <span>Maintain critical stock levels and ensure timely restocking.</span>
           </div>
         </div>
       </div>
