@@ -39,21 +39,18 @@ export default function AdminDashboard() {
         ]}
       />
 
-      {/* SECTION B — Core Hospital KPIs */}
-      <section className="mt-6">
-        <CoreHospitalKpisCard />
-      </section>
+      {/* SECTION B + C + D — KPIs, Capacity, Pharmacy (3-up row like reference) */}
+      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
+        <CoreHospitalKpisCard className="h-full" />
 
-      {/* SECTION C — Capacity + SECTION D — Pharmacy */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <InsightPanel title="Capacity Intelligence" chartLabel="Past 7 days">
+        <InsightPanel title="Capacity Intelligence" chartLabel="Past 7 days" className="h-full">
           <p className="font-medium text-gray-900 dark:text-gray-100">Insight (placeholder)</p>
           <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
             Admissions and discharges stable this week. Emergency utilization is rising faster than other departments.
           </p>
         </InsightPanel>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <section className="h-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <header className="flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Pharmacy Intelligence</h3>
             <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">

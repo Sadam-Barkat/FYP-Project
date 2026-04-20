@@ -80,7 +80,7 @@ function MiniBars({ tone }: { tone: "up" | "down" | "flat" }) {
   );
 }
 
-export default function CoreHospitalKpisCard() {
+export default function CoreHospitalKpisCard({ className = "" }: { className?: string }) {
   const [todayOverview, setTodayOverview] = useState<HospitalOverview | null>(null);
   const [yesterdayOverview, setYesterdayOverview] = useState<HospitalOverview | null>(null);
   const [todayHr, setTodayHr] = useState<HrStaffOverview | null>(null);
@@ -163,7 +163,12 @@ export default function CoreHospitalKpisCard() {
   const icuTrend = diffPct(icuOcc, icuOccY);
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <section
+      className={[
+        "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900",
+        className,
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e6f2ff] text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">

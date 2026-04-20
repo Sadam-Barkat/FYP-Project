@@ -8,14 +8,21 @@ export default function InsightPanel({
   rightSlot,
   children,
   chartLabel,
+  className = "",
 }: {
   title: string;
   rightSlot?: React.ReactNode;
   children?: React.ReactNode;
   chartLabel?: string;
+  className?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <section
+      className={[
+        "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900",
+        className,
+      ].join(" ")}
+    >
       <header className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
         {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
