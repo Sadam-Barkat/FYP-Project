@@ -55,6 +55,17 @@ function MiniChartDown() {
   );
 }
 
+function MiniChartFlat() {
+  return (
+    <svg width="36" height="16" viewBox="0 0 36 16" className="mr-1 opacity-90">
+      <line x1="0" y1="8" x2="16" y2="8" stroke="#9ca3af" strokeWidth="1" strokeDasharray="2 2" />
+      <rect x="18" y="6" width="3" height="6" fill="#9ca3af" rx="1" />
+      <rect x="24" y="6" width="3" height="6" fill="#9ca3af" rx="1" />
+      <rect x="30" y="6" width="3" height="6" fill="#9ca3af" rx="1" />
+    </svg>
+  );
+}
+
 export default function CoreHospitalKpisCard({ className = "" }: { className?: string }) {
   const [todayOverview, setTodayOverview] = useState<HospitalOverview | null>(null);
   const [yesterdayOverview, setYesterdayOverview] = useState<HospitalOverview | null>(null);
@@ -154,7 +165,7 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               <span className="text-2xl ml-0.5">%</span>
             </p>
             <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-              {bedTrend.tone === "down" ? <MiniChartDown /> : <MiniChartUp />}
+              {bedTrend.tone === "down" ? <MiniChartDown /> : bedTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
             </div>
           </div>
@@ -190,7 +201,7 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               <span className="text-2xl text-[#d97706] ml-0.5">%</span>
             </p>
             <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-              {icuTrend.tone === "down" ? <MiniChartDown /> : <MiniChartUp />}
+              {icuTrend.tone === "down" ? <MiniChartDown /> : icuTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
             </div>
           </div>
