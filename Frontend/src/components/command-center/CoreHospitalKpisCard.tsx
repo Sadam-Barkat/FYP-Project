@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
+import { LayoutDashboard, TrendingUp, Users } from "lucide-react";
 
 type HospitalOverview = {
   total_beds: number;
@@ -26,57 +27,30 @@ function clampPct(n: number): number {
   return Math.max(0, Math.min(100, n));
 }
 
-function fmtPct(n: number): string {
-  return `${Math.round(clampPct(n))}%`;
-}
-
-function fmtPKR(n: number): string {
-  const v = Number.isFinite(n) ? n : 0;
-  return `PKR ${Math.round(v).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
-}
-
 function diffPct(today: number, yesterday: number): { tone: "up" | "down" | "flat"; text: string } {
   const d = Math.round((today - yesterday) * 10) / 10;
   if (!Number.isFinite(d) || d === 0) return { tone: "flat", text: "0%" };
   return { tone: d > 0 ? "up" : "down", text: `${d > 0 ? "+" : ""}${d}%` };
 }
 
-function diffInt(today: number, yesterday: number, label: string): { tone: "up" | "down" | "flat"; text: string } {
-  const d = Math.round((today ?? 0) - (yesterday ?? 0));
-  if (!Number.isFinite(d) || d === 0) return { tone: "flat", text: `vs yesterday` };
-  return { tone: d > 0 ? "up" : "down", text: `${label} ${d > 0 ? "+" : ""}${d}` };
-}
-
-function TrendPill({
-  tone,
-  children,
-}: {
-  tone: "up" | "down" | "flat";
-  children: React.ReactNode;
-}) {
-  const cls =
-    tone === "up"
-      ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900/60"
-      : tone === "down"
-        ? "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/30 dark:text-rose-200 dark:border-rose-900/60"
-        : "bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-900/40 dark:text-slate-200 dark:border-slate-800";
-
+function MiniChartUp() {
   return (
-    <span className={["inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium", cls].join(" ")}>
-      {children}
-    </span>
+    <svg width="36" height="16" viewBox="0 0 36 16" className="mr-1 opacity-90">
+      <line x1="0" y1="10" x2="16" y2="10" stroke="#9ca3af" strokeWidth="1" strokeDasharray="2 2" />
+      <rect x="18" y="8" width="3" height="8" fill="#fcd34d" rx="1" />
+      <rect x="24" y="4" width="3" height="12" fill="#f59e0b" rx="1" />
+      <rect x="30" y="0" width="3" height="16" fill="#d97706" rx="1" />
+    </svg>
   );
 }
 
-function MiniBars({ tone }: { tone: "up" | "down" | "flat" }) {
-  const barColor =
-    tone === "up" ? "bg-amber-500" : tone === "down" ? "bg-rose-500" : "bg-slate-400";
+function MiniChartDown() {
   return (
-    <span className="inline-flex items-end gap-[2px]" aria-hidden>
-      <span className={["h-2 w-[3px] rounded-sm", barColor].join(" ")} />
-      <span className={["h-3 w-[3px] rounded-sm opacity-80", barColor].join(" ")} />
-      <span className={["h-4 w-[3px] rounded-sm opacity-70", barColor].join(" ")} />
-    </span>
+    <svg width="36" height="16" viewBox="0 0 36 16" className="mr-1 opacity-90">
+      <line x1="0" y1="8" x2="20" y2="8" stroke="#9ca3af" strokeWidth="1" strokeDasharray="2 2" />
+      <rect x="24" y="4" width="3" height="12" fill="#f59e0b" rx="1" />
+      <rect x="30" y="8" width="3" height="8" fill="#d97706" rx="1" />
+    </svg>
   );
 }
 
@@ -142,22 +116,13 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
   }, [yesterdayOverview]);
 
   const totalStaff = todayHr?.live_staff_status?.length ?? 0;
-  const totalStaffY = yesterdayHr?.live_staff_status?.length ?? 0;
-
   const staffAvailable = todayHr?.staff_on_duty ?? 0;
-  const staffAvailableY = yesterdayHr?.staff_on_duty ?? 0;
 
   const activePatients = todayOverview?.active_patients?.total ?? 0;
-  const activePatientsY = yesterdayOverview?.active_patients?.total ?? 0;
-
   const icuOcc = todayOverview?.icu_occupancy ?? 0;
   const icuOccY = yesterdayOverview?.icu_occupancy ?? 0;
-
   const criticalPatients = todayOverview?.critical_condition_cases ?? 0;
-  const criticalPatientsY = yesterdayOverview?.critical_condition_cases ?? 0;
-
   const revenue = todayOverview?.todays_revenue ?? 0;
-  const revenueY = yesterdayOverview?.todays_revenue ?? 0;
 
   const bedTrend = diffPct(bedOccupancy, bedOccupancyY);
   const icuTrend = diffPct(icuOcc, icuOccY);
@@ -165,109 +130,100 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
   return (
     <section
       className={[
-        "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900",
+        "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col",
         className,
       ].join(" ")}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#e6f2ff] text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
-            ▦
-          </span>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Core Hospital KPIs</h2>
-        </div>
-        <span className="text-xs text-gray-500 dark:text-gray-400">{loading ? "Loading…" : "Live"}</span>
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800 shrink-0">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-[#1d4ed8] text-white shadow-sm">
+          <LayoutDashboard size={16} />
+        </span>
+        <h2 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100">Core Hospital KPIs</h2>
       </div>
 
-      <div className="grid grid-cols-1 divide-y divide-gray-100 dark:divide-gray-800 md:grid-cols-2 md:divide-x md:divide-y-0">
-        {/* Row 1 */}
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Bed Occupancy</p>
-            <div className="flex items-center gap-2">
-              <MiniBars tone={bedTrend.tone} />
-              <TrendPill tone={bedTrend.tone}>{bedTrend.text}</TrendPill>
-            </div>
-          </div>
-          <p className="mt-3 text-4xl font-semibold tracking-tight text-amber-600 dark:text-amber-300">
-            {fmtPct(bedOccupancy)}
-          </p>
-        </div>
-
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Active Patients</p>
-            <TrendPill tone={activePatients - activePatientsY >= 0 ? "up" : "down"}>
-              {diffInt(activePatients, activePatientsY, "").text}
-            </TrendPill>
-          </div>
-          <p className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {activePatients}
-          </p>
-        </div>
-
-        {/* Row 2 */}
-        <div className="border-t border-gray-100 p-6 dark:border-gray-800 md:border-t-0 md:border-r">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">ICU Occupancy</p>
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-block h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-800" />
-              <TrendPill tone={icuTrend.tone}>{icuTrend.text}</TrendPill>
-            </div>
-          </div>
-          <p className="mt-3 text-4xl font-semibold tracking-tight text-amber-600 dark:text-amber-300">
-            {fmtPct(icuOcc)}
-          </p>
-        </div>
-
-        <div className="border-t border-gray-100 p-6 dark:border-gray-800 md:border-t-0">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Critical Patients</p>
-          </div>
-          <p className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {criticalPatients}
-          </p>
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            High-severity alerts today (proxy)
-          </p>
-        </div>
-
-        {/* Row 3 */}
-        <div className="border-t border-gray-100 p-6 dark:border-gray-800 md:border-r">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Today&apos;s Revenue</p>
-          </div>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {fmtPKR(revenue)}
-          </p>
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {loading ? "—" : `Yesterday: ${fmtPKR(revenueY)}`}
-          </p>
-        </div>
-
-        <div className="border-t border-gray-100 p-6 dark:border-gray-800">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Staff Available</p>
-            <div className="flex items-center gap-2">
-              <TrendPill tone={(todayHr?.absent_today ?? 0) > 0 ? "down" : "flat"}>
-                {(todayHr?.absent_today ?? 0)} absent
-              </TrendPill>
-              <TrendPill tone="flat">{todayHr?.on_leave ?? 0} leave</TrendPill>
-            </div>
-          </div>
-          <div className="mt-3 flex items-end gap-2">
-            <p className="text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">{staffAvailable}</p>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              <span className="mx-1">/</span>
-              {totalStaff || totalStaffY}
+      {/* Grid */}
+      <div className="grid flex-1 grid-cols-2 grid-rows-3">
+        {/* Cell 1: Bed Occupancy */}
+        <div className="flex flex-col justify-center border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Bed Occupancy</p>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-3xl font-bold text-[#d97706]">
+              {Math.round(clampPct(bedOccupancy))}
+              <span className="text-2xl ml-0.5">%</span>
             </p>
-            <TrendPill tone={staffAvailable - staffAvailableY >= 0 ? "up" : "down"}>
-              {diffInt(staffAvailable, staffAvailableY, "").text}
-            </TrendPill>
+            <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              {bedTrend.tone === "down" ? <MiniChartDown /> : <MiniChartUp />}
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cell 2: Active Patients */}
+        <div className="flex flex-col justify-center border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Active Patients</p>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activePatients}</p>
+            <div className="flex h-7 items-center gap-1.5 rounded-full bg-[#f0f5ff] px-2.5 text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
+              <TrendingUp size={12} strokeWidth={2.5} />
+              <span className="text-[11px] font-semibold">Vs yesterday</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cell 3: ICU Occupancy */}
+        <div className="flex flex-col justify-center border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">ICU Occupancy</p>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              {Math.round(clampPct(icuOcc))}
+              <span className="text-2xl text-[#d97706] ml-0.5">%</span>
+            </p>
+            <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              {icuTrend.tone === "down" ? <MiniChartDown /> : <MiniChartUp />}
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cell 4: Critical Patients */}
+        <div className="flex flex-col justify-center border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Critical Patients</p>
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
+          </div>
+        </div>
+
+        {/* Cell 5: Today's Revenue */}
+        <div className="flex flex-col justify-center border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Revenue</p>
+          <div className="mt-2 flex items-center gap-2">
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <span className="text-[22px] font-semibold mr-1.5">PKR</span>
+              {Math.round(revenue).toLocaleString("en-PK")}
+            </p>
+          </div>
+        </div>
+
+        {/* Cell 6: Staff Available */}
+        <div className="flex flex-col justify-center px-6 py-5">
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Staff Available</p>
+            <span className="rounded bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
+              {todayHr?.absent_today || 0} absent
+            </span>
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{staffAvailable}</p>
+            <p className="text-[11px] font-semibold text-[#0066cc] dark:text-[#60a5fa] mb-1">out of</p>
+            <p className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">{totalStaff}</p>
+            <div className="flex items-center h-5 rounded bg-[#f0f5ff] px-1.5 gap-1 text-[#0066cc] mb-1 dark:bg-[#0b2a52] dark:text-[#60a5fa]">
+              <Users size={10} strokeWidth={2.5} />
+              <span className="text-[10px] font-semibold">Total</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
-
