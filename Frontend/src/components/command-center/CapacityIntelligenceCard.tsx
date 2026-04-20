@@ -93,18 +93,18 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
           Admissions - Discharges trend
         </h4>
 
-        <div className="h-44 w-full relative">
+        <div className="h-44 w-full relative mt-2">
           {loading && data.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
               Loading chart...
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <ComposedChart data={data} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorAdmissions" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#d97706" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -119,7 +119,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 11, fill: '#6b7280' }} 
-                  tickFormatter={(val) => `${val}`}
+                  tickFormatter={(val) => `${val}.0%`}
                 />
                 <Tooltip 
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -136,18 +136,18 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
                 <Line 
                   type="monotone" 
                   dataKey="discharges" 
-                  stroke="#0ea5e9" 
+                  stroke="#3b82f6" 
                   strokeWidth={2} 
-                  dot={{ r: 3, fill: "#0ea5e9", strokeWidth: 0 }} 
+                  dot={{ r: 3, fill: "#3b82f6", strokeWidth: 0 }} 
                   activeDot={{ r: 5 }} 
                   name="Discharges"
                 />
                 <Line 
                   type="monotone" 
                   dataKey="admissions" 
-                  stroke="#d97706" 
+                  stroke="#f59e0b" 
                   strokeWidth={2} 
-                  dot={{ r: 3, fill: "#d97706", strokeWidth: 0 }} 
+                  dot={{ r: 3, fill: "#f59e0b", strokeWidth: 0 }} 
                   activeDot={{ r: 5 }} 
                   name="Admissions"
                 />
@@ -156,14 +156,14 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
           )}
         </div>
 
-        <div className="mt-6 space-y-3 pt-4 text-[13px] text-gray-700 dark:border-gray-800 dark:text-gray-200 border-t border-dashed border-gray-200">
+        <div className="mt-4 space-y-3 pt-4 text-[13px] text-gray-700 dark:border-gray-800 dark:text-gray-200 border-t border-dashed border-gray-200">
           <div className="flex gap-3 items-start">
-            <InsightDiamond color="#d97706" />
-            <p>Admissions and discharge stable this week</p>
+            <InsightDiamond color="#f59e0b" />
+            <p>Admissions and discharge trend placeholder.</p>
           </div>
           <div className="flex gap-3 items-start">
-            <InsightDiamond color="#0ea5e9" />
-            <p>Emergency department utilization increasing faster than other departments.</p>
+            <InsightDiamond color="#10b981" />
+            <p>Department utilization trend insight placeholder.</p>
           </div>
         </div>
 
