@@ -49,10 +49,9 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
         
         // Format dates for the X-axis
         const trend = (json.admissions_discharges_trend || []).map((item: any) => {
-          const d = new Date(item.date);
           return {
             ...item,
-            displayDate: `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`,
+            displayDate: item.day || item.date, // Use the 'day' string provided by the backend
           };
         });
         setData(trend);
