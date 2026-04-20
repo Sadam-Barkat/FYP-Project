@@ -23,8 +23,14 @@ export default function Sidebar() {
   }, []);
 
   const navItems = ADMIN_NAV_ITEMS;
+  const path = pathname ?? "";
 
-  if (!shouldShowAdminSidebar(role, pathname)) {
+  // Staff-style billing workspace: never show the admin rail (matches nurse-style layout)
+  if (path.startsWith("/admin/billing-finance")) {
+    return null;
+  }
+
+  if (!shouldShowAdminSidebar(role, path)) {
     return null;
   }
 
@@ -49,7 +55,8 @@ export default function Sidebar() {
       {/* Navigation Links */}
       <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (pathname.startsWith(item.href + '/') && item.href !== '/admin');
+          const isActive =
+            path === item.href || (path.startsWith(item.href + "/") && item.href !== "/admin");
           const Icon = item.icon;
           
           return (

@@ -79,25 +79,16 @@ export default function BillingFinancePage() {
   const [chargeSubmitting, setChargeSubmitting] = useState(false);
   const [markingPaidId, setMarkingPaidId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [userRole, setUserRole] = useState<string>("admin");
   const [userDisplayName, setUserDisplayName] = useState<string>("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let r = sessionStorage.getItem("userRole");
-    if (!r) {
-      r = localStorage.getItem("userRole");
-      if (r) sessionStorage.setItem("userRole", r);
-    }
-    if (r) setUserRole(r);
     const name =
       sessionStorage.getItem("userName") ||
       localStorage.getItem("userName") ||
       "";
     setUserDisplayName(name);
   }, []);
-
-  const staffFinanceLayout = userRole === "finance";
 
   const fetchOverview = useCallback(async () => {
     try {
@@ -219,60 +210,39 @@ export default function BillingFinancePage() {
   const invoices = overview?.recent_invoices ?? [];
   const revenueTrend = overview?.revenue_vs_expenses ?? [];
 
-  const shellClass = staffFinanceLayout
-    ? "dashboard-page-shell max-w-5xl pb-8 transition-colors sm:pb-12"
-    : "dashboard-page-shell max-w-7xl";
-
   return (
-    <div id="dashboard-content" className={shellClass}>
-      {staffFinanceLayout ? (
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
-            Billing workspace
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Add charges from clinical events, then mark payment when received. Revenue totals use confirmed payments only.
+    <div
+      id="dashboard-content"
+      className="dashboard-page-shell max-w-5xl pb-8 transition-colors sm:pb-12"
+    >
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
+          Billing workspace
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          Add charges from clinical events, then mark payment when received. Revenue totals use confirmed payments only.
+        </p>
+        {userDisplayName ? (
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+            Logged in as{" "}
+            <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
           </p>
-          {userDisplayName ? (
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
-              Logged in as{" "}
-              <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
-            </p>
-          ) : null}
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400" htmlFor="billing-date">
-                Report date
-              </label>
-              <input
-                id="billing-date"
-                type="date"
-                className="border border-gray-200 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0066cc] bg-white dark:bg-gray-800 dark:text-gray-100"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-          <h2 className="text-3xl font-semibold text-[#0066cc] text-center md:text-left dark:text-[#60a5fa]">
-            Billing & Finance Overview
-          </h2>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 dark:text-gray-400" htmlFor="billing-date-admin">
-              Select date:
+            <label className="text-sm text-gray-600 dark:text-gray-400" htmlFor="billing-date">
+              Report date
             </label>
             <input
-              id="billing-date-admin"
+              id="billing-date"
               type="date"
-              className="border border-gray-200 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-100"
+              className="border border-gray-200 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0066cc] bg-white dark:bg-gray-800 dark:text-gray-100"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
             />
           </div>
         </div>
-      )}
+      </div>
 
       {isLoading && !overview && (
         <p className="text-sm text-gray-500">Loading billing & finance data...</p>

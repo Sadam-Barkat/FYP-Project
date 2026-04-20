@@ -57,20 +57,23 @@ export const FINANCE_NAV_ITEMS: DashboardNavItem[] = [
 ];
 
 /** Same route visibility rules as the desktop sidebar: admin sees full admin nav on md+. */
-export function shouldShowAdminSidebar(role: string, pathname: string): boolean {
-  if (role === "doctor" || pathname.startsWith("/doctor")) return false;
-  if (role === "nurse" || pathname.startsWith("/nurse")) return false;
-  if (role === "receptionist" || pathname.startsWith("/reception")) return false;
-  if (role === "laboratorian" || pathname.startsWith("/laboratory-entry")) return false;
+export function shouldShowAdminSidebar(role: string, pathname: string | null): boolean {
+  const path = pathname ?? "";
+  if (role === "doctor" || path.startsWith("/doctor")) return false;
+  if (role === "nurse" || path.startsWith("/nurse")) return false;
+  if (role === "receptionist" || path.startsWith("/reception")) return false;
+  if (role === "laboratorian" || path.startsWith("/laboratory-entry")) return false;
   if (role === "finance") return false;
+  if (path.startsWith("/admin/billing-finance")) return false;
   return true;
 }
 
-export function getMobileNavItems(role: string, pathname: string): DashboardNavItem[] {
-  if (role === "doctor" || pathname.startsWith("/doctor")) return DOCTOR_NAV_ITEMS;
-  if (role === "nurse" || pathname.startsWith("/nurse")) return NURSE_NAV_ITEMS;
-  if (role === "receptionist" || pathname.startsWith("/reception")) return RECEPTION_NAV_ITEMS;
-  if (role === "laboratorian" || pathname.startsWith("/laboratory-entry")) return LAB_NAV_ITEMS;
+export function getMobileNavItems(role: string, pathname: string | null): DashboardNavItem[] {
+  const path = pathname ?? "";
+  if (role === "doctor" || path.startsWith("/doctor")) return DOCTOR_NAV_ITEMS;
+  if (role === "nurse" || path.startsWith("/nurse")) return NURSE_NAV_ITEMS;
+  if (role === "receptionist" || path.startsWith("/reception")) return RECEPTION_NAV_ITEMS;
+  if (role === "laboratorian" || path.startsWith("/laboratory-entry")) return LAB_NAV_ITEMS;
   if (role === "finance") return FINANCE_NAV_ITEMS;
   return ADMIN_NAV_ITEMS;
 }
