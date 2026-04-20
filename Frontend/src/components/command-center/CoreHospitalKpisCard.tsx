@@ -11,6 +11,7 @@ type HospitalOverview = {
   todays_revenue: number;
   icu_occupancy: number;
   critical_condition_cases: number;
+  emergency_cases: number;
 };
 
 type HrStaffOverview = {
@@ -157,6 +158,9 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
             </div>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : `Yesterday was ${Math.round(clampPct(bedOccupancyY))}%. ${bedOccupancy > bedOccupancyY ? "Higher demand today." : bedOccupancy < bedOccupancyY ? "Lower demand today." : "Stable demand."}`}
+          </p>
         </div>
 
         {/* Cell 2: Active Patients */}
@@ -166,9 +170,15 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activePatients}</p>
             <div className="flex h-7 items-center gap-1.5 rounded-full bg-[#f0f5ff] px-2.5 text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
               <TrendingUp size={12} strokeWidth={2.5} />
-              <span className="text-[11px] font-semibold">Vs yesterday</span>
+              <span className="text-[11px] font-semibold">
+                {activePatients - (yesterdayOverview?.active_patients?.total ?? 0) > 0 ? "+" : ""}
+                {activePatients - (yesterdayOverview?.active_patients?.total ?? 0)} Vs yesterday
+              </span>
             </div>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : `${yesterdayOverview?.active_patients?.total ?? 0} patients yesterday. ${activePatients > (yesterdayOverview?.active_patients?.total ?? 0) ? "Inflow is increasing." : "Inflow is decreasing."}`}
+          </p>
         </div>
 
         {/* Cell 3: ICU Occupancy */}
@@ -184,6 +194,9 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
             </div>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : `Yesterday: ${Math.round(clampPct(icuOccY))}%. ${icuOcc > 80 ? "Critical levels, monitor closely." : "Sufficient capacity available."}`}
+          </p>
         </div>
 
         {/* Cell 4: Critical Patients */}
@@ -192,6 +205,9 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
           <div className="mt-2 flex items-center gap-3">
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : `Includes ${todayOverview?.emergency_cases ?? 0} emergency cases. (Yesterday: ${yesterdayOverview?.critical_condition_cases ?? 0} critical, ${yesterdayOverview?.emergency_cases ?? 0} emergency).`}
+          </p>
         </div>
 
         {/* Cell 5: Today's Revenue */}
@@ -203,6 +219,9 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               {Math.round(revenue).toLocaleString("en-PK")}
             </p>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : `Yesterday: PKR ${Math.round(yesterdayOverview?.todays_revenue ?? 0).toLocaleString("en-PK")} (${revenue - (yesterdayOverview?.todays_revenue ?? 0) >= 0 ? '+' : ''}${Math.round((yesterdayOverview?.todays_revenue ?? 0) > 0 ? ((revenue - (yesterdayOverview?.todays_revenue ?? 0)) / (yesterdayOverview?.todays_revenue ?? 0)) * 100 : 0)}%).`}
+          </p>
         </div>
 
         {/* Cell 6: Staff Available */}
@@ -222,6 +241,9 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               <span className="text-[10px] font-semibold">Total</span>
             </div>
           </div>
+          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+            {loading ? "..." : (staffAvailable / (totalStaff || 1) < 0.8 ? "Warning: Operating with reduced staff." : "Coverage is optimal for current patient load.")}
+          </p>
         </div>
       </div>
     </section>
