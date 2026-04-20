@@ -250,7 +250,7 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               </div>
               <div className="mt-1 flex items-baseline gap-2">
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
-                <span className="text-[10px] font-medium text-rose-600">{diffInt(criticalPatients, criticalPatientsY, "").text}</span>
+                <span className={`text-[10px] font-medium ${diffInt(criticalPatients, criticalPatientsY, "").tone === "down" ? "text-emerald-600" : diffInt(criticalPatients, criticalPatientsY, "").tone === "up" ? "text-rose-600" : "text-gray-500"}`}>{diffInt(criticalPatients, criticalPatientsY, "").text}</span>
               </div>
             </div>
             <div>
@@ -260,7 +260,7 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
               </div>
               <div className="mt-1 flex items-baseline gap-2">
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{emergencyCases}</p>
-                <span className="text-[10px] font-medium text-amber-600">{diffInt(emergencyCases, emergencyCasesY, "").text}</span>
+                <span className={`text-[10px] font-medium ${diffInt(emergencyCases, emergencyCasesY, "").tone === "down" ? "text-emerald-600" : diffInt(emergencyCases, emergencyCasesY, "").tone === "up" ? "text-amber-600" : "text-gray-500"}`}>{diffInt(emergencyCases, emergencyCasesY, "").text}</span>
               </div>
             </div>
           </div>
