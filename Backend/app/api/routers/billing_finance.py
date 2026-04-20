@@ -240,6 +240,30 @@ async def list_pending_billing_charges(
     return rows
 
 
+@router.get("/billing-patients/search")
+async def search_patients_for_billing(
+    q: str = Query("", max_length=120),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_finance_or_admin),
+    limit: int = Query(25, ge=1, le=50),
+) -> List[Dict[str, Any]]:
+    """Name search for attaching charges to a patient (finance / admin)."""
+    raw = (q or "").strip()
+    if len(raw) < 2:
+        return []
+    safe = raw.replace("\\", "").replace("%", "").replace("_", "")
+    if not safe:
+        return []
+    pattern = f"%{safe}%"
+    r = await db.execute(
+        select(Patient.id, Patient.name, Patient.age)
+        .where(Patient.name.ilike(pattern))
+        .order_by(Patient.name.asc())
+        .limit(limit)
+    )
+    return [{"id": row.id, "name": row.name, "age": int(row.age)} for row in r]
+
+
 @router.post("/billing-charges", status_code=status.HTTP_201_CREATED)
 async def create_billing_charge(
     body: BillingChargeCreate,

@@ -21,7 +21,9 @@ export default function HeaderTitle() {
 
   // Pathname first so billing route always shows correctly (admin or finance), including first paint.
   let title = "Admin Dashboard";
-  if (path.startsWith("/admin/billing-finance")) {
+  if (path.startsWith("/admin/billing-finance/analytics")) {
+    title = "Billing analytics";
+  } else if (path.startsWith("/admin/billing-finance")) {
     title = "Billing & Finance";
   } else if (path.startsWith("/admin/ops-copilot")) {
     title = "AI Hospital Ops Copilot";

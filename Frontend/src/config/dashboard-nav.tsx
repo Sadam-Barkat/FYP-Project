@@ -53,7 +53,8 @@ export const LAB_NAV_ITEMS: DashboardNavItem[] = [
 ];
 
 export const FINANCE_NAV_ITEMS: DashboardNavItem[] = [
-  { name: "Billing & Finance", href: "/admin/billing-finance", icon: DollarSign },
+  { name: "Workspace", href: "/admin/billing-finance", icon: DollarSign },
+  { name: "Revenue & reports", href: "/admin/billing-finance/analytics", icon: LineChart },
 ];
 
 /** Same route visibility rules as the desktop sidebar: admin sees full admin nav on md+. */
