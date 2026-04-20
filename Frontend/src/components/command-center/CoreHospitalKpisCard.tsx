@@ -66,6 +66,13 @@ function MiniChartFlat() {
   );
 }
 
+function diffInt(current: number, previous: number, suffix: string = "") {
+  const diff = current - previous;
+  if (diff > 0) return { tone: "up", text: `+${diff}${suffix}` };
+  if (diff < 0) return { tone: "down", text: `${diff}${suffix}` };
+  return { tone: "flat", text: `0${suffix}` };
+}
+
 export default function CoreHospitalKpisCard({ className = "" }: { className?: string }) {
   const [todayOverview, setTodayOverview] = useState<HospitalOverview | null>(null);
   const [yesterdayOverview, setYesterdayOverview] = useState<HospitalOverview | null>(null);
@@ -134,10 +141,31 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
   const icuOcc = todayOverview?.icu_occupancy ?? 0;
   const icuOccY = yesterdayOverview?.icu_occupancy ?? 0;
   const criticalPatients = todayOverview?.critical_condition_cases ?? 0;
+  const criticalPatientsY = yesterdayOverview?.critical_condition_cases ?? 0;
   const revenue = todayOverview?.todays_revenue ?? 0;
 
   const bedTrend = diffPct(bedOccupancy, bedOccupancyY);
   const icuTrend = diffPct(icuOcc, icuOccY);
+
+  // High risk calculations
+  const emergencyCases = todayOverview?.emergency_cases ?? 0;
+  const emergencyCasesY = yesterdayOverview?.emergency_cases ?? 0;
+  const totalHighRisk = criticalPatients + emergencyCases;
+  const critPct = totalHighRisk > 0 ? (criticalPatients / totalHighRisk) * 100 : 0;
+  const emergPct = totalHighRisk > 0 ? (emergencyCases / totalHighRisk) * 100 : 0;
+
+  let highRiskInsight = "High-risk patient volume is stable compared to yesterday.";
+  if (criticalPatients > criticalPatientsY && emergencyCases > emergencyCasesY) {
+    highRiskInsight = "Both critical and emergency cases increased since yesterday. Ensure ICU and ED readiness.";
+  } else if (criticalPatients > criticalPatientsY) {
+    highRiskInsight = "Critical cases increased since yesterday. Monitor ICU availability.";
+  } else if (emergencyCases > emergencyCasesY) {
+    highRiskInsight = "Emergency influx is higher today. Monitor ED triage times.";
+  } else if (criticalPatients < criticalPatientsY && emergencyCases < emergencyCasesY) {
+    highRiskInsight = "High-risk patient volume has decreased since yesterday.";
+  } else if (totalHighRisk === 0) {
+    highRiskInsight = "No critical or emergency cases currently active.";
+  }
 
   return (
     <section
@@ -210,14 +238,40 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
           </p>
         </div>
 
-        {/* Cell 4: Critical Patients */}
+        {/* Cell 4: High-Risk Patients */}
         <div className="flex flex-col justify-center border-b border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Critical Patients</p>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
+          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">High-Risk Patients</p>
+          
+          <div className="mt-2 flex items-end gap-6">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-rose-500"></div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Critical</span>
+              </div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
+                <span className="text-[10px] font-medium text-rose-600">{diffInt(criticalPatients, criticalPatientsY, "").text}</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Emergency</span>
+              </div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{emergencyCases}</p>
+                <span className="text-[10px] font-medium text-amber-600">{diffInt(emergencyCases, emergencyCasesY, "").text}</span>
+              </div>
+            </div>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : `Includes ${todayOverview?.emergency_cases ?? 0} emergency cases. (Yesterday: ${yesterdayOverview?.critical_condition_cases ?? 0} critical, ${yesterdayOverview?.emergency_cases ?? 0} emergency).`}
+          
+          <div className="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div style={{ width: `${critPct}%` }} className="bg-rose-500 transition-all duration-500" />
+            <div style={{ width: `${emergPct}%` }} className="bg-amber-500 transition-all duration-500" />
+          </div>
+          
+          <p className="mt-2.5 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
+            {loading ? "..." : highRiskInsight}
           </p>
         </div>
 
