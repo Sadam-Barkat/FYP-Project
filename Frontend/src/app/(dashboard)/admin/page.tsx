@@ -5,6 +5,7 @@ import InsightPanel from "@/components/command-center/InsightPanel";
 import CoreHospitalKpisCard from "@/components/command-center/CoreHospitalKpisCard";
 import CapacityIntelligenceCard from "@/components/command-center/CapacityIntelligenceCard";
 import PharmacyIntelligenceCard from "@/components/command-center/PharmacyIntelligenceCard";
+import ClinicalRiskCard from "@/components/command-center/ClinicalRiskCard";
 
 export default function AdminDashboard() {
   return (
@@ -35,29 +36,7 @@ export default function AdminDashboard() {
 
       {/* SECTION E — Clinical Risk + SECTION F — Staff */}
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <header className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Clinical Risk Intelligence</h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
-          </header>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Critical alerts</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">3</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Abnormal lab trends</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">5</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Emergency cases</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">2</p>
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
-            Critical patients concentrated in Emergency and ICU. Prioritize review of high-severity alerts.
-          </div>
-        </section>
+        <ClinicalRiskCard className="h-full" />
 
         <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <header className="flex items-center justify-between gap-3">
