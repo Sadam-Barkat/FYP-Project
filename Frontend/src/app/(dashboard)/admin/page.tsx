@@ -3,6 +3,7 @@
 import SummaryPanel from "@/components/command-center/SummaryPanel";
 import InsightPanel from "@/components/command-center/InsightPanel";
 import CoreHospitalKpisCard from "@/components/command-center/CoreHospitalKpisCard";
+import CapacityIntelligenceCard from "@/components/command-center/CapacityIntelligenceCard";
 
 export default function AdminDashboard() {
   return (
@@ -43,12 +44,7 @@ export default function AdminDashboard() {
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
         <CoreHospitalKpisCard className="h-full" />
 
-        <InsightPanel title="Capacity Intelligence" chartLabel="Past 7 days" className="h-full">
-          <p className="font-medium text-gray-900 dark:text-gray-100">Insight (placeholder)</p>
-          <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
-            Admissions and discharges stable this week. Emergency utilization is rising faster than other departments.
-          </p>
-        </InsightPanel>
+        <CapacityIntelligenceCard className="h-full" />
 
         <section className="h-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <header className="flex items-center justify-between gap-3">
