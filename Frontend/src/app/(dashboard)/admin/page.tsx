@@ -1,6 +1,6 @@
 "use client";
 
-import SummaryPanel from "@/components/command-center/SummaryPanel";
+import ExecutiveSummaryCard from "@/components/command-center/ExecutiveSummaryCard";
 import InsightPanel from "@/components/command-center/InsightPanel";
 import CoreHospitalKpisCard from "@/components/command-center/CoreHospitalKpisCard";
 import CapacityIntelligenceCard from "@/components/command-center/CapacityIntelligenceCard";
@@ -22,24 +22,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* SECTION A — Executive Intelligence Summary */}
-      <SummaryPanel
-        title="Executive Summary"
-        subtitle="Hospital operational status overview"
-        leftTitle="Key Observations"
-        rightTitle="Recommended Actions"
-        leftItems={[
-          "ICU occupancy increasing steadily",
-          "7 staff absent today may affect response time",
-          "20 system warnings generated today",
-          "Revenue stable but outstanding payments remain high",
-        ]}
-        rightItems={[
-          "Prepare additional ICU bed capacity",
-          "Reassign staff to high-workload departments",
-          "Reorder critical medicines within 24 hours",
-          "Review high-severity alerts and close aging items",
-        ]}
-      />
+      <ExecutiveSummaryCard />
 
       {/* SECTION B + C + D — KPIs, Capacity, Pharmacy (3-up row like reference) */}
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
