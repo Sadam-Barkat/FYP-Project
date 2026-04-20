@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Circle, PieChart } from "lucide-react";
+import { Building2, PieChart } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -18,8 +18,16 @@ import { getAuthHeaders } from "@/lib/auth";
 
 const API_BASE = getApiBaseUrl();
 
-function Diamond({ className }: { className: string }) {
-  return <span className={["mt-1 h-2 w-2 rotate-45 rounded-sm shrink-0", className].join(" ")} aria-hidden />;
+function InsightDiamond({ color }: { color: string }) {
+  return (
+    <span 
+      className="mt-1.5 flex h-2.5 w-2.5 shrink-0 items-center justify-center rotate-45 rounded-[1px]" 
+      style={{ backgroundColor: color }} 
+      aria-hidden
+    >
+      <span className="h-1 w-1 rounded-full bg-white dark:bg-gray-900" />
+    </span>
+  );
 }
 
 export default function CapacityIntelligenceCard({ className = "" }: { className?: string }) {
@@ -150,12 +158,12 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
 
         <div className="mt-6 space-y-3 pt-4 text-[13px] text-gray-700 dark:border-gray-800 dark:text-gray-200 border-t border-dashed border-gray-200">
           <div className="flex gap-3 items-start">
-            <Diamond className="bg-[#d97706]" />
-            <p>Admissions and discharge trend placeholder.</p>
+            <InsightDiamond color="#d97706" />
+            <p>Admissions and discharge stable this week</p>
           </div>
           <div className="flex gap-3 items-start">
-            <Circle size={8} className="mt-1 shrink-0 fill-[#0d9488] text-[#0d9488]" />
-            <p>Department utilization trend insight placeholder.</p>
+            <InsightDiamond color="#0ea5e9" />
+            <p>Emergency department utilization increasing faster than other departments.</p>
           </div>
         </div>
 
