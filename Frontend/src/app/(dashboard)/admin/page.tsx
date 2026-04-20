@@ -1,8 +1,8 @@
 "use client";
 
 import SummaryPanel from "@/components/command-center/SummaryPanel";
-import KpiCard from "@/components/command-center/KpiCard";
 import InsightPanel from "@/components/command-center/InsightPanel";
+import CoreHospitalKpisCard from "@/components/command-center/CoreHospitalKpisCard";
 
 export default function AdminDashboard() {
   return (
@@ -41,19 +41,7 @@ export default function AdminDashboard() {
 
       {/* SECTION B — Core Hospital KPIs */}
       <section className="mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Core Hospital KPIs</h2>
-          <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder values</span>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <KpiCard title="Bed Occupancy" value="69%" trend={{ tone: "up", text: "+1%" }} description="Across all wards (placeholder)" accent="amber" />
-          <KpiCard title="Active Patients" value="320" trend={{ tone: "flat", text: "0%" }} description="Currently admitted (placeholder)" accent="blue" />
-          <KpiCard title="ICU Occupancy" value="72%" trend={{ tone: "down", text: "-4%" }} description="ICU utilization (placeholder)" accent="violet" />
-          <KpiCard title="Critical Patients" value="18" trend={{ tone: "up", text: "+2" }} description="High severity cases (placeholder)" accent="rose" />
-          <KpiCard title="Today’s Revenue" value="PKR 25,150" trend={{ tone: "flat", text: "Stable" }} description="Paid billings only (placeholder)" accent="green" />
-          <KpiCard title="Staff Available" value="42 / 49" trend={{ tone: "down", text: "7 absent" }} description="On duty now (placeholder)" accent="blue" />
-        </div>
+        <CoreHospitalKpisCard />
       </section>
 
       {/* SECTION C — Capacity + SECTION D — Pharmacy */}
