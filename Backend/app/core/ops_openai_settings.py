@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Backend/ directory (parent of app/)
@@ -29,6 +30,8 @@ class OpsOpenAISettings(BaseSettings):
 
     OPENAI_API_KEY: str = ""
     OPENAI_OPS_COPILOT_MODEL: str = "gpt-4o-mini"
+    # Agents SDK Runner: each tool call + model step consumes turns (default SDK cap is 10).
+    OPENAI_OPS_COPILOT_MAX_TURNS: int = Field(default=40, ge=10, le=128)
 
 
 def get_ops_openai_settings() -> OpsOpenAISettings:

@@ -166,11 +166,14 @@ async def run_ops_copilot_agent(db: AsyncSession) -> Dict[str, Any]:
     agent = _build_agent(model)
     run_context = OpsCopilotContext(db=db)
 
+    max_turns = int(settings.OPENAI_OPS_COPILOT_MAX_TURNS)
+
     try:
         result = await Runner.run(
             agent,
             USER_PROMPT,
             context=run_context,
+            max_turns=max_turns,
         )
     except Exception as e:
         raise RuntimeError(f"Ops Copilot agent run failed: {e}") from e
