@@ -25,11 +25,6 @@ export default function Sidebar() {
   const navItems = ADMIN_NAV_ITEMS;
   const path = pathname ?? "";
 
-  // Staff-style billing workspace: never show the admin rail (matches nurse-style layout)
-  if (path.startsWith("/admin/billing-finance")) {
-    return null;
-  }
-
   if (!shouldShowAdminSidebar(role, path)) {
     return null;
   }

@@ -22,12 +22,9 @@ export default function ExportPDFButton() {
     if (r) setRole(r);
   }, []);
 
-  // Billing page: staff-style, no screenshot export. Finance role: no export on other admin routes either.
   const path = pathname ?? "";
   const showExport =
-    (path.startsWith("/admin") || path.startsWith("/doctor")) &&
-    role !== "finance" &&
-    !path.startsWith("/admin/billing-finance");
+    (path.startsWith("/admin") || path.startsWith("/doctor")) && role !== "finance";
   if (!showExport) return null;
 
   const handleExport = async () => {

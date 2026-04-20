@@ -15,6 +15,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthHeaders } from "@/lib/auth";
 
 const API_BASE = getApiBaseUrl();
 
@@ -41,12 +42,6 @@ type DailySummary = {
   revenue_yesterday_pkr: number;
   revenue_change_pct: number | null;
 };
-
-function authHeaders(): HeadersInit {
-  if (typeof window === "undefined") return {};
-  const t = localStorage.getItem("access_token");
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
 
 function statusBadgeClass(s: string) {
   switch (s) {
@@ -88,7 +83,7 @@ export default function OpsCopilotPage() {
   const loadAll = useCallback(async () => {
     try {
       setError(null);
-      const h = authHeaders();
+      const h = getAuthHeaders();
       const [latestRes, listRes, sumRes, envRes] = await Promise.all([
         fetch(`${API_BASE}/api/ops-copilot/briefings/latest`, { headers: h }),
         fetch(`${API_BASE}/api/ops-copilot/briefings?limit=30`, { headers: h }),
@@ -99,8 +94,13 @@ export default function OpsCopilotPage() {
         setError("Please sign in as admin to use Ops Copilot.");
         return;
       }
+      if (latestRes.status === 403 || listRes.status === 403) {
+        setError("Admin access required for Ops Copilot.");
+        return;
+      }
       if (!latestRes.ok || !listRes.ok) {
-        throw new Error("Failed to load briefings");
+        const detail = await latestRes.text().catch(() => "");
+        throw new Error(detail || "Failed to load briefings");
       }
       const latestJson = await latestRes.json();
       const listJson = await listRes.json();
@@ -117,8 +117,14 @@ export default function OpsCopilotPage() {
       } else if (alive.current) {
         setOpenaiEnvOk(null);
       }
-    } catch {
-      if (alive.current) setError("Could not load Ops Copilot data.");
+    } catch (e) {
+      if (alive.current) {
+        setError(
+          e instanceof Error && e.message && e.message !== "Failed to load briefings"
+            ? e.message
+            : "Could not load Ops Copilot data.",
+        );
+      }
     } finally {
       if (alive.current) setLoading(false);
     }
@@ -144,7 +150,7 @@ export default function OpsCopilotPage() {
     try {
       const res = await fetch(`${API_BASE}/api/ops-copilot/briefings/generate`, {
         method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
       });
       const text = await res.text();
       let detail = text;
@@ -169,7 +175,7 @@ export default function OpsCopilotPage() {
     try {
       const res = await fetch(`${API_BASE}/api/ops-copilot/briefings/${id}/status`, {
         method: "PATCH",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) return;

@@ -65,7 +65,6 @@ export function shouldShowAdminSidebar(role: string, pathname: string | null): b
   if (role === "receptionist" || path.startsWith("/reception")) return false;
   if (role === "laboratorian" || path.startsWith("/laboratory-entry")) return false;
   if (role === "finance") return false;
-  if (path.startsWith("/admin/billing-finance")) return false;
   return true;
 }
 

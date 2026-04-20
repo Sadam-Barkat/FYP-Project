@@ -55,15 +55,24 @@ export default function BillingFinancePage() {
   const [markingPaidId, setMarkingPaidId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [userDisplayName, setUserDisplayName] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("admin");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    let r = sessionStorage.getItem("userRole");
+    if (!r) {
+      r = localStorage.getItem("userRole");
+      if (r) sessionStorage.setItem("userRole", r);
+    }
+    if (r) setUserRole(r);
     const name =
       sessionStorage.getItem("userName") ||
       localStorage.getItem("userName") ||
       "";
     setUserDisplayName(name);
   }, []);
+
+  const isFinanceUser = userRole === "finance";
 
   const fetchSignalsAndPending = useCallback(async () => {
     try {
@@ -209,18 +218,27 @@ export default function BillingFinancePage() {
     }
   };
 
+  const shellClass = isFinanceUser
+    ? "dashboard-page-shell max-w-5xl pb-8 transition-colors sm:pb-12"
+    : "dashboard-page-shell max-w-7xl pb-8 transition-colors sm:pb-12";
+
   return (
-    <div
-      id="dashboard-content"
-      className="dashboard-page-shell max-w-5xl pb-8 transition-colors sm:pb-12"
-    >
+    <div id="dashboard-content" className={shellClass}>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
-            Billing workspace
+          <h2
+            className={
+              isFinanceUser
+                ? "text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl"
+                : "text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl"
+            }
+          >
+            {isFinanceUser ? "Billing workspace" : "Billing & Finance"}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Queue clinical events, add charges, confirm payment. Revenue KPIs live on the reports page.
+            {isFinanceUser
+              ? "Queue clinical events, add charges, confirm payment. Revenue KPIs live on the reports page."
+              : "Operational billing: queue, charges, and payments. Open Revenue & reports for dashboards and trends."}
           </p>
           {userDisplayName ? (
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
