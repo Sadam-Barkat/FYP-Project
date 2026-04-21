@@ -200,7 +200,38 @@ async def get_patients_beds_overview(
                 }
             )
 
+
+        # ----- Previous 7 Days (for comparison) -----
+        fourteen_days_ago = base_date - timedelta(days=13)
+        previous_seven_days_end = base_date - timedelta(days=7)
+
+        prev_admissions_result = await db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .where(
+                and_(
+                    cast(Admission.admission_date, Date) >= fourteen_days_ago,
+                    cast(Admission.admission_date, Date) <= previous_seven_days_end,
+                )
+            )
+        )
+        prev_admissions = prev_admissions_result.scalar_one() or 0
+
+        prev_discharges_result = await db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .where(
+                and_(
+                    Admission.discharge_date.is_not(None),
+                    cast(Admission.discharge_date, Date) >= fourteen_days_ago,
+                    cast(Admission.discharge_date, Date) <= previous_seven_days_end,
+                )
+            )
+        )
+        prev_discharges = prev_discharges_result.scalar_one() or 0
+
         return {
+
             "total_capacity": int(total_capacity),
             "total_patients": int(total_patients),
             "occupied_beds": int(occupied_beds),
@@ -210,6 +241,8 @@ async def get_patients_beds_overview(
             "critical_condition_cases": int(critical_condition_cases),
             "bed_occupancy_by_department": bed_occupancy_by_department,
             "admissions_discharges_trend": admissions_discharges_trend,
+            "previous_7_days_admissions": int(prev_admissions),
+            "previous_7_days_discharges": int(prev_discharges),
             "selected_date": base_date.isoformat(),
         }
 
