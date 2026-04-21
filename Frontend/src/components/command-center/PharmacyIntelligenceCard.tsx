@@ -83,7 +83,19 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
     last_7_days_avg: { critical_drugs: 0, low_stock_drugs: 0 }
   };
 
+  const calcChange = (current: number, previous: number) => {
+    if (previous === 0) return { pct: 0, dir: 'flat' };
+    const diff = current - previous;
+    const pct = Math.abs(Math.round((diff / previous) * 100));
+    return { pct, dir: diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat' };
+  };
+
+  const critChange = calcChange(comparison.current_7_days.critical_drugs, comparison.previous_7_days.critical_drugs);
+  const lowChange = calcChange(comparison.current_7_days.low_stock_drugs, comparison.previous_7_days.low_stock_drugs);
+
   const totalAvg = comparison.last_7_days_avg.critical_drugs + comparison.last_7_days_avg.low_stock_drugs;
+  const totalPrev = comparison.previous_7_days.critical_drugs + comparison.previous_7_days.low_stock_drugs;
+  const totalChange = calcChange(totalAvg, totalPrev);
 
   return (
     <section
@@ -169,7 +181,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 <BriefcaseMedical size={16} className="text-red-700 shrink-0" />
                 <div className="flex-1">
                   <div className="flex justify-between items-center text-[13px]">
-                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate w-20">{criticalMed1?.medicine_name || "Investment"}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate w-20">{criticalMed1?.medicine_name || "N/A"}</span>
                     <div className="w-16 h-2.5 bg-gray-100 dark:bg-gray-800 rounded-sm overflow-hidden flex">
                       <div className="w-1/4 bg-amber-300 h-full" />
                       <div className="w-1/2 bg-amber-400 h-full" />
@@ -194,12 +206,12 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 <BriefcaseMedical size={16} className="text-amber-600 shrink-0" />
                 <div className="flex-1">
                   <div className="flex justify-between items-center text-[13px]">
-                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate w-16">{lowMed1?.medicine_name || "Little"}</span>
-                    <span className="text-gray-600 dark:text-gray-400">{lowMed1?.current_stock || 2} remaining</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200 truncate w-16">{lowMed1?.medicine_name || "N/A"}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{lowMed1?.current_stock || 0} remaining</span>
                   </div>
                   <div className="flex justify-between items-center text-[12px] text-gray-500 mt-1">
-                    <span>{lowMed2?.current_stock || 2} remaining</span>
-                    <span>{lowMed2?.current_stock || 1} remaining</span>
+                    <span>{lowMed2?.current_stock || 0} remaining</span>
+                    <span>{lowMed2?.current_stock || 0} remaining</span>
                   </div>
                 </div>
               </div>
@@ -243,7 +255,16 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
           <div className="flex gap-2.5 text-[13px] text-gray-700 dark:text-gray-300">
             <BriefcaseMedical size={16} className="text-[#16a34a] shrink-0 mt-0.5" />
             <p>
-              Prioritize restocking of critical medicines {criticalMed1?.medicine_name || "Investment"} and {criticalMed2?.medicine_name || "MaxAir"}. Review expiring inventory of {expiringMedicines[0]?.medicine_name || "NitroPace"} and {expiringMedicines[1]?.medicine_name || "GlucoHex"} within 24 hours.
+              {criticalCount > 0 ? (
+                <>Prioritize restocking of critical medicines {criticalMed1?.medicine_name}{criticalMed2 ? ` and ${criticalMed2.medicine_name}` : ""}. </>
+              ) : lowCount > 0 ? (
+                <>Consider restocking low stock medicines like {lowMed1?.medicine_name}{lowMed2 ? ` and ${lowMed2.medicine_name}` : ""}. </>
+              ) : (
+                <>Stock levels are currently stable. </>
+              )}
+              {expiringMedicines.length > 0 && (
+                <>Review expiring inventory of {expiringMedicines[0]?.medicine_name}{expiringMedicines[1] ? ` and ${expiringMedicines[1].medicine_name}` : ""} within 24 hours.</>
+              )}
             </p>
           </div>
         </div>
@@ -266,11 +287,12 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.current_7_days.critical_drugs} 
-                  <span className="ml-2 text-[12px] text-red-600">↓ 60%</span>
+                  <span className={`ml-2 text-[12px] ${critChange.dir === 'down' ? 'text-[#16a34a]' : critChange.dir === 'up' ? 'text-red-600' : 'text-gray-500'}`}>
+                    {critChange.dir === 'down' ? '↓' : critChange.dir === 'up' ? '↑' : '-'} {critChange.pct}%
+                  </span>
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.previous_7_days.critical_drugs}
-                  <span className="ml-2 text-[12px] text-[#16a34a]">↑ 25%</span>
                 </td>
               </tr>
               <tr>
@@ -280,11 +302,12 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.current_7_days.low_stock_drugs}
-                  <span className="ml-2 text-[12px] text-[#16a34a]">↑ 26%</span>
+                  <span className={`ml-2 text-[12px] ${lowChange.dir === 'down' ? 'text-[#16a34a]' : lowChange.dir === 'up' ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {lowChange.dir === 'down' ? '↓' : lowChange.dir === 'up' ? '↑' : '-'} {lowChange.pct}%
+                  </span>
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.previous_7_days.low_stock_drugs}
-                  <span className="ml-2 text-[12px] text-[#16a34a]">↑ 25%</span>
                 </td>
               </tr>
             </tbody>
