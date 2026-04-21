@@ -34,79 +34,76 @@ export default function AdminDashboard() {
         <PharmacyIntelligenceCard className="h-full" />
       </section>
 
-      {/* SECTION E — Clinical Risk + SECTION F — Staff */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* SECTION E + F + G + H — Bottom 4 Intelligence Cards (1 row on large screens) */}
+      <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-stretch">
         <ClinicalRiskCard className="h-full" />
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col h-full">
           <header className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Staff Intelligence</h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
+            <h3 className="text-[15px] font-semibold text-gray-800 dark:text-gray-100">Staff Intelligence</h3>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Placeholder</span>
           </header>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Staff on duty</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">22</p>
+          <div className="mt-4 flex-1 flex flex-col gap-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Staff on duty</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">22</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Absent staff</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">7</p>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Absent staff</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">7</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Shift coverage</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">Good</p>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Shift coverage</p>
+              <p className="text-[15px] font-semibold text-emerald-600 dark:text-emerald-500">Good</p>
             </div>
           </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
             Coverage sufficient overall; monitor evening shift coverage for Emergency and ICU.
           </div>
         </section>
-      </section>
 
-      {/* SECTION G — Financial + SECTION H — Forecast */}
-      <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col h-full">
           <header className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Financial Intelligence</h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">Placeholder indicators</span>
+            <h3 className="text-[15px] font-semibold text-gray-800 dark:text-gray-100">Financial Intelligence</h3>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">Placeholder</span>
           </header>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Revenue today</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">PKR 25.1k</p>
+          <div className="mt-4 flex-1 flex flex-col gap-3">
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Revenue today</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">PKR 25.1k</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Outstanding payments</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">PKR 28k</p>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Outstanding</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">PKR 28k</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Expense ratio</p>
-              <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">41%</p>
+            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
+              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Expense ratio</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">41%</p>
             </div>
           </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
-            Revenue stable but outstanding payments are elevated; prioritize clearing aged pending bills.
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
+            Revenue stable but outstanding payments are elevated; prioritize clearing aged bills.
           </div>
         </section>
 
-        <InsightPanel title="Forecast Intelligence" chartLabel="Next 7 days">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Capacity Risk Score</p>
-              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">6.7 (Moderate)</p>
+        <InsightPanel title="Forecast Intelligence" chartLabel="Next 7 days" className="h-full">
+          <div className="flex-1 flex flex-col gap-3 mt-1">
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
+              <p className="text-[13px] text-gray-500 dark:text-gray-400">Capacity Risk</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">6.7</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Predicted Admissions</p>
-              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">48</p>
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
+              <p className="text-[13px] text-gray-500 dark:text-gray-400">Predicted Adm.</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">48</p>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Predicted Occupancy</p>
-              <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">67%</p>
+            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
+              <p className="text-[13px] text-gray-500 dark:text-gray-400">Predicted Occ.</p>
+              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">67%</p>
             </div>
           </div>
-          <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
             Moderate capacity risk; expected to increase slightly based on recent intake trends.
-          </p>
+          </div>
         </InsightPanel>
       </section>
     </div>
