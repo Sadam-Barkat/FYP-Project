@@ -12,8 +12,115 @@ from app.models.billing import Billing, BillingStatus
 from app.models.staff import Staff
 from app.models.alert import Alert, AlertSeverity
 from app.models.hr import Attendance, AttendanceStatus
+from app.models.user import User, UserRole
+from app.models.vital import Vital
 
 router = APIRouter(prefix="/api", tags=["overview"])
+
+
+def _format_kpi_trend_pct(today: float, yesterday: float) -> str:
+    """Percentage change today vs yesterday; 'N/A' when comparison is undefined."""
+    try:
+        t = float(today)
+        y = float(yesterday)
+    except (TypeError, ValueError):
+        return "N/A"
+    if y == 0 and t == 0:
+        return "0%"
+    if y == 0:
+        return "N/A"
+    pct = (t - y) / y * 100.0
+    rounded = int(round(pct))
+    if rounded == 0:
+        return "0%"
+    sign = "+" if rounded > 0 else ""
+    return f"{sign}{rounded}%"
+
+
+async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict[str, Any]:
+    """
+    Admin dashboard KPI snapshot for a single calendar day (UTC boundaries).
+    """
+    day_start = datetime.combine(base_date, time.min)
+    day_end = datetime.combine(base_date, time.max)
+
+    total_patients_result = await db.execute(
+        select(func.count(func.distinct(Admission.patient_id))).where(
+            and_(
+                Admission.admission_date >= day_start,
+                Admission.admission_date <= day_end,
+            )
+        )
+    )
+    total_patients = int(total_patients_result.scalar_one() or 0)
+
+    active_admissions_result = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .where(Admission.discharge_date.is_(None))
+    )
+    active_admissions = int(active_admissions_result.scalar_one() or 0)
+
+    available_beds_result = await db.execute(
+        select(func.count())
+        .select_from(Bed)
+        .where(Bed.status == BedStatus.available)
+    )
+    available_beds = int(available_beds_result.scalar_one() or 0)
+
+    latest_vitals = (
+        select(
+            Vital.patient_id,
+            Vital.condition_level,
+            func.row_number()
+            .over(
+                partition_by=Vital.patient_id,
+                order_by=Vital.recorded_at.desc(),
+            )
+            .label("rn"),
+        ).subquery()
+    )
+    critical_patients_result = await db.execute(
+        select(func.count())
+        .select_from(latest_vitals)
+        .where(
+            latest_vitals.c.rn == 1,
+            func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
+        )
+    )
+    critical_patients = int(critical_patients_result.scalar_one() or 0)
+
+    staff_on_duty_result = await db.execute(
+        select(func.count())
+        .select_from(User)
+        .where(
+            and_(
+                User.role.in_((UserRole.doctor, UserRole.nurse)),
+                User.is_active.is_(True),
+            )
+        )
+    )
+    staff_on_duty = int(staff_on_duty_result.scalar_one() or 0)
+
+    revenue_today_result = await db.execute(
+        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+            and_(
+                Billing.status == BillingStatus.paid,
+                Billing.date >= day_start,
+                Billing.date <= day_end,
+            )
+        )
+    )
+    revenue_today = float(revenue_today_result.scalar_one() or 0.0)
+
+    return {
+        "total_patients": total_patients,
+        "active_admissions": active_admissions,
+        "available_beds": available_beds,
+        "critical_patients": critical_patients,
+        "staff_on_duty": staff_on_duty,
+        "revenue_today": revenue_today,
+    }
 
 
 @router.get("/hospital-overview")
@@ -294,6 +401,37 @@ async def get_hospital_overview(
         icu_occupancy_7d_avg = sum(icu_occupancy_trend) / len(icu_occupancy_trend) if icu_occupancy_trend else 0.0
         revenue_7d_avg = sum(revenue_trend) / len(revenue_trend) if revenue_trend else 0.0
 
+        today_kpis = await _compute_admin_kpi_snapshot(db, base_date)
+        yesterday_date = base_date - timedelta(days=1)
+        yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
+
+        admin_dashboard_kpis = {
+            "total_patients": int(today_kpis["total_patients"]),
+            "active_admissions": int(today_kpis["active_admissions"]),
+            "available_beds": int(today_kpis["available_beds"]),
+            "critical_patients": int(today_kpis["critical_patients"]),
+            "staff_on_duty": int(today_kpis["staff_on_duty"]),
+            "revenue_today": float(today_kpis["revenue_today"]),
+            "total_patients_trend": _format_kpi_trend_pct(
+                today_kpis["total_patients"], yesterday_kpis["total_patients"]
+            ),
+            "active_admissions_trend": _format_kpi_trend_pct(
+                today_kpis["active_admissions"], yesterday_kpis["active_admissions"]
+            ),
+            "available_beds_trend": _format_kpi_trend_pct(
+                today_kpis["available_beds"], yesterday_kpis["available_beds"]
+            ),
+            "critical_patients_trend": _format_kpi_trend_pct(
+                today_kpis["critical_patients"], yesterday_kpis["critical_patients"]
+            ),
+            "staff_on_duty_trend": _format_kpi_trend_pct(
+                today_kpis["staff_on_duty"], yesterday_kpis["staff_on_duty"]
+            ),
+            "revenue_today_trend": _format_kpi_trend_pct(
+                today_kpis["revenue_today"], yesterday_kpis["revenue_today"]
+            ),
+        }
+
         return {
 
             "total_beds": int(total_beds),
@@ -311,6 +449,7 @@ async def get_hospital_overview(
             "icu_occupancy_7d_avg": icu_occupancy_7d_avg,
             "revenue_trend": revenue_trend,
             "revenue_7d_avg": revenue_7d_avg,
+            **admin_dashboard_kpis,
         }
 
     except Exception as exc:

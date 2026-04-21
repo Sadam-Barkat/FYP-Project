@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Users,
   Bed,
@@ -20,8 +20,56 @@ import {
   YAxis,
 } from "recharts";
 
+import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthHeaders } from "@/lib/auth";
+import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
+
 const cardBase =
   "rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 transition-all hover:border-[#00b4d8] sm:p-5";
+
+export type HospitalOverviewKpis = {
+  total_patients?: number | null;
+  active_admissions?: number | null;
+  available_beds?: number | null;
+  critical_patients?: number | null;
+  staff_on_duty?: number | null;
+  revenue_today?: number | null;
+  total_patients_trend?: string | null;
+  active_admissions_trend?: string | null;
+  available_beds_trend?: string | null;
+  critical_patients_trend?: string | null;
+  staff_on_duty_trend?: string | null;
+  revenue_today_trend?: string | null;
+};
+
+function formatKpiDisplay(
+  data: HospitalOverviewKpis | null,
+  valueKey: keyof HospitalOverviewKpis,
+  kind: "int" | "currency"
+): string {
+  if (!data) return "—";
+  const raw = data[valueKey];
+  if (raw === null || raw === undefined) return "—";
+  if (kind === "currency") {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return "—";
+    return `$${n.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString();
+}
+
+function trendTextClass(trend: string | null | undefined): string {
+  const s = (trend ?? "").trim();
+  if (!s || s === "N/A") return "text-[#94a3b8]";
+  if (s.startsWith("+")) return "text-[#10b981]";
+  if (s.startsWith("-")) return "text-[#ef4444]";
+  return "text-[#94a3b8]";
+}
 
 function formatDateTime(d: Date) {
   return d.toLocaleString(undefined, {
@@ -36,70 +84,108 @@ function formatDateTime(d: Date) {
   });
 }
 
+const KPI_CARD_DEFS = [
+  {
+    label: "Total Patients Today",
+    valueKey: "total_patients" as const,
+    trendKey: "total_patients_trend" as const,
+    icon: Users,
+    accent: "text-[#00b4d8]",
+    iconWrap: "bg-[#00b4d8]/15 text-[#00b4d8]",
+    kind: "int" as const,
+  },
+  {
+    label: "Active Admissions",
+    valueKey: "active_admissions" as const,
+    trendKey: "active_admissions_trend" as const,
+    icon: Bed,
+    accent: "text-sky-400",
+    iconWrap: "bg-sky-500/15 text-sky-400",
+    kind: "int" as const,
+  },
+  {
+    label: "Available Beds",
+    valueKey: "available_beds" as const,
+    trendKey: "available_beds_trend" as const,
+    icon: LayoutGrid,
+    accent: "text-[#10b981]",
+    iconWrap: "bg-[#10b981]/15 text-[#10b981]",
+    kind: "int" as const,
+  },
+  {
+    label: "Critical Patients",
+    valueKey: "critical_patients" as const,
+    trendKey: "critical_patients_trend" as const,
+    icon: AlertTriangle,
+    accent: "text-[#ef4444]",
+    iconWrap: "bg-[#ef4444]/15 text-[#ef4444]",
+    kind: "int" as const,
+  },
+  {
+    label: "Staff On Duty",
+    valueKey: "staff_on_duty" as const,
+    trendKey: "staff_on_duty_trend" as const,
+    icon: UserCheck,
+    accent: "text-violet-400",
+    iconWrap: "bg-violet-500/15 text-violet-400",
+    kind: "int" as const,
+  },
+  {
+    label: "Revenue Today",
+    valueKey: "revenue_today" as const,
+    trendKey: "revenue_today_trend" as const,
+    icon: DollarSign,
+    accent: "text-[#f59e0b]",
+    iconWrap: "bg-[#f59e0b]/15 text-[#f59e0b]",
+    kind: "currency" as const,
+  },
+] as const;
+
 export default function AdminDashboard() {
   const [now, setNow] = useState<Date>(() => new Date());
   const [lastUpdated, setLastUpdated] = useState<Date>(() => new Date());
+  const [kpiData, setKpiData] = useState<HospitalOverviewKpis | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const kpiHasLoadedOnce = useRef(false);
+
+  const loadKpis = useCallback(async () => {
+    if (!kpiHasLoadedOnce.current) {
+      setKpiLoading(true);
+    }
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/hospital-overview`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as HospitalOverviewKpis;
+      setKpiData(data);
+      setLastUpdated(new Date());
+      kpiHasLoadedOnce.current = true;
+    } catch {
+      if (!kpiHasLoadedOnce.current) {
+        setKpiData(null);
+      }
+    } finally {
+      setKpiLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const handleRefreshClick = useCallback(() => {
-    setLastUpdated(new Date());
-  }, []);
+  useEffect(() => {
+    void loadKpis();
+  }, [loadKpis]);
 
-  // TODO: Replace with real API data
-  const kpiCards = [
-    {
-      label: "Total Patients Today",
-      value: "184",
-      trend: { dir: "up" as const, pct: "12%", vs: "yesterday" },
-      icon: Users,
-      accent: "text-[#00b4d8]",
-      iconWrap: "bg-[#00b4d8]/15 text-[#00b4d8]",
-    },
-    {
-      label: "Active Admissions",
-      value: "42",
-      trend: { dir: "up" as const, pct: "5%", vs: "yesterday" },
-      icon: Bed,
-      accent: "text-sky-400",
-      iconWrap: "bg-sky-500/15 text-sky-400",
-    },
-    {
-      label: "Available Beds",
-      value: "28",
-      trend: { dir: "down" as const, pct: "3%", vs: "yesterday" },
-      icon: LayoutGrid,
-      accent: "text-[#10b981]",
-      iconWrap: "bg-[#10b981]/15 text-[#10b981]",
-    },
-    {
-      label: "Critical Patients",
-      value: "6",
-      trend: { dir: "up" as const, pct: "2", vs: "vs yesterday" },
-      icon: AlertTriangle,
-      accent: "text-[#ef4444]",
-      iconWrap: "bg-[#ef4444]/15 text-[#ef4444]",
-    },
-    {
-      label: "Staff On Duty",
-      value: "112",
-      trend: { dir: "up" as const, pct: "8%", vs: "yesterday" },
-      icon: UserCheck,
-      accent: "text-violet-400",
-      iconWrap: "bg-violet-500/15 text-violet-400",
-    },
-    {
-      label: "Revenue Today",
-      value: "$48.2k",
-      trend: { dir: "up" as const, pct: "15%", vs: "yesterday" },
-      icon: DollarSign,
-      accent: "text-[#f59e0b]",
-      iconWrap: "bg-[#f59e0b]/15 text-[#f59e0b]",
-    },
-  ];
+  useRealtimeEvent("admin_data_changed", () => {
+    void loadKpis();
+  });
+
+  const handleRefreshClick = useCallback(() => {
+    void loadKpis();
+  }, [loadKpis]);
 
   // TODO: Replace with real API data
   const riskRows = [
@@ -249,15 +335,20 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* KPI row */}
+      {/* KPI row — data from GET /api/hospital-overview */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {kpiCards.map((k) => {
+        {KPI_CARD_DEFS.map((k) => {
           const Icon = k.icon;
-          const trendUp = k.trend.dir === "up";
-          const invertTrend = k.label === "Critical Patients";
-          const good = invertTrend ? !trendUp : trendUp;
-          const trendColor = good ? "text-[#10b981]" : "text-[#ef4444]";
-          const arrow = trendUp ? "↑" : "↓";
+          const displayValue = formatKpiDisplay(kpiData, k.valueKey, k.kind);
+          const trendRaw = kpiData?.[k.trendKey];
+          const trendStr =
+            trendRaw === null || trendRaw === undefined || trendRaw === ""
+              ? "N/A"
+              : String(trendRaw);
+          const trendLine =
+            trendStr === "N/A"
+              ? "N/A vs yesterday"
+              : `${trendStr} vs yesterday`;
           return (
             <div key={k.label} className={cardBase}>
               <div className="flex items-start justify-between">
@@ -270,13 +361,26 @@ export default function AdminDashboard() {
               <h3 className="mt-3 text-xs font-semibold leading-snug text-[#00b4d8]">
                 {k.label}
               </h3>
+              <div className="mt-3 flex min-h-[2.5rem] items-center justify-center">
+                {kpiLoading ? (
+                  <div
+                    className="h-10 w-28 max-w-full animate-pulse rounded-md bg-[#1e3a5f]"
+                    aria-hidden
+                  />
+                ) : (
+                  <p
+                    className={`text-center text-3xl font-bold tracking-tight ${k.accent}`}
+                  >
+                    {displayValue}
+                  </p>
+                )}
+              </div>
               <p
-                className={`mt-3 text-center text-3xl font-bold tracking-tight ${k.accent}`}
+                className={`mt-3 text-center text-xs font-medium ${trendTextClass(
+                  kpiLoading ? "N/A" : trendStr
+                )}`}
               >
-                {k.value}
-              </p>
-              <p className={`mt-3 text-center text-xs font-medium ${trendColor}`}>
-                {arrow} {k.trend.pct} vs {k.trend.vs}
+                {kpiLoading ? "N/A vs yesterday" : trendLine}
               </p>
             </div>
           );
