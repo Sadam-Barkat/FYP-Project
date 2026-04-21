@@ -6,6 +6,10 @@ import { UserCircle } from "lucide-react";
 export default function NavbarProfileButton() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(
+    null
+  );
 
   const profile = useMemo(() => {
     if (typeof window === "undefined") return { role: "", name: "", email: "" };
@@ -17,6 +21,23 @@ export default function NavbarProfileButton() {
 
   useEffect(() => {
     if (!open) return;
+
+    const place = () => {
+      const btn = btnRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const menuWidth = Math.min(352, Math.round(window.innerWidth * 0.86)); // matches w-[min(22rem,86vw)]
+      const gap = 10;
+      const top = Math.round(r.bottom + gap);
+      // Right-align to the button, but clamp into viewport with 8px padding.
+      const pad = 8;
+      const desiredLeft = Math.round(r.right - menuWidth);
+      const left = Math.max(pad, Math.min(desiredLeft, window.innerWidth - menuWidth - pad));
+      setMenuPos({ top, left });
+    };
+
+    place();
+
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node | null;
       if (t && rootRef.current && !rootRef.current.contains(t)) setOpen(false);
@@ -24,11 +45,17 @@ export default function NavbarProfileButton() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    const onReflow = () => place();
+
     document.addEventListener("mousedown", onDocClick);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onReflow);
+    window.addEventListener("scroll", onReflow, true);
     return () => {
       document.removeEventListener("mousedown", onDocClick);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onReflow);
+      window.removeEventListener("scroll", onReflow, true);
     };
   }, [open]);
 
@@ -50,6 +77,7 @@ export default function NavbarProfileButton() {
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gray-50 text-gray-600 shadow-sm ring-1 ring-gray-200/50 transition-all duration-300 hover:bg-white hover:text-blue-600 hover:shadow-md hover:ring-blue-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700/50 dark:hover:bg-gray-700 dark:hover:text-blue-400 dark:hover:ring-blue-500/30"
@@ -65,7 +93,12 @@ export default function NavbarProfileButton() {
         <div
           role="menu"
           aria-label="Profile menu"
-          className="absolute right-0 top-full z-50 mt-3 w-[min(22rem,86vw)] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900"
+          className="fixed z-50 w-[min(22rem,86vw)] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900"
+          style={
+            menuPos
+              ? { top: menuPos.top, left: menuPos.left }
+              : { top: 80, left: 8 }
+          }
         >
           <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
             <div className="min-w-0">
