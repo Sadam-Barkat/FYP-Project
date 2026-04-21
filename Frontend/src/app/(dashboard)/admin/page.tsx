@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Users,
   Bed,
@@ -9,18 +9,6 @@ import {
   UserCheck,
   DollarSign,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  LineChart,
-  Line,
-  CartesianGrid,
-  Cell,
-} from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
@@ -102,53 +90,27 @@ export type PatientIntelVitals = {
   respiratory_rate: number;
 };
 
-export type PatientIntelVitalsTrend = {
-  heart_rate_trend: string;
-  bp_trend: string;
-  spo2_trend: string;
-  temp_trend: string;
+export type PatientIntelVitalsChange = {
+  heart_rate: string;
+  bp: string;
+  spo2: string;
+  temp: string;
 };
 
 export type PatientIntelPatient = {
-  patient_id: number;
   name: string;
   age: number;
   gender: string;
   ward: string;
   condition_level: string;
-  news2_score: number;
-  risk_level: string;
-  trend: string;
   vitals: PatientIntelVitals;
-  vitals_trend: PatientIntelVitalsTrend;
-  predicted_condition_24h: string;
-  estimated_discharge: string;
-};
-
-export type PatientIntelSummary = {
-  total_active_patients: number;
-  high_risk_count: number;
-  medium_risk_count: number;
-  low_risk_count: number;
-};
-
-export type RiskScoreTrendPoint = {
-  label: string;
-  news2_score: number;
-  recorded_at: string;
-};
-
-export type RiskScoreTrend = {
-  patient_name: string;
-  points: RiskScoreTrendPoint[];
-  current_score: number;
-  score_delta: number;
+  vitals_change: PatientIntelVitalsChange;
+  prediction: string;
 };
 
 export type PatientIntelResponse = {
-  summary: PatientIntelSummary;
+  high_risk_count: number;
   patients: PatientIntelPatient[];
-  risk_score_trend: RiskScoreTrend;
 };
 
 function formatKpiDisplay(
@@ -280,50 +242,48 @@ function kpiTooltipContent(
   }
 }
 
-function riskBadgeLabel(level: string): string {
-  const rl = (level || "").toUpperCase();
-  if (rl === "HIGH") return "🔴 HIGH";
-  if (rl === "MEDIUM") return "🟡 MEDIUM";
-  return "🟢 LOW";
-}
-
-function intelTrendUi(trend: string): { sym: string; cls: string } {
-  const t = (trend || "").trim();
-  if (t === "WORSENING") return { sym: "↑", cls: "text-[#ef4444]" };
-  if (t === "MONITOR") return { sym: "→", cls: "text-[#f59e0b]" };
-  return { sym: "↓", cls: "text-[#10b981]" };
-}
-
-function predictionSnippet(predicted: string): string {
-  const p = (predicted || "").trim();
-  if (p === "CRITICAL") return "Critical in 24h";
-  if (p === "HIGH RISK") return "High risk watch";
-  return "Stable outlook";
-}
-
-function intelLastUpdatedLabel(at: Date | null, tick: number): string {
+function intelFooterUpdated(at: Date | null, tick: number): string {
   void tick;
-  if (!at) return "last: —";
+  if (!at) return "last updated —";
   const m = Math.floor((Date.now() - at.getTime()) / 60000);
-  if (m < 1) return "last: just now";
-  return `last: ${m}m ago`;
+  if (m < 1) return "last updated just now";
+  return `last updated ${m} mins ago`;
 }
 
-function vitalInRangeClass(
-  kind: "hr" | "bp" | "temp" | "spo2" | "rr",
-  v: PatientIntelVitals
-): string {
-  const ok =
-    kind === "hr"
-      ? v.heart_rate >= 60 && v.heart_rate <= 100
-      : kind === "bp"
-        ? v.systolic_bp >= 90 && v.systolic_bp <= 120
-        : kind === "temp"
-          ? v.temperature >= 36.1 && v.temperature <= 37.2
-          : kind === "spo2"
-            ? v.spo2 >= 95
-            : v.respiratory_rate >= 12 && v.respiratory_rate <= 20;
-  return ok ? "text-[#10b981]" : "text-[#ef4444]";
+function conditionBadgeClass(level: string): string {
+  const x = (level || "").toLowerCase().trim();
+  if (x === "critical") return "bg-[#ef4444]/20 text-[#fecaca] ring-1 ring-[#ef4444]/40";
+  if (x === "emergency")
+    return "bg-[#7f1d1d]/50 text-[#fecaca] ring-1 ring-[#991b1b]";
+  if (x === "stable") return "bg-[#10b981]/20 text-[#bbf7d0]";
+  if (x === "observation") return "bg-[#f59e0b]/20 text-[#fde68a]";
+  return "bg-[#1e3a5f] text-[#94a3b8]";
+}
+
+type VitalKind = "hr" | "bp" | "spo2" | "temp";
+
+function vitalsArrowClass(kind: VitalKind, dir: string): string {
+  const d = (dir || "").toUpperCase();
+  if (d === "STABLE") return "text-[#94a3b8]";
+  if (kind === "spo2") {
+    return d === "UP" ? "text-[#10b981]" : "text-[#ef4444]";
+  }
+  return d === "UP" ? "text-[#ef4444]" : "text-[#10b981]";
+}
+
+function vitalsArrowSymbol(dir: string): string {
+  const d = (dir || "").toUpperCase();
+  if (d === "UP") return "↑";
+  if (d === "DOWN") return "↓";
+  return "—";
+}
+
+function predictionTextClass(text: string): string {
+  const t = (text || "").toLowerCase();
+  if (/(risk|failure|critical|deteriorat)/.test(t)) return "text-[#ef4444]";
+  if (/(monitor|watch|concern)/.test(t)) return "text-[#f59e0b]";
+  if (/(stable|improving)/.test(t)) return "text-[#10b981]";
+  return "text-[#94a3b8]";
 }
 
 const KPI_CARD_DEFS = [
@@ -450,16 +410,6 @@ export default function AdminDashboard() {
     return () => window.clearInterval(id);
   }, []);
 
-  const intelRiskBarData = useMemo(() => {
-    const s = intelData?.summary;
-    if (!s) return [];
-    return [
-      { name: "High", value: s.high_risk_count, fill: "#ef4444" },
-      { name: "Med", value: s.medium_risk_count, fill: "#f59e0b" },
-      { name: "Low", value: s.low_risk_count, fill: "#10b981" },
-    ];
-  }, [intelData]);
-
   return (
     <div
       id="dashboard-content"
@@ -560,253 +510,96 @@ export default function AdminDashboard() {
         })}
       </section>
 
-      {/* Patient Intelligence — GET /api/patient-intelligence */}
-      <section className="rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] shadow-lg transition-all hover:border-[#00b4d8]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1e3a5f]/80 px-4 py-3 sm:px-5">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="text-lg" aria-hidden>
+      {/* Patient Risk Intelligence — GET /api/patient-intelligence (width = 2 KPI cards on xl) */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="min-h-[11rem] rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 shadow-lg transition-colors hover:border-[#00b4d8] xl:col-span-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#1e3a5f]/80 pb-2 text-sm">
+            <span className="text-[#00b4d8]" aria-hidden>
               🧠
             </span>
-            <h2 className="text-base font-semibold text-[#00b4d8] sm:text-lg">
-              Patient Intelligence
-            </h2>
-            <span className="inline-flex items-center gap-1.5 text-xs text-[#fecaca]">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-[#ef4444]" />
-              <span className="font-medium text-[#ffffff]">
-                {intelData?.summary?.high_risk_count ?? "—"}
-              </span>
-              <span className="text-[#94a3b8]">High Risk</span>
+            <span className="font-semibold text-[#00b4d8]">Patient Risk Intelligence</span>
+            <span className="text-[#64748b]" aria-hidden>
+              |
+            </span>
+            <span className="text-xs text-[#fecaca]">
+              🔴 {intelData?.high_risk_count ?? "—"} High Risk
             </span>
           </div>
-          <p className="text-xs text-[#94a3b8]">
-            {intelLastUpdatedLabel(intelLastFetch, intelClock)}
-          </p>
-        </div>
 
-        <div className="p-4 sm:p-5">
-          {!intelData && !intelLoading ? (
-            <p className="text-sm text-[#94a3b8]">
-              Unable to load patient intelligence. Check admin access and API
-              connection.
-            </p>
-          ) : null}
-          {intelLoading && !intelData ? (
-            <div className="h-48 animate-pulse rounded-lg bg-[#1e3a5f]/60" />
-          ) : null}
+          <div className="mt-3 space-y-0">
+            {!intelData && !intelLoading ? (
+              <p className="text-xs text-[#94a3b8]">
+                Unable to load. Check admin access and API connection.
+              </p>
+            ) : null}
+            {intelLoading && !intelData ? (
+              <div className="h-24 animate-pulse rounded-md bg-[#1e3a5f]/50" />
+            ) : null}
 
-          {intelData ? (
-            <div className="grid min-h-[260px] grid-cols-1 gap-0 lg:grid-cols-[1fr_1.8fr_1.2fr]">
-              {/* Risk summary */}
-              <div className="flex flex-col gap-3 border-[#1e3a5f] py-2 pr-0 lg:border-r lg:py-0 lg:pr-4">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#00b4d8]">
-                  Risk summary
-                </p>
-                <div className="space-y-2">
-                  <div className="rounded-lg border border-[#1e3a5f] bg-[#0a0f1e]/80 px-3 py-2">
-                    <p className="text-2xl font-bold text-[#ffffff]">
-                      {intelData.summary.total_active_patients}
-                    </p>
-                    <p className="text-[10px] uppercase tracking-wide text-[#94a3b8]">
-                      Total active patients
-                    </p>
+            {intelData?.patients?.length === 0 && !intelLoading ? (
+              <p className="text-xs text-[#94a3b8]">No ranked patients yet.</p>
+            ) : null}
+
+            {intelData?.patients?.map((p, idx) => {
+              const vc = p.vitals_change;
+              const v = p.vitals;
+              const sep = "text-[#475569]";
+              return (
+                <div
+                  key={`${p.name}-${idx}`}
+                  className={`space-y-1 py-2 ${idx > 0 ? "border-t border-[#1e3a5f]" : ""}`}
+                >
+                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs leading-snug">
+                    <span
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${conditionBadgeClass(p.condition_level)}`}
+                    >
+                      {p.condition_level}
+                    </span>
+                    <span className="text-sm font-medium text-[#ffffff]">{p.name}</span>
+                    <span className={sep}>—</span>
+                    <span className="text-[#94a3b8]">{p.ward || "—"}</span>
+                    <span className={sep}>—</span>
+                    <span className="text-[#94a3b8]">
+                      {`${p.age}/${p.gender || "—"}`}
+                    </span>
                   </div>
-                  <div className="rounded-lg border border-[#1e3a5f] bg-[#0a0f1e]/80 px-3 py-2">
-                    <p className="text-lg font-bold text-[#fecaca]">
-                      🔴 High Risk: {intelData.summary.high_risk_count}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-[#1e3a5f] bg-[#0a0f1e]/80 px-3 py-2">
-                    <p className="text-lg font-bold text-[#fde68a]">
-                      🟡 Medium Risk: {intelData.summary.medium_risk_count}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-[#1e3a5f] bg-[#0a0f1e]/80 px-3 py-2">
-                    <p className="text-lg font-bold text-[#bbf7d0]">
-                      🟢 Low Risk: {intelData.summary.low_risk_count}
-                    </p>
-                  </div>
+                  <p className="text-[11px] leading-relaxed text-[#94a3b8]">
+                    <span className="text-[#64748b]">Vitals:</span>{" "}
+                    <span className={vitalsArrowClass("hr", vc.heart_rate)}>
+                      HR:{v.heart_rate}
+                      {vitalsArrowSymbol(vc.heart_rate)}
+                    </span>
+                    <span className="text-[#475569]"> | </span>
+                    <span className={vitalsArrowClass("bp", vc.bp)}>
+                      BP:{v.systolic_bp}/{v.diastolic_bp}
+                      {vitalsArrowSymbol(vc.bp)}
+                    </span>
+                    <span className="text-[#475569]"> | </span>
+                    <span className={vitalsArrowClass("spo2", vc.spo2)}>
+                      SpO2:{v.spo2}%
+                      {vitalsArrowSymbol(vc.spo2)}
+                    </span>
+                    <span className="text-[#475569]"> | </span>
+                    <span className={vitalsArrowClass("temp", vc.temp)}>
+                      Temp:{v.temperature}°C
+                      {vitalsArrowSymbol(vc.temp)}
+                    </span>
+                  </p>
+                  <p className={`text-[11px] leading-snug ${predictionTextClass(p.prediction)}`}>
+                    <span className="text-[#94a3b8]" aria-hidden>
+                      💬{" "}
+                    </span>
+                    &quot;{p.prediction}&quot;
+                  </p>
                 </div>
-                <div className="mt-1 h-36 w-full min-w-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={intelRiskBarData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#1e3a5f" }} />
-                      <YAxis allowDecimals={false} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#1e3a5f" }} />
-                      <Tooltip
-                        cursor={{ fill: "rgba(30,58,95,0.35)" }}
-                        contentStyle={{
-                          backgroundColor: "#0d1b2a",
-                          border: "1px solid #00b4d8",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                          color: "#fff",
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={36}>
-                        {intelRiskBarData.map((e) => (
-                          <Cell key={e.name} fill={e.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+              );
+            })}
+          </div>
 
-              {/* Top 5 */}
-              <div className="flex flex-col border-[#1e3a5f] py-2 lg:border-r lg:px-4 lg:py-0">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#00b4d8]">
-                  Top 5 patients
-                </p>
-                <div className="min-h-0 flex-1 space-y-0">
-                  {intelData.patients.length === 0 ? (
-                    <p className="text-sm text-[#94a3b8]">No active admissions with vitals.</p>
-                  ) : (
-                    intelData.patients.map((p) => {
-                      const tr = intelTrendUi(p.trend);
-                      return (
-                        <div
-                          key={p.patient_id}
-                          className="group relative border-b border-[#1e3a5f]/50 px-2 py-2 text-xs transition-colors last:border-b-0 hover:bg-[#1e3a5f]"
-                        >
-                          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-snug sm:text-xs">
-                            <span className="shrink-0 font-semibold text-[#94a3b8]">
-                              {riskBadgeLabel(p.risk_level)}
-                            </span>
-                            <span className="min-w-0 font-medium text-[#ffffff]">
-                              {p.name}
-                            </span>
-                            <span className="text-[#94a3b8]">—</span>
-                            <span className="text-[#94a3b8]">{p.ward || "—"}</span>
-                            <span className="text-[#94a3b8]">—</span>
-                            <span className="text-[#ffffff]">
-                              Score: {p.news2_score}/12
-                            </span>
-                            <span className={`shrink-0 font-bold ${tr.cls}`} title={p.trend}>
-                              {tr.sym}
-                            </span>
-                            <span className="text-[#64748b]">—</span>
-                            <span className="text-[#94a3b8]">
-                              {predictionSnippet(p.predicted_condition_24h)}
-                            </span>
-                          </div>
-                          <div className="pointer-events-none invisible absolute left-2 top-full z-50 mt-1 w-[min(100%,280px)] rounded-lg border border-[#00b4d8] bg-[#0a0f1e] p-3 text-[11px] opacity-0 shadow-xl transition-opacity group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 sm:left-auto sm:right-0 sm:w-72">
-                            <p className="font-semibold text-[#00b4d8]">Vitals snapshot</p>
-                            <p className="mt-1 text-[#94a3b8]">
-                              Age {p.age}, {p.gender || "—"} · Ward {p.ward || "—"}
-                            </p>
-                            <ul className="mt-2 space-y-1 text-[#ffffff]">
-                              <li className={vitalInRangeClass("hr", p.vitals)}>
-                                HR: {p.vitals.heart_rate} bpm{" "}
-                                <span className="text-[#64748b]">(60–100)</span>
-                              </li>
-                              <li className={vitalInRangeClass("bp", p.vitals)}>
-                                BP: {p.vitals.systolic_bp}/{p.vitals.diastolic_bp}{" "}
-                                <span className="text-[#64748b]">(sys 90–120)</span>
-                              </li>
-                              <li className={vitalInRangeClass("temp", p.vitals)}>
-                                Temp: {p.vitals.temperature}°C{" "}
-                                <span className="text-[#64748b]">(36.1–37.2)</span>
-                              </li>
-                              <li className={vitalInRangeClass("spo2", p.vitals)}>
-                                SpO2: {p.vitals.spo2}%{" "}
-                                <span className="text-[#64748b]">(≥95)</span>
-                              </li>
-                              <li className={vitalInRangeClass("rr", p.vitals)}>
-                                RR: {p.vitals.respiratory_rate}/min{" "}
-                                <span className="text-[#64748b]">(12–20)</span>
-                              </li>
-                            </ul>
-                            <p className="mt-2 text-[#94a3b8]">
-                              Predicted (24h):{" "}
-                              <span className="font-medium text-[#ffffff]">
-                                {p.predicted_condition_24h}
-                              </span>
-                            </p>
-                            <p className="text-[#94a3b8]">
-                              Est. discharge:{" "}
-                              <span className="font-medium text-[#ffffff]">
-                                {p.estimated_discharge}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* NEWS2 trend top-1 */}
-              <div className="flex flex-col py-2 pl-0 lg:pl-4 lg:py-0">
-                {(() => {
-                  const rt = intelData.risk_score_trend;
-                  const pts = (rt?.points ?? []).map((x, i) => ({
-                    ...x,
-                    idx: i,
-                    t: x.label || `#${i + 1}`,
-                  }));
-                  const delta = rt?.score_delta ?? 0;
-                  const lineColor =
-                    delta > 0 ? "#ef4444" : delta < 0 ? "#10b981" : "#00b4d8";
-                  const name = rt?.patient_name || "—";
-                  return (
-                    <>
-                      <p className="mb-1 line-clamp-2 text-[10px] font-semibold uppercase tracking-wider text-[#00b4d8]">
-                        Risk Score Trend — {name}
-                      </p>
-                      {pts.length === 0 ? (
-                        <p className="text-sm text-[#94a3b8]">No vitals history for top patient.</p>
-                      ) : (
-                        <>
-                          <div className="h-40 w-full min-w-0 flex-1">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={pts} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                                <XAxis dataKey="t" tick={{ fill: "#94a3b8", fontSize: 9 }} axisLine={{ stroke: "#1e3a5f" }} />
-                                <YAxis domain={[0, 12]} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#1e3a5f" }} />
-                                <Tooltip
-                                  contentStyle={{
-                                    backgroundColor: "#0d1b2a",
-                                    border: "1px solid #00b4d8",
-                                    borderRadius: "8px",
-                                    fontSize: "11px",
-                                    color: "#fff",
-                                  }}
-                                />
-                                <Line type="monotone" dataKey="news2_score" stroke={lineColor} strokeWidth={2} dot={{ r: 3, fill: lineColor }} />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="mt-2 space-y-0.5 text-xs text-[#94a3b8]">
-                            <p>
-                              Current score:{" "}
-                              <span className="font-semibold text-[#ffffff]">
-                                {rt?.current_score ?? 0}/12
-                              </span>
-                            </p>
-                            <p>
-                              Change from last reading:{" "}
-                              <span
-                                className={
-                                  delta > 0
-                                    ? "font-semibold text-[#ef4444]"
-                                    : delta < 0
-                                      ? "font-semibold text-[#10b981]"
-                                      : "font-semibold text-[#ffffff]"
-                                }
-                              >
-                                {delta > 0 ? `+${delta}` : delta === 0 ? "0" : `${delta}`}
-                              </span>
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          ) : null}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-[#1e3a5f]/80 pt-2 text-[10px] text-[#64748b]">
+            <span>Powered by NEWS2 + AI</span>
+            <span className="text-[#94a3b8]">{intelFooterUpdated(intelLastFetch, intelClock)}</span>
+          </div>
         </div>
       </section>
 

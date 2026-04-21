@@ -1,8 +1,12 @@
 """
-Admin Patient Intelligence — top 5 highest NEWS2 active patients + compact summary.
+Admin patient risk intelligence: NEWS2-based ranking (score not exposed) + OpenAI predictions.
 """
 from __future__ import annotations
 
+import asyncio
+import json
+import re
+import urllib.request
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -11,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
+from app.core.ops_openai_settings import resolve_openai_api_key
 from app.database import get_db
 from app.models.admission import Admission
 from app.models.bed import Bed
@@ -19,6 +24,11 @@ from app.models.user import User, UserRole
 from app.models.vital import Vital
 
 router = APIRouter(prefix="/api", tags=["patient-intelligence"])
+
+OPENAI_SYSTEM = (
+    "You are a clinical AI assistant for a hospital dashboard. "
+    "Be concise and direct."
+)
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
@@ -37,11 +47,12 @@ def calculate_news2(
     systolic_bp: Optional[int],
     heart_rate: Optional[int],
 ) -> int:
+    """NEWS2 aggregate (0–20+); used only for sorting / high-risk counts — not returned to clients."""
     rr = int(respiratory_rate) if respiratory_rate is not None else 16
     sp = int(spo2) if spo2 is not None else 98
     temp = float(temperature) if temperature is not None else 37.0
     sys_bp = int(systolic_bp) if systolic_bp is not None else 120
-    hr = int(heart_rate) if heart_rate is not None else 75
+    hr = int(heart_rate) if heart_rate is not None else 72
 
     score = 0
 
@@ -62,8 +73,6 @@ def calculate_news2(
         score += 2
     elif sp <= 95:
         score += 1
-    else:
-        score += 0
 
     if temp <= 35.0:
         score += 3
@@ -103,28 +112,11 @@ def calculate_news2(
     return score
 
 
-def news2_risk_level(score: int) -> str:
-    if score <= 4:
-        return "LOW"
-    if score <= 6:
-        return "MEDIUM"
-    return "HIGH"
+def _news2_high_risk(score: int) -> bool:
+    return score >= 7
 
 
-def news2_trend_label(current_score: int, previous_score: Optional[int]) -> str:
-    if previous_score is None:
-        return "STABLE"
-    delta = current_score - previous_score
-    if delta >= 2:
-        return "WORSENING"
-    if delta == 1:
-        return "MONITOR"
-    return "STABLE"
-
-
-def _metric_trend(
-    curr: Optional[float], prev: Optional[float]
-) -> str:
+def _metric_dir(curr: Optional[float], prev: Optional[float]) -> str:
     if curr is None or prev is None:
         return "STABLE"
     if curr > prev:
@@ -134,31 +126,69 @@ def _metric_trend(
     return "STABLE"
 
 
-def predicted_condition_24h(score: int, trend: str) -> str:
-    if score >= 7 and trend == "WORSENING":
-        return "CRITICAL"
-    if score >= 5 or trend == "WORSENING":
-        return "HIGH RISK"
-    return "STABLE"
+def _vitals_dict(v: Optional[Vital]) -> Dict[str, Any]:
+    if not v:
+        return {
+            "heart_rate": 0,
+            "systolic_bp": 0,
+            "diastolic_bp": 0,
+            "temperature": 0.0,
+            "spo2": 0,
+            "respiratory_rate": 0,
+        }
+    return {
+        "heart_rate": int(v.heart_rate) if v.heart_rate is not None else 0,
+        "systolic_bp": int(v.blood_pressure_sys)
+        if v.blood_pressure_sys is not None
+        else 0,
+        "diastolic_bp": int(v.blood_pressure_dia)
+        if v.blood_pressure_dia is not None
+        else 0,
+        "temperature": float(v.temperature) if v.temperature is not None else 0.0,
+        "spo2": int(v.spo2) if v.spo2 is not None else 0,
+        "respiratory_rate": int(v.respiratory_rate)
+        if v.respiratory_rate is not None
+        else 0,
+    }
 
 
-def estimated_discharge(condition_level: str, score: int) -> str:
-    cl = (condition_level or "").lower().strip()
-    if cl == "emergency":
-        return "Indeterminate"
-    if cl == "critical" or score >= 7:
-        return "10+ days"
-    if cl == "observation":
-        return "3-5 days"
-    if cl == "stable":
-        if score <= 2:
-            return "1-2 days"
-        if score <= 4:
-            return "3-5 days"
-    return "3-5 days"
+def _vitals_change(latest: Optional[Vital], previous: Optional[Vital]) -> Dict[str, str]:
+    if not latest or not previous:
+        return {
+            "heart_rate": "STABLE",
+            "bp": "STABLE",
+            "spo2": "STABLE",
+            "temp": "STABLE",
+        }
+    return {
+        "heart_rate": _metric_dir(
+            float(latest.heart_rate) if latest.heart_rate is not None else None,
+            float(previous.heart_rate) if previous.heart_rate is not None else None,
+        ),
+        "bp": _metric_dir(
+            float(latest.blood_pressure_sys)
+            if latest.blood_pressure_sys is not None
+            else None,
+            float(previous.blood_pressure_sys)
+            if previous.blood_pressure_sys is not None
+            else None,
+        ),
+        "spo2": _metric_dir(
+            float(latest.spo2) if latest.spo2 is not None else None,
+            float(previous.spo2) if previous.spo2 is not None else None,
+        ),
+        "temp": _metric_dir(
+            float(latest.temperature) if latest.temperature is not None else None,
+            float(previous.temperature)
+            if previous.temperature is not None
+            else None,
+        ),
+    }
 
 
-def _vital_scores(v: Vital) -> int:
+def _score_from_vital(v: Optional[Vital]) -> int:
+    if not v:
+        return 0
     return calculate_news2(
         v.respiratory_rate,
         v.spo2,
@@ -168,108 +198,81 @@ def _vital_scores(v: Vital) -> int:
     )
 
 
-def _build_patient_payload(
-    patient: Patient,
-    bed: Bed,
-    latest: Optional[Vital],
-    previous: Optional[Vital],
-) -> Dict[str, Any]:
-    cond = (latest.condition_level if latest else "") or "unknown"
-    cur = (
-        _vital_scores(latest)
-        if latest
-        else calculate_news2(None, None, None, None, None)
-    )
-    prev_score = _vital_scores(previous) if previous else None
-    trend = news2_trend_label(cur, prev_score)
+def _parse_openai_json_array(raw: str) -> List[Dict[str, Any]]:
+    txt = (raw or "").strip()
+    if txt.startswith("```"):
+        txt = re.sub(r"^```[a-zA-Z]*\s*", "", txt)
+        txt = re.sub(r"\s*```$", "", txt)
+    data = json.loads(txt)
+    if not isinstance(data, list):
+        return []
+    return [x for x in data if isinstance(x, dict)]
 
-    if latest is None:
-        vitals_out = {
-            "heart_rate": 0,
-            "systolic_bp": 0,
-            "diastolic_bp": 0,
-            "temperature": 0.0,
-            "spo2": 0,
-            "respiratory_rate": 0,
-        }
-        vt = {
-            "heart_rate_trend": "STABLE",
-            "bp_trend": "STABLE",
-            "spo2_trend": "STABLE",
-            "temp_trend": "STABLE",
-        }
-    else:
-        vitals_out = {
-            "heart_rate": int(latest.heart_rate)
-            if latest.heart_rate is not None
-            else 0,
-            "systolic_bp": int(latest.blood_pressure_sys)
-            if latest.blood_pressure_sys is not None
-            else 0,
-            "diastolic_bp": int(latest.blood_pressure_dia)
-            if latest.blood_pressure_dia is not None
-            else 0,
-            "temperature": float(latest.temperature)
-            if latest.temperature is not None
-            else 0.0,
-            "spo2": int(latest.spo2) if latest.spo2 is not None else 0,
-            "respiratory_rate": int(latest.respiratory_rate)
-            if latest.respiratory_rate is not None
-            else 0,
-        }
 
-    if latest is not None and previous is not None:
-        vt = {
-            "heart_rate_trend": _metric_trend(
-                float(latest.heart_rate) if latest.heart_rate is not None else None,
-                float(previous.heart_rate)
-                if previous.heart_rate is not None
-                else None,
-            ),
-            "bp_trend": _metric_trend(
-                float(latest.blood_pressure_sys)
-                if latest.blood_pressure_sys is not None
-                else None,
-                float(previous.blood_pressure_sys)
-                if previous.blood_pressure_sys is not None
-                else None,
-            ),
-            "spo2_trend": _metric_trend(
-                float(latest.spo2) if latest.spo2 is not None else None,
-                float(previous.spo2) if previous.spo2 is not None else None,
-            ),
-            "temp_trend": _metric_trend(
-                float(latest.temperature)
-                if latest.temperature is not None
-                else None,
-                float(previous.temperature)
-                if previous.temperature is not None
-                else None,
-            ),
-        }
-    elif latest is not None:
-        vt = {
-            "heart_rate_trend": "STABLE",
-            "bp_trend": "STABLE",
-            "spo2_trend": "STABLE",
-            "temp_trend": "STABLE",
-        }
+def _openai_predictions_sync(patients_payload: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    api_key = (resolve_openai_api_key() or "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY missing")
 
-    return {
-        "patient_id": int(patient.id),
-        "name": patient.name,
-        "age": int(patient.age) if patient.age is not None else 0,
-        "gender": patient.gender or "",
-        "ward": bed.ward or "",
-        "condition_level": cond,
-        "news2_score": cur,
-        "risk_level": news2_risk_level(cur),
-        "trend": trend,
-        "vitals": vitals_out,
-        "vitals_trend": vt,
-        "predicted_condition_24h": predicted_condition_24h(cur, trend),
-        "estimated_discharge": estimated_discharge(cond, cur),
+    user_msg = f"""
+Based on these patients vitals and trends,
+give a one-line prediction for each patient
+about their health risk in the next 24 hours.
+Only use vitals data to predict. Be specific.
+Format response as JSON array:
+[
+  {{"name": "...", "prediction": "one line prediction here"}},
+  ...
+]
+
+Patients data:
+{json.dumps(patients_payload)}
+"""
+
+    body = {
+        "model": "gpt-4o-mini",
+        "max_tokens": 300,
+        "messages": [
+            {"role": "system", "content": OPENAI_SYSTEM},
+            {"role": "user", "content": user_msg},
+        ],
     }
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=45) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    content = payload["choices"][0]["message"]["content"]
+    return _parse_openai_json_array(content)
+
+
+async def _fetch_openai_predictions(
+    patients_payload: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    return await asyncio.to_thread(_openai_predictions_sync, patients_payload)
+
+
+def _merge_predictions(
+    patients: List[Dict[str, Any]], preds: List[Dict[str, Any]]
+) -> None:
+    for p in patients:
+        p["prediction"] = "Prediction unavailable"
+    by_name: Dict[str, str] = {}
+    for row in preds:
+        name = str(row.get("name", "")).strip()
+        pr = str(row.get("prediction", "")).strip()
+        if name and pr:
+            by_name[name.lower()] = pr
+    for p in patients:
+        key = str(p.get("name", "")).strip().lower()
+        if key in by_name:
+            p["prediction"] = by_name[key]
 
 
 @router.get("/patient-intelligence")
@@ -297,8 +300,8 @@ async def get_patient_intelligence(
             if len(vitals_map[v.patient_id]) < 2:
                 vitals_map[v.patient_id].append(v)
 
-    built: List[Tuple[int, Dict[str, Any]]] = []
-    high_n = med_n = low_n = 0
+    high_risk_count = 0
+    scored: List[Tuple[int, Dict[str, Any]]] = []
 
     for row in adm_rows:
         patient: Patient = row.Patient
@@ -307,74 +310,45 @@ async def get_patient_intelligence(
         vlist = vitals_map.get(pid, [])
         latest = vlist[0] if vlist else None
         previous = vlist[1] if len(vlist) > 1 else None
-        cur = (
-            _vital_scores(latest)
-            if latest
-            else calculate_news2(None, None, None, None, None)
-        )
-        rl = news2_risk_level(cur)
-        if rl == "HIGH":
-            high_n += 1
-        elif rl == "MEDIUM":
-            med_n += 1
-        else:
-            low_n += 1
-        built.append((cur, _build_patient_payload(patient, bed, latest, previous)))
 
-    built.sort(key=lambda x: x[0], reverse=True)
-    top5 = [p for _, p in built[:5]]
+        score = _score_from_vital(latest)
+        if _news2_high_risk(score):
+            high_risk_count += 1
 
-    trend_block: Dict[str, Any] = {
-        "patient_name": "",
-        "points": [],
-        "current_score": 0,
-        "score_delta": 0,
-    }
-    if top5:
-        top_pid = int(top5[0]["patient_id"])
-        hist_res = await db.execute(
-            select(Vital)
-            .where(Vital.patient_id == top_pid)
-            .order_by(Vital.recorded_at.desc())
-            .limit(5)
-        )
-        hist = list(hist_res.scalars().all())
-        hist.reverse()
-        points: List[Dict[str, Any]] = []
-        scores: List[int] = []
-        for v in hist:
-            sc = _vital_scores(v)
-            scores.append(sc)
-            label = v.recorded_at.strftime("%H:%M") if v.recorded_at else ""
-            points.append(
-                {
-                    "label": label,
-                    "news2_score": sc,
-                    "recorded_at": v.recorded_at.isoformat()
-                    if v.recorded_at
-                    else "",
-                }
-            )
-        current_score = scores[-1] if scores else 0
-        score_delta = (
-            (scores[-1] - scores[-2]) if len(scores) >= 2 else 0
-        )
-        trend_block = {
-            "patient_name": str(top5[0]["name"]),
-            "points": points,
-            "current_score": current_score,
-            "score_delta": score_delta,
+        cond = (latest.condition_level if latest else None) or "unknown"
+        payload = {
+            "name": patient.name or "",
+            "age": int(patient.age) if patient.age is not None else 0,
+            "gender": patient.gender or "",
+            "ward": bed.ward or "",
+            "condition_level": (cond or "").lower().strip(),
+            "vitals": _vitals_dict(latest),
+            "vitals_change": _vitals_change(latest, previous),
         }
+        scored.append((score, payload))
 
-    summary = {
-        "total_active_patients": len(patient_ids),
-        "high_risk_count": high_n,
-        "medium_risk_count": med_n,
-        "low_risk_count": low_n,
-    }
+    scored.sort(key=lambda x: x[0], reverse=True)
+    top5 = [dict(p) for _, p in scored[:5]]
 
-    return {
-        "summary": summary,
-        "patients": top5,
-        "risk_score_trend": trend_block,
-    }
+    ai_payload = [
+        {
+            "name": p["name"],
+            "age": p["age"],
+            "gender": p["gender"],
+            "ward": p["ward"],
+            "condition_level": p["condition_level"],
+            "vitals": p["vitals"],
+            "vitals_change": p["vitals_change"],
+        }
+        for p in top5
+    ]
+
+    if top5:
+        try:
+            preds = await _fetch_openai_predictions(ai_payload)
+            _merge_predictions(top5, preds)
+        except Exception:
+            for p in top5:
+                p["prediction"] = "Prediction unavailable"
+
+    return {"high_risk_count": high_risk_count, "patients": top5}
