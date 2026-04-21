@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
-import { LayoutDashboard, TrendingUp, Users } from "lucide-react";
+import { LayoutDashboard, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, AlertCircle } from "lucide-react";
 
 type HospitalOverview = {
   total_beds: number;
@@ -12,6 +12,12 @@ type HospitalOverview = {
   icu_occupancy: number;
   critical_condition_cases: number;
   emergency_cases: number;
+  bed_occupancy_trend?: number[];
+  bed_occupancy_7d_avg?: number;
+  icu_occupancy_trend?: number[];
+  icu_occupancy_7d_avg?: number;
+  revenue_trend?: number[];
+  revenue_7d_avg?: number;
 };
 
 type HrStaffOverview = {
@@ -32,6 +38,13 @@ function diffPct(today: number, yesterday: number): { tone: "up" | "down" | "fla
   const d = Math.round((today - yesterday) * 10) / 10;
   if (!Number.isFinite(d) || d === 0) return { tone: "flat", text: "0%" };
   return { tone: d > 0 ? "up" : "down", text: `${d > 0 ? "+" : ""}${d}%` };
+}
+
+function diffInt(current: number, previous: number, suffix: string = "") {
+  const diff = current - previous;
+  if (diff > 0) return { tone: "up", text: `+${diff}${suffix}` };
+  if (diff < 0) return { tone: "down", text: `${diff}${suffix}` };
+  return { tone: "flat", text: `0${suffix}` };
 }
 
 function MiniChartUp() {
@@ -66,11 +79,65 @@ function MiniChartFlat() {
   );
 }
 
-function diffInt(current: number, previous: number, suffix: string = "") {
-  const diff = current - previous;
-  if (diff > 0) return { tone: "up", text: `+${diff}${suffix}` };
-  if (diff < 0) return { tone: "down", text: `${diff}${suffix}` };
-  return { tone: "flat", text: `0${suffix}` };
+function TinyTrendChart({ data, color }: { data: number[], color: "orange" | "green" }) {
+  if (!data || data.length === 0) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  
+  const width = 120;
+  const height = 20;
+  const barWidth = 6;
+  const gap = 4;
+  
+  const points = data.map((val, i) => {
+    const x = i * (barWidth + gap);
+    const y = height - ((val - min) / range) * height;
+    return { x, y, val };
+  });
+
+  const pathD = points.map((p, i) => (i === 0 ? `M ${p.x + barWidth/2} ${p.y}` : `L ${p.x + barWidth/2} ${p.y}`)).join(" ");
+  
+  const fillColor = color === "orange" ? "#fcd34d" : "#86efac";
+  const strokeColor = color === "orange" ? "#f59e0b" : "#22c55e";
+
+  return (
+    <div className="relative mt-2 h-[24px] w-full">
+      <svg width={width} height={height} className="absolute bottom-0 left-0 overflow-visible">
+        {/* Bars */}
+        {points.map((p, i) => {
+          const h = Math.max(2, height - p.y);
+          // Make the last few bars darker/colored, earlier ones lighter/grayish
+          const isRecent = i >= data.length - 3;
+          const rectFill = isRecent ? fillColor : (color === "orange" ? "#fef3c7" : "#dcfce7");
+          return (
+            <rect key={i} x={p.x} y={height - h} width={barWidth} height={h} fill={rectFill} rx={1} />
+          );
+        })}
+        {/* Line overlay */}
+        <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60" />
+        <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="1.5" strokeDasharray="2 2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 translate-y-1" />
+      </svg>
+    </div>
+  );
+}
+
+function StatusBadge({ type, text }: { type: "success" | "warning" | "error", text: string }) {
+  const colors = {
+    success: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800",
+    warning: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800",
+    error: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800",
+  };
+  
+  return (
+    <div className={`mt-3 ml-auto flex w-fit items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ${colors[type]}`}>
+      {type === "success" && <CheckCircle2 size={12} />}
+      {type === "warning" && <AlertCircle size={12} />}
+      {type === "error" && <AlertTriangle size={12} />}
+      <span>{text}</span>
+      <ChevronRight size={12} className="opacity-70" />
+    </div>
+  );
 }
 
 export default function CoreHospitalKpisCard({ className = "" }: { className?: string }) {
@@ -136,6 +203,8 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
 
   const totalStaff = todayHr?.live_staff_status?.length ?? 0;
   const staffAvailable = todayHr?.staff_on_duty ?? 0;
+  const staffAbsent = todayHr?.absent_today ?? 0;
+  const staffAbsentY = yesterdayHr?.absent_today ?? 0;
 
   const activePatients = todayOverview?.active_patients?.total ?? 0;
   const icuOcc = todayOverview?.icu_occupancy ?? 0;
@@ -143,29 +212,32 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
   const criticalPatients = todayOverview?.critical_condition_cases ?? 0;
   const criticalPatientsY = yesterdayOverview?.critical_condition_cases ?? 0;
   const revenue = todayOverview?.todays_revenue ?? 0;
+  const revenueY = yesterdayOverview?.todays_revenue ?? 0;
 
   const bedTrend = diffPct(bedOccupancy, bedOccupancyY);
   const icuTrend = diffPct(icuOcc, icuOccY);
+
+  // 7-day averages
+  const bed7dAvg = todayOverview?.bed_occupancy_7d_avg ?? bedOccupancy;
+  const icu7dAvg = todayOverview?.icu_occupancy_7d_avg ?? icuOcc;
+  const rev7dAvg = todayOverview?.revenue_7d_avg ?? revenue;
 
   // High risk calculations
   const emergencyCases = todayOverview?.emergency_cases ?? 0;
   const emergencyCasesY = yesterdayOverview?.emergency_cases ?? 0;
   const totalHighRisk = criticalPatients + emergencyCases;
-  const critPct = totalHighRisk > 0 ? (criticalPatients / totalHighRisk) * 100 : 0;
-  const emergPct = totalHighRisk > 0 ? (emergencyCases / totalHighRisk) * 100 : 0;
 
-  let highRiskInsight = "High-risk patient volume is stable compared to yesterday.";
-  if (criticalPatients > criticalPatientsY && emergencyCases > emergencyCasesY) {
-    highRiskInsight = "Both critical and emergency cases increased since yesterday. Ensure ICU and ED readiness.";
-  } else if (criticalPatients > criticalPatientsY) {
-    highRiskInsight = "Critical cases increased since yesterday. Monitor ICU availability.";
-  } else if (emergencyCases > emergencyCasesY) {
-    highRiskInsight = "Emergency influx is higher today. Monitor ED triage times.";
-  } else if (criticalPatients < criticalPatientsY && emergencyCases < emergencyCasesY) {
-    highRiskInsight = "High-risk patient volume has decreased since yesterday.";
-  } else if (totalHighRisk === 0) {
-    highRiskInsight = "No critical or emergency cases currently active.";
+  let highRiskInsight = "No critical or emergency cases currently active.";
+  if (criticalPatients > 0) {
+    highRiskInsight = `${criticalPatients} patient${criticalPatients > 1 ? 's' : ''} in critical condition is currently active.`;
+  } else if (emergencyCases > 0) {
+    highRiskInsight = `${emergencyCases} emergency case${emergencyCases > 1 ? 's' : ''} currently active.`;
   }
+
+  // Revenue trend text
+  const revDiff = revenue - revenueY;
+  const revPct = revenueY > 0 ? (revDiff / revenueY) * 100 : 0;
+  const revTone = revDiff >= 0 ? "up" : "down";
 
   return (
     <section
@@ -185,130 +257,171 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
       {/* Grid */}
       <div className="grid flex-1 grid-cols-2 grid-rows-3">
         {/* Cell 1: Bed Occupancy */}
-        <div className="flex flex-col justify-center border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Bed Occupancy</p>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-3xl font-bold text-[#d97706]">
-              {Math.round(clampPct(bedOccupancy))}
-              <span className="text-2xl ml-0.5">%</span>
-            </p>
-            <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-              {bedTrend.tone === "down" ? <MiniChartDown /> : bedTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
+        <div className="flex flex-col justify-between border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <div>
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Bed Occupancy</p>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-3xl font-bold text-[#d97706]">
+                {Math.round(clampPct(bedOccupancy))}
+                <span className="text-2xl ml-0.5">%</span>
+              </p>
+              <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                {bedTrend.tone === "down" ? <MiniChartDown /> : bedTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
+              </div>
             </div>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                7-Day Avg: {Math.round(clampPct(bed7dAvg))}%
+              </p>
+              <TinyTrendChart data={todayOverview?.bed_occupancy_trend || [65, 66, 68, 69, 70, 69, 68]} color="orange" />
+            </div>
+            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : bedOccupancy < 80 ? "Bed availability is good, demand has eased today." : "High demand for beds today."}
+            </p>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : `Yesterday was ${Math.round(clampPct(bedOccupancyY))}%. ${bedOccupancy > bedOccupancyY ? "Higher demand today." : bedOccupancy < bedOccupancyY ? "Lower demand today." : "Stable demand."}`}
-          </p>
+          <StatusBadge type={bedOccupancy < 85 ? "success" : "warning"} text={bedOccupancy < 85 ? "Normal" : "High"} />
         </div>
 
         {/* Cell 2: Active Patients */}
-        <div className="flex flex-col justify-center border-b border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Active Patients</p>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activePatients}</p>
-            <div className="flex h-7 items-center gap-1.5 rounded-full bg-[#f0f5ff] px-2.5 text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
-              <TrendingUp size={12} strokeWidth={2.5} />
-              <span className="text-[11px] font-semibold">
-                {activePatients - (yesterdayOverview?.active_patients?.total ?? 0) > 0 ? "+" : ""}
-                {activePatients - (yesterdayOverview?.active_patients?.total ?? 0)} Vs yesterday
-              </span>
+        <div className="flex flex-col justify-between border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+          <div>
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Active Patients</p>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activePatients}</p>
+              <div className="flex h-7 items-center gap-1.5 rounded-full bg-[#f0f5ff] px-2.5 text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
+                <TrendingUp size={12} strokeWidth={2.5} />
+                <span className="text-[11px] font-semibold">
+                  {activePatients - (yesterdayOverview?.active_patients?.total ?? 0) > 0 ? "+" : ""}
+                  {activePatients - (yesterdayOverview?.active_patients?.total ?? 0)} vs yesterday
+                </span>
+              </div>
             </div>
+            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : `${yesterdayOverview?.active_patients?.total ?? 0} patients yesterday. Inflow is ${activePatients > (yesterdayOverview?.active_patients?.total ?? 0) ? "increasing" : "decreasing"} compared to yesterday.`}
+            </p>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : `${yesterdayOverview?.active_patients?.total ?? 0} patients yesterday. ${activePatients > (yesterdayOverview?.active_patients?.total ?? 0) ? "Inflow is increasing." : "Inflow is decreasing."}`}
-          </p>
+          <StatusBadge type="success" text="Normal" />
         </div>
 
         {/* Cell 3: ICU Occupancy */}
-        <div className="flex flex-col justify-center border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">ICU Occupancy</p>
-          <div className="mt-2 flex items-center gap-3">
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {Math.round(clampPct(icuOcc))}
-              <span className="text-2xl text-[#d97706] ml-0.5">%</span>
-            </p>
-            <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-              {icuTrend.tone === "down" ? <MiniChartDown /> : icuTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
+        <div className="flex flex-col justify-between border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <div>
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">ICU Occupancy</p>
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {Math.round(clampPct(icuOcc))}
+                <span className="text-2xl text-[#d97706] ml-0.5">%</span>
+              </p>
+              <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                {icuTrend.tone === "down" ? <MiniChartDown /> : icuTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
+              </div>
             </div>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                7-Day Avg: {Math.round(clampPct(icu7dAvg))}%
+              </p>
+              <TinyTrendChart data={todayOverview?.icu_occupancy_trend || [40, 42, 45, 46, 45, 42, 39]} color="orange" />
+            </div>
+            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : icuOcc < 75 ? "ICU has good capacity available." : "ICU capacity is limited."}
+            </p>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : `Yesterday: ${Math.round(clampPct(icuOccY))}%. ${icuOcc > 80 ? "Critical levels, monitor closely." : "Sufficient capacity available."}`}
-          </p>
+          <StatusBadge type={icuOcc < 80 ? "success" : "error"} text={icuOcc < 80 ? "Sufficient" : "Critical"} />
         </div>
 
         {/* Cell 4: High-Risk Patients */}
-        <div className="flex flex-col justify-center border-b border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">High-Risk Patients</p>
-          
-          <div className="mt-2 flex items-end gap-6">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-rose-500"></div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Critical</span>
+        <div className="flex flex-col justify-between border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+          <div>
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">High-Risk Patients</p>
+            
+            <div className="mt-2 flex items-end gap-6">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-rose-500"></div>
+                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Critical</span>
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
+                  <span className="text-[10px] font-medium text-gray-500 ml-1">{criticalPatientsY}</span>
+                </div>
               </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
-                <span className={`text-[10px] font-medium ${diffInt(criticalPatients, criticalPatientsY, "").tone === "down" ? "text-emerald-600" : diffInt(criticalPatients, criticalPatientsY, "").tone === "up" ? "text-rose-600" : "text-gray-500"}`}>{diffInt(criticalPatients, criticalPatientsY, "").text}</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
+                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Emergency</span>
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{emergencyCases}</p>
+                  <span className="text-[10px] font-medium text-gray-500 ml-1">{emergencyCasesY}</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Emergency</span>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{emergencyCases}</p>
-                <span className={`text-[10px] font-medium ${diffInt(emergencyCases, emergencyCasesY, "").tone === "down" ? "text-emerald-600" : diffInt(emergencyCases, emergencyCasesY, "").tone === "up" ? "text-amber-600" : "text-gray-500"}`}>{diffInt(emergencyCases, emergencyCasesY, "").text}</span>
-              </div>
-            </div>
+            
+            <p className="mt-4 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : highRiskInsight}
+            </p>
           </div>
-          
-          <div className="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-            <div style={{ width: `${critPct}%` }} className="bg-rose-500 transition-all duration-500" />
-            <div style={{ width: `${emergPct}%` }} className="bg-amber-500 transition-all duration-500" />
-          </div>
-          
-          <p className="mt-2.5 text-[11px] text-gray-500 dark:text-gray-400 leading-snug">
-            {loading ? "..." : highRiskInsight}
-          </p>
+          <StatusBadge type={totalHighRisk > 5 ? "error" : "warning"} text={totalHighRisk > 5 ? "Critical" : "Stable"} />
         </div>
 
         {/* Cell 5: Today's Revenue */}
-        <div className="flex flex-col justify-center border-r border-gray-100 px-6 py-5 dark:border-gray-800">
-          <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Revenue</p>
-          <div className="mt-2 flex items-center gap-2">
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              <span className="text-[22px] font-semibold mr-1.5">PKR</span>
-              {Math.round(revenue).toLocaleString("en-PK")}
+        <div className="flex flex-col justify-between border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+          <div>
+            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Revenue</p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <span className="text-[20px] font-semibold mr-1.5">PKR</span>
+                {Math.round(revenue).toLocaleString("en-PK")}
+              </p>
+              <span className={`text-[13px] font-semibold ${revTone === "up" ? "text-emerald-600" : "text-rose-600"}`}>
+                {revTone === "up" ? "↑" : "↓"}{revTone === "up" ? "+" : ""}{Math.round(revPct)}%
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                7-Day Avg: PKR {Math.round(rev7dAvg).toLocaleString("en-PK")}
+              </p>
+              <TinyTrendChart data={todayOverview?.revenue_trend || [2000, 2200, 2500, 2400, 2800, 3000, 3399]} color="green" />
+            </div>
+            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : "Revenue is stable, but clearance of aged pending payments is advised."}
             </p>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : `Yesterday: PKR ${Math.round(yesterdayOverview?.todays_revenue ?? 0).toLocaleString("en-PK")} (${revenue - (yesterdayOverview?.todays_revenue ?? 0) >= 0 ? '+' : ''}${Math.round((yesterdayOverview?.todays_revenue ?? 0) > 0 ? ((revenue - (yesterdayOverview?.todays_revenue ?? 0)) / (yesterdayOverview?.todays_revenue ?? 0)) * 100 : 0)}%).`}
-          </p>
         </div>
 
         {/* Cell 6: Staff Available */}
-        <div className="flex flex-col justify-center px-6 py-5">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col justify-between px-6 py-5">
+          <div>
             <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Staff Available</p>
-            <span className="rounded bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
-              {todayHr?.absent_today || 0} absent
-            </span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{staffAvailable}</p>
-            <p className="text-[11px] font-semibold text-[#0066cc] dark:text-[#60a5fa] mb-1">out of</p>
-            <p className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">{totalStaff}</p>
-            <div className="flex items-center h-5 rounded bg-[#f0f5ff] px-1.5 gap-1 text-[#0066cc] mb-1 dark:bg-[#0b2a52] dark:text-[#60a5fa]">
-              <Users size={10} strokeWidth={2.5} />
-              <span className="text-[10px] font-semibold">Total</span>
+            
+            <div className="mt-2 flex items-baseline gap-2">
+              <p className={`text-3xl font-bold ${staffAvailable < totalStaff * 0.8 ? 'text-rose-600' : 'text-gray-900 dark:text-gray-100'}`}>{staffAvailable}</p>
+              <p className="text-[12px] font-medium text-gray-500 mb-1">of</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-0.5">{totalStaff}</p>
+              
+              {staffAbsent > 0 && (
+                <div className="ml-2 flex items-center gap-1 text-[11px] font-semibold text-rose-600">
+                  <span className="bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded flex items-center gap-1 dark:bg-rose-900/20">
+                    <AlertTriangle size={10} />
+                    +{staffAbsent} ill <ChevronRight size={10} className="ml-0.5" />
+                  </span>
+                </div>
+              )}
             </div>
+
+            {staffAvailable < totalStaff * 0.8 && (
+              <div className="mt-3 flex items-center gap-1.5 text-amber-600">
+                <AlertTriangle size={14} />
+                <span className="text-[13px] font-semibold">Limited Staff</span>
+              </div>
+            )}
+            
+            <p className="mt-2 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+              {loading ? "..." : (staffAvailable / (totalStaff || 1) < 0.8 ? "Ensure adequate coverage for critical departments." : "Coverage is optimal for current patient load.")}
+            </p>
           </div>
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-            {loading ? "..." : (staffAvailable / (totalStaff || 1) < 0.8 ? "Warning: Operating with reduced staff." : "Coverage is optimal for current patient load.")}
-          </p>
         </div>
       </div>
     </section>
