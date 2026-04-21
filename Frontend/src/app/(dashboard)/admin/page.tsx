@@ -6,6 +6,7 @@ import CoreHospitalKpisCard from "@/components/command-center/CoreHospitalKpisCa
 import CapacityIntelligenceCard from "@/components/command-center/CapacityIntelligenceCard";
 import PharmacyIntelligenceCard from "@/components/command-center/PharmacyIntelligenceCard";
 import ClinicalRiskCard from "@/components/command-center/ClinicalRiskCard";
+import StaffIntelligenceCard from "@/components/command-center/StaffIntelligenceCard";
 
 export default function AdminDashboard() {
   return (
@@ -38,29 +39,7 @@ export default function AdminDashboard() {
       <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-stretch">
         <ClinicalRiskCard className="h-full" />
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col h-full">
-          <header className="flex items-center justify-between gap-3">
-            <h3 className="text-[15px] font-semibold text-gray-800 dark:text-gray-100">Staff Intelligence</h3>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">Placeholder</span>
-          </header>
-          <div className="mt-4 flex-1 flex flex-col gap-3">
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Staff on duty</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">22</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Absent staff</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">7</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Shift coverage</p>
-              <p className="text-[15px] font-semibold text-emerald-600 dark:text-emerald-500">Good</p>
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
-            Coverage sufficient overall; monitor evening shift coverage for Emergency and ICU.
-          </div>
-        </section>
+        <StaffIntelligenceCard className="h-full" />
 
         <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col h-full">
           <header className="flex items-center justify-between gap-3">
