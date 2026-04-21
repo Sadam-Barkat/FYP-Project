@@ -8,6 +8,7 @@ import PharmacyIntelligenceCard from "@/components/command-center/PharmacyIntell
 import ClinicalRiskCard from "@/components/command-center/ClinicalRiskCard";
 import StaffIntelligenceCard from "@/components/command-center/StaffIntelligenceCard";
 import FinancialIntelligenceCard from "@/components/command-center/FinancialIntelligenceCard";
+import ForecastIntelligenceCard from "@/components/command-center/ForecastIntelligenceCard";
 
 export default function AdminDashboard() {
   return (
@@ -44,25 +45,7 @@ export default function AdminDashboard() {
 
         <FinancialIntelligenceCard className="h-full" />
 
-        <InsightPanel title="Forecast Intelligence" chartLabel="Next 7 days" className="h-full">
-          <div className="flex-1 flex flex-col gap-3 mt-1">
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
-              <p className="text-[13px] text-gray-500 dark:text-gray-400">Capacity Risk</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">6.7</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
-              <p className="text-[13px] text-gray-500 dark:text-gray-400">Predicted Adm.</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">48</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900 flex justify-between items-center">
-              <p className="text-[13px] text-gray-500 dark:text-gray-400">Predicted Occ.</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">67%</p>
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
-            Moderate capacity risk; expected to increase slightly based on recent intake trends.
-          </div>
-        </InsightPanel>
+        <ForecastIntelligenceCard className="h-full" />
       </section>
     </div>
   );
