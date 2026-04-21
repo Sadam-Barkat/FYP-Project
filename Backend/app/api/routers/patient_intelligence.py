@@ -1,24 +1,20 @@
 """
-Admin patient risk intelligence: NEWS2-based ranking (score not exposed) + OpenAI predictions.
+Admin patient intelligence: census, vitals quality metrics, NEWS2 (internal), OpenAI summary.
 """
 from __future__ import annotations
 
 import asyncio
-import json
-import re
-import urllib.request
-from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
 from app.core.ops_openai_settings import resolve_openai_api_key
 from app.database import get_db
 from app.models.admission import Admission
-from app.models.bed import Bed
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.models.vital import Vital
@@ -27,7 +23,8 @@ router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 
 OPENAI_SYSTEM = (
     "You are a clinical AI assistant for a hospital dashboard. "
-    "Be concise and direct."
+    "Be concise, direct, and medically practical. "
+    "Respond in exactly 2 sentences only. No extra text."
 )
 
 
@@ -41,28 +38,27 @@ def require_admin(user: User = Depends(get_current_user)) -> User:
 
 
 def calculate_news2(
-    respiratory_rate: Optional[int],
+    rr: Optional[int],
     spo2: Optional[int],
-    temperature: Optional[float],
-    systolic_bp: Optional[int],
-    heart_rate: Optional[int],
+    temp: Optional[float],
+    sbp: Optional[int],
+    hr: Optional[int],
 ) -> int:
-    """NEWS2 aggregate (0–20+); used only for sorting / high-risk counts — not returned to clients."""
-    rr = int(respiratory_rate) if respiratory_rate is not None else 16
+    """NEWS2 aggregate; not returned to API clients."""
+    r = int(rr) if rr is not None else 16
     sp = int(spo2) if spo2 is not None else 98
-    temp = float(temperature) if temperature is not None else 37.0
-    sys_bp = int(systolic_bp) if systolic_bp is not None else 120
-    hr = int(heart_rate) if heart_rate is not None else 72
+    t = float(temp) if temp is not None else 37.0
+    sys_bp = int(sbp) if sbp is not None else 120
+    h = int(hr) if hr is not None else 72
 
     score = 0
-
-    if rr <= 8:
+    if r <= 8:
         score += 3
-    elif rr <= 11:
+    elif r <= 11:
         score += 1
-    elif rr <= 20:
+    elif r <= 20:
         score += 0
-    elif rr <= 24:
+    elif r <= 24:
         score += 2
     else:
         score += 3
@@ -74,13 +70,13 @@ def calculate_news2(
     elif sp <= 95:
         score += 1
 
-    if temp <= 35.0:
+    if t <= 35.0:
         score += 3
-    elif temp <= 36.0:
+    elif t <= 36.0:
         score += 1
-    elif temp <= 38.0:
+    elif t <= 38.0:
         score += 0
-    elif temp <= 39.0:
+    elif t <= 39.0:
         score += 1
     else:
         score += 2
@@ -96,15 +92,15 @@ def calculate_news2(
     else:
         score += 3
 
-    if hr <= 40:
+    if h <= 40:
         score += 3
-    elif hr <= 50:
+    elif h <= 50:
         score += 1
-    elif hr <= 90:
+    elif h <= 90:
         score += 0
-    elif hr <= 110:
+    elif h <= 110:
         score += 1
-    elif hr <= 130:
+    elif h <= 130:
         score += 2
     else:
         score += 3
@@ -112,83 +108,45 @@ def calculate_news2(
     return score
 
 
-def _news2_high_risk(score: int) -> bool:
-    return score >= 7
+def _hr_normal(v: Optional[int]) -> bool:
+    return v is not None and 60 <= v <= 100
 
 
-def _metric_dir(curr: Optional[float], prev: Optional[float]) -> str:
-    if curr is None or prev is None:
-        return "STABLE"
-    if curr > prev:
-        return "UP"
-    if curr < prev:
-        return "DOWN"
-    return "STABLE"
+def _sbp_normal(v: Optional[int]) -> bool:
+    return v is not None and 90 <= v <= 120
 
 
-def _vitals_dict(v: Optional[Vital]) -> Dict[str, Any]:
+def _temp_normal(v: Optional[float]) -> bool:
+    return v is not None and 36.1 <= v <= 37.2
+
+
+def _spo2_normal(v: Optional[int]) -> bool:
+    return v is not None and v >= 95
+
+
+def _rr_normal(v: Optional[int]) -> bool:
+    return v is not None and 12 <= v <= 20
+
+
+def _patient_has_any_abnormal(v: Vital) -> bool:
+    checks = [
+        (v.heart_rate, _hr_normal),
+        (v.blood_pressure_sys, _sbp_normal),
+        (v.temperature, _temp_normal),
+        (v.spo2, _spo2_normal),
+        (v.respiratory_rate, _rr_normal),
+    ]
+    for val, ok in checks:
+        if val is None:
+            continue
+        if not ok(val):
+            return True
+    return False
+
+
+def _score_for_vital(v: Optional[Vital]) -> int:
     if not v:
-        return {
-            "heart_rate": 0,
-            "systolic_bp": 0,
-            "diastolic_bp": 0,
-            "temperature": 0.0,
-            "spo2": 0,
-            "respiratory_rate": 0,
-        }
-    return {
-        "heart_rate": int(v.heart_rate) if v.heart_rate is not None else 0,
-        "systolic_bp": int(v.blood_pressure_sys)
-        if v.blood_pressure_sys is not None
-        else 0,
-        "diastolic_bp": int(v.blood_pressure_dia)
-        if v.blood_pressure_dia is not None
-        else 0,
-        "temperature": float(v.temperature) if v.temperature is not None else 0.0,
-        "spo2": int(v.spo2) if v.spo2 is not None else 0,
-        "respiratory_rate": int(v.respiratory_rate)
-        if v.respiratory_rate is not None
-        else 0,
-    }
-
-
-def _vitals_change(latest: Optional[Vital], previous: Optional[Vital]) -> Dict[str, str]:
-    if not latest or not previous:
-        return {
-            "heart_rate": "STABLE",
-            "bp": "STABLE",
-            "spo2": "STABLE",
-            "temp": "STABLE",
-        }
-    return {
-        "heart_rate": _metric_dir(
-            float(latest.heart_rate) if latest.heart_rate is not None else None,
-            float(previous.heart_rate) if previous.heart_rate is not None else None,
-        ),
-        "bp": _metric_dir(
-            float(latest.blood_pressure_sys)
-            if latest.blood_pressure_sys is not None
-            else None,
-            float(previous.blood_pressure_sys)
-            if previous.blood_pressure_sys is not None
-            else None,
-        ),
-        "spo2": _metric_dir(
-            float(latest.spo2) if latest.spo2 is not None else None,
-            float(previous.spo2) if previous.spo2 is not None else None,
-        ),
-        "temp": _metric_dir(
-            float(latest.temperature) if latest.temperature is not None else None,
-            float(previous.temperature)
-            if previous.temperature is not None
-            else None,
-        ),
-    }
-
-
-def _score_from_vital(v: Optional[Vital]) -> int:
-    if not v:
-        return 0
+        return calculate_news2(None, None, None, None, None)
     return calculate_news2(
         v.respiratory_rate,
         v.spo2,
@@ -198,81 +156,72 @@ def _score_from_vital(v: Optional[Vital]) -> int:
     )
 
 
-def _parse_openai_json_array(raw: str) -> List[Dict[str, Any]]:
-    txt = (raw or "").strip()
-    if txt.startswith("```"):
-        txt = re.sub(r"^```[a-zA-Z]*\s*", "", txt)
-        txt = re.sub(r"\s*```$", "", txt)
-    data = json.loads(txt)
-    if not isinstance(data, list):
-        return []
-    return [x for x in data if isinstance(x, dict)]
+def _openai_summary_sync(
+    total_patients: int,
+    at_risk_count: int,
+    vitals_health_percentage: int,
+    critical_vitals_percentage: int,
+    change_from_last_week: int,
+    top_risk_patient_names: str,
+) -> str:
+    from openai import OpenAI
 
-
-def _openai_predictions_sync(patients_payload: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     api_key = (resolve_openai_api_key() or "").strip()
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY missing")
 
-    user_msg = f"""
-Based on these patients vitals and trends,
-give a one-line prediction for each patient
-about their health risk in the next 24 hours.
-Only use vitals data to predict. Be specific.
-Format response as JSON array:
-[
-  {{"name": "...", "prediction": "one line prediction here"}},
-  ...
-]
+    user_prompt = f"""
+Hospital patient summary:
+- Total active patients: {total_patients}
+- Patients with abnormal vitals: {at_risk_count}
+- Overall vitals health: {vitals_health_percentage}%
+- Critical vitals percentage: {critical_vitals_percentage}%
+- Change from last week: {change_from_last_week} patients
+- Top at risk patients by vitals: {top_risk_patient_names}
 
-Patients data:
-{json.dumps(patients_payload)}
+Give exactly 2 sentences:
+Sentence 1: Overall prediction about patient
+health risk in next 5 days.
+Sentence 2: Mention the at-risk patient names
+specifically and recommend action.
+
+Example:
+"Based on current vitals trends, 3 patients are likely
+to need urgent attention in the next 5 days.
+Patients Ahmed Ali, Sara Khan, and Bilal Ahmed are
+showing critical vitals — immediate review recommended."
 """
 
-    body = {
-        "model": "gpt-4o-mini",
-        "max_tokens": 300,
-        "messages": [
+    client = OpenAI(api_key=api_key)
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=100,
+        messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
-            {"role": "user", "content": user_msg},
+            {"role": "user", "content": user_prompt},
         ],
-    }
-    req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
     )
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    content = payload["choices"][0]["message"]["content"]
-    return _parse_openai_json_array(content)
+    msg = resp.choices[0].message.content
+    return (msg or "").strip()
 
 
-async def _fetch_openai_predictions(
-    patients_payload: List[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
-    return await asyncio.to_thread(_openai_predictions_sync, patients_payload)
-
-
-def _merge_predictions(
-    patients: List[Dict[str, Any]], preds: List[Dict[str, Any]]
-) -> None:
-    for p in patients:
-        p["prediction"] = "Prediction unavailable"
-    by_name: Dict[str, str] = {}
-    for row in preds:
-        name = str(row.get("name", "")).strip()
-        pr = str(row.get("prediction", "")).strip()
-        if name and pr:
-            by_name[name.lower()] = pr
-    for p in patients:
-        key = str(p.get("name", "")).strip().lower()
-        if key in by_name:
-            p["prediction"] = by_name[key]
+async def _fetch_ai_prediction(
+    total_patients: int,
+    at_risk_count: int,
+    vitals_health_percentage: int,
+    critical_vitals_percentage: int,
+    change_from_last_week: int,
+    top_risk_patient_names: str,
+) -> str:
+    return await asyncio.to_thread(
+        _openai_summary_sync,
+        total_patients,
+        at_risk_count,
+        vitals_health_percentage,
+        critical_vitals_percentage,
+        change_from_last_week,
+        top_risk_patient_names,
+    )
 
 
 @router.get("/patient-intelligence")
@@ -281,74 +230,100 @@ async def get_patient_intelligence(
     _: User = Depends(require_admin),
 ) -> Dict[str, Any]:
     adm_res = await db.execute(
-        select(Admission, Patient, Bed)
+        select(Admission, Patient)
         .join(Patient, Admission.patient_id == Patient.id)
-        .join(Bed, Admission.bed_id == Bed.id)
         .where(Admission.discharge_date.is_(None))
     )
     adm_rows = adm_res.all()
     patient_ids = [int(row.Patient.id) for row in adm_rows]
+    total_patients = len(patient_ids)
 
-    vitals_map: Dict[int, List[Vital]] = defaultdict(list)
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    prev_week_res = await db.execute(
+        select(func.count(Admission.id)).where(
+            Admission.discharge_date.is_(None),
+            Admission.admission_date >= week_ago,
+        )
+    )
+    previous_week_patients = int(prev_week_res.scalar() or 0)
+    change_from_last_week = total_patients - previous_week_patients
+
+    latest_by_pid: Dict[int, Vital] = {}
     if patient_ids:
         vit_res = await db.execute(
             select(Vital)
             .where(Vital.patient_id.in_(patient_ids))
-            .order_by(Vital.patient_id, Vital.recorded_at.desc())
+            .order_by(Vital.recorded_at.desc())
         )
         for v in vit_res.scalars().all():
-            if len(vitals_map[v.patient_id]) < 2:
-                vitals_map[v.patient_id].append(v)
+            if v.patient_id not in latest_by_pid:
+                latest_by_pid[v.patient_id] = v
 
-    high_risk_count = 0
-    scored: List[Tuple[int, Dict[str, Any]]] = []
+    normal_checks = 0
+    total_checks = 0
+    abnormal_patient_ids: set[int] = set()
+    scored: List[Tuple[int, str]] = []
 
     for row in adm_rows:
         patient: Patient = row.Patient
-        bed: Bed = row.Bed
         pid = int(patient.id)
-        vlist = vitals_map.get(pid, [])
-        latest = vlist[0] if vlist else None
-        previous = vlist[1] if len(vlist) > 1 else None
+        v = latest_by_pid.get(pid)
+        name = (patient.name or "").strip() or f"Patient #{pid}"
 
-        score = _score_from_vital(latest)
-        if _news2_high_risk(score):
-            high_risk_count += 1
+        if v:
+            field_vals = [
+                (v.heart_rate, _hr_normal),
+                (v.blood_pressure_sys, _sbp_normal),
+                (v.temperature, _temp_normal),
+                (v.spo2, _spo2_normal),
+                (v.respiratory_rate, _rr_normal),
+            ]
+            for val, ok_fn in field_vals:
+                if val is None:
+                    continue
+                total_checks += 1
+                if ok_fn(val):
+                    normal_checks += 1
+                else:
+                    abnormal_patient_ids.add(pid)
 
-        cond = (latest.condition_level if latest else None) or "unknown"
-        payload = {
-            "name": patient.name or "",
-            "age": int(patient.age) if patient.age is not None else 0,
-            "gender": patient.gender or "",
-            "ward": bed.ward or "",
-            "condition_level": (cond or "").lower().strip(),
-            "vitals": _vitals_dict(latest),
-            "vitals_change": _vitals_change(latest, previous),
-        }
-        scored.append((score, payload))
+        sc = _score_for_vital(v)
+        scored.append((sc, name))
+
+    vitals_health_percentage = (
+        int(round(100 * normal_checks / total_checks)) if total_checks else 0
+    )
+    critical_vitals_percentage = (
+        int(round(100 * len(abnormal_patient_ids) / total_patients))
+        if total_patients
+        else 0
+    )
+
+    at_risk_count = sum(1 for sc, _ in scored if sc >= 5)
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    top5 = [dict(p) for _, p in scored[:5]]
+    top_names = [n for _, n in scored[:5]]
+    top_risk_patients = ", ".join(top_names) if top_names else ""
 
-    ai_payload = [
-        {
-            "name": p["name"],
-            "age": p["age"],
-            "gender": p["gender"],
-            "ward": p["ward"],
-            "condition_level": p["condition_level"],
-            "vitals": p["vitals"],
-            "vitals_change": p["vitals_change"],
-        }
-        for p in top5
-    ]
+    try:
+        ai_prediction = await _fetch_ai_prediction(
+            total_patients,
+            at_risk_count,
+            vitals_health_percentage,
+            critical_vitals_percentage,
+            change_from_last_week,
+            top_risk_patients or "(none listed)",
+        )
+    except Exception:
+        ai_prediction = "Prediction unavailable at this time."
 
-    if top5:
-        try:
-            preds = await _fetch_openai_predictions(ai_payload)
-            _merge_predictions(top5, preds)
-        except Exception:
-            for p in top5:
-                p["prediction"] = "Prediction unavailable"
-
-    return {"high_risk_count": high_risk_count, "patients": top5}
+    return {
+        "total_patients": total_patients,
+        "previous_week_patients": previous_week_patients,
+        "change_from_last_week": change_from_last_week,
+        "vitals_health_percentage": vitals_health_percentage,
+        "critical_vitals_percentage": critical_vitals_percentage,
+        "at_risk_count": at_risk_count,
+        "top_risk_patients": top_risk_patients,
+        "ai_prediction": ai_prediction,
+    }

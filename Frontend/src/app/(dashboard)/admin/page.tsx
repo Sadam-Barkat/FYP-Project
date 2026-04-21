@@ -81,36 +81,15 @@ export type HospitalOverviewKpis = {
   revenue_today_breakdown?: RevenueTodayBreakdown | null;
 };
 
-export type PatientIntelVitals = {
-  heart_rate: number;
-  systolic_bp: number;
-  diastolic_bp: number;
-  temperature: number;
-  spo2: number;
-  respiratory_rate: number;
-};
-
-export type PatientIntelVitalsChange = {
-  heart_rate: string;
-  bp: string;
-  spo2: string;
-  temp: string;
-};
-
-export type PatientIntelPatient = {
-  name: string;
-  age: number;
-  gender: string;
-  ward: string;
-  condition_level: string;
-  vitals: PatientIntelVitals;
-  vitals_change: PatientIntelVitalsChange;
-  prediction: string;
-};
-
 export type PatientIntelResponse = {
-  high_risk_count: number;
-  patients: PatientIntelPatient[];
+  total_patients: number;
+  previous_week_patients: number;
+  change_from_last_week: number;
+  vitals_health_percentage: number;
+  critical_vitals_percentage: number;
+  at_risk_count: number;
+  top_risk_patients: string;
+  ai_prediction: string;
 };
 
 function formatKpiDisplay(
@@ -250,40 +229,46 @@ function intelFooterUpdated(at: Date | null, tick: number): string {
   return `last updated ${m} mins ago`;
 }
 
-function conditionBadgeClass(level: string): string {
-  const x = (level || "").toLowerCase().trim();
-  if (x === "critical") return "bg-[#ef4444]/20 text-[#fecaca] ring-1 ring-[#ef4444]/40";
-  if (x === "emergency")
-    return "bg-[#7f1d1d]/50 text-[#fecaca] ring-1 ring-[#991b1b]";
-  if (x === "stable") return "bg-[#10b981]/20 text-[#bbf7d0]";
-  if (x === "observation") return "bg-[#f59e0b]/20 text-[#fde68a]";
-  return "bg-[#1e3a5f] text-[#94a3b8]";
+function healthPctEmoji(pct: number): string {
+  if (pct >= 70) return "🟢";
+  if (pct >= 50) return "🟡";
+  return "🔴";
 }
 
-type VitalKind = "hr" | "bp" | "spo2" | "temp";
+function healthPctClass(pct: number): string {
+  if (pct >= 70) return "text-[#10b981]";
+  if (pct >= 50) return "text-[#f59e0b]";
+  return "text-[#ef4444]";
+}
 
-function vitalsArrowClass(kind: VitalKind, dir: string): string {
-  const d = (dir || "").toUpperCase();
-  if (d === "STABLE") return "text-[#94a3b8]";
-  if (kind === "spo2") {
-    return d === "UP" ? "text-[#10b981]" : "text-[#ef4444]";
+function changeVsWeekUi(delta: number): { arrow: string; cls: string; tail: string } {
+  if (delta > 0) {
+    return { arrow: "↑", cls: "text-[#10b981]", tail: `${delta} vs last week` };
   }
-  return d === "UP" ? "text-[#ef4444]" : "text-[#10b981]";
+  if (delta < 0) {
+    return {
+      arrow: "↓",
+      cls: "text-[#ef4444]",
+      tail: `${Math.abs(delta)} vs last week`,
+    };
+  }
+  return { arrow: "—", cls: "text-[#94a3b8]", tail: "0 vs last week" };
 }
 
-function vitalsArrowSymbol(dir: string): string {
-  const d = (dir || "").toUpperCase();
-  if (d === "UP") return "↑";
-  if (d === "DOWN") return "↓";
-  return "—";
+function splitAiTwoSentences(text: string): [string, string] {
+  const t = (text || "").trim();
+  if (!t) return ["", ""];
+  const m = t.match(/^(.+?[.!?])(\s+.+)$/);
+  if (m) return [m[1].trim(), m[2].trim()];
+  return [t, ""];
 }
 
-function predictionTextClass(text: string): string {
-  const t = (text || "").toLowerCase();
-  if (/(risk|failure|critical|deteriorat)/.test(t)) return "text-[#ef4444]";
-  if (/(monitor|watch|concern)/.test(t)) return "text-[#f59e0b]";
-  if (/(stable|improving)/.test(t)) return "text-[#10b981]";
-  return "text-[#94a3b8]";
+function aiSecondSentenceClass(s: string): string {
+  const x = s.toLowerCase();
+  if (/(critical|urgent|risk|danger)/.test(x)) return "text-[#ef4444] font-semibold";
+  if (/(monitor|watch|attention)/.test(x)) return "text-[#f97316] font-semibold";
+  if (/(stable|improving)/.test(x)) return "text-[#10b981] font-semibold";
+  return "text-[#f97316] font-semibold";
 }
 
 const KPI_CARD_DEFS = [
@@ -510,98 +495,99 @@ export default function AdminDashboard() {
         })}
       </section>
 
-      {/* Patient Risk Intelligence — GET /api/patient-intelligence (width = 2 KPI cards on xl) */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="min-h-[11rem] rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 shadow-lg transition-colors hover:border-[#00b4d8] xl:col-span-2">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[#1e3a5f]/80 pb-2 text-sm">
-            <span className="text-[#00b4d8]" aria-hidden>
-              🧠
-            </span>
-            <span className="font-semibold text-[#00b4d8]">Patient Risk Intelligence</span>
-            <span className="text-[#64748b]" aria-hidden>
-              |
-            </span>
-            <span className="text-xs text-[#fecaca]">
-              🔴 {intelData?.high_risk_count ?? "—"} High Risk
-            </span>
-          </div>
+      {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="max-h-[220px] overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+          <h2 className="border-b border-[#1e3a5f] pb-2 text-xs font-semibold text-[#00b4d8]">
+            🧠 Patient Intelligence
+          </h2>
 
-          <div className="mt-3 space-y-0">
-            {!intelData && !intelLoading ? (
-              <p className="text-xs text-[#94a3b8]">
-                Unable to load. Check admin access and API connection.
-              </p>
-            ) : null}
-            {intelLoading && !intelData ? (
-              <div className="h-24 animate-pulse rounded-md bg-[#1e3a5f]/50" />
-            ) : null}
+          {!intelData && !intelLoading ? (
+            <p className="mt-2 text-xs text-[#94a3b8]">
+              Unable to load. Check admin access and API.
+            </p>
+          ) : null}
+          {intelLoading && !intelData ? (
+            <div className="mt-2 h-36 animate-pulse rounded-md bg-[#1e3a5f]/50" />
+          ) : null}
 
-            {intelData?.patients?.length === 0 && !intelLoading ? (
-              <p className="text-xs text-[#94a3b8]">No ranked patients yet.</p>
-            ) : null}
+          {intelData ? (
+            <div className="mt-2 space-y-2">
+              <div className="flex flex-wrap items-end gap-x-2 gap-y-0.5 border-b border-[#1e3a5f]/80 pb-2">
+                <span className="text-xs text-[#94a3b8]">Total:</span>
+                <span className="text-lg font-bold text-white">
+                  {intelData.total_patients}
+                </span>
+                {(() => {
+                  const u = changeVsWeekUi(intelData.change_from_last_week);
+                  return (
+                    <span className={`text-xs ${u.cls}`}>
+                      {u.arrow} {u.tail}
+                    </span>
+                  );
+                })()}
+              </div>
 
-            {intelData?.patients?.map((p, idx) => {
-              const vc = p.vitals_change;
-              const v = p.vitals;
-              const sep = "text-[#475569]";
-              return (
-                <div
-                  key={`${p.name}-${idx}`}
-                  className={`space-y-1 py-2 ${idx > 0 ? "border-t border-[#1e3a5f]" : ""}`}
-                >
-                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs leading-snug">
-                    <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${conditionBadgeClass(p.condition_level)}`}
-                    >
-                      {p.condition_level}
+              <div className="grid grid-cols-2 gap-2 border-b border-[#1e3a5f]/80 pb-2">
+                <div>
+                  <p className="text-xs text-[#94a3b8]">Vitals Health</p>
+                  <p
+                    className={`text-lg font-bold ${healthPctClass(
+                      intelData.vitals_health_percentage
+                    )}`}
+                  >
+                    {intelData.vitals_health_percentage}%{" "}
+                    <span className="text-base" aria-hidden>
+                      {healthPctEmoji(intelData.vitals_health_percentage)}
                     </span>
-                    <span className="text-sm font-medium text-[#ffffff]">{p.name}</span>
-                    <span className={sep}>—</span>
-                    <span className="text-[#94a3b8]">{p.ward || "—"}</span>
-                    <span className={sep}>—</span>
-                    <span className="text-[#94a3b8]">
-                      {`${p.age}/${p.gender || "—"}`}
-                    </span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed text-[#94a3b8]">
-                    <span className="text-[#64748b]">Vitals:</span>{" "}
-                    <span className={vitalsArrowClass("hr", vc.heart_rate)}>
-                      HR:{v.heart_rate}
-                      {vitalsArrowSymbol(vc.heart_rate)}
-                    </span>
-                    <span className="text-[#475569]"> | </span>
-                    <span className={vitalsArrowClass("bp", vc.bp)}>
-                      BP:{v.systolic_bp}/{v.diastolic_bp}
-                      {vitalsArrowSymbol(vc.bp)}
-                    </span>
-                    <span className="text-[#475569]"> | </span>
-                    <span className={vitalsArrowClass("spo2", vc.spo2)}>
-                      SpO2:{v.spo2}%
-                      {vitalsArrowSymbol(vc.spo2)}
-                    </span>
-                    <span className="text-[#475569]"> | </span>
-                    <span className={vitalsArrowClass("temp", vc.temp)}>
-                      Temp:{v.temperature}°C
-                      {vitalsArrowSymbol(vc.temp)}
-                    </span>
-                  </p>
-                  <p className={`text-[11px] leading-snug ${predictionTextClass(p.prediction)}`}>
-                    <span className="text-[#94a3b8]" aria-hidden>
-                      💬{" "}
-                    </span>
-                    &quot;{p.prediction}&quot;
                   </p>
                 </div>
-              );
-            })}
-          </div>
+                <div>
+                  <p className="text-xs text-[#94a3b8]">Critical Vitals</p>
+                  <p className="text-lg font-bold text-[#ef4444]">
+                    {intelData.critical_vitals_percentage}%{" "}
+                    <span className="text-base" aria-hidden>
+                      🔴
+                    </span>
+                  </p>
+                </div>
+              </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-[#1e3a5f]/80 pt-2 text-[10px] text-[#64748b]">
-            <span>Powered by NEWS2 + AI</span>
-            <span className="text-[#94a3b8]">{intelFooterUpdated(intelLastFetch, intelClock)}</span>
-          </div>
+              <div className="flex flex-wrap items-end gap-x-2 border-b border-[#1e3a5f]/80 pb-2">
+                <span className="text-xs text-[#94a3b8]">⚠️ At Risk:</span>
+                <span className="text-lg font-bold text-[#f97316]">
+                  {intelData.at_risk_count}
+                </span>
+                <span className="text-xs text-[#94a3b8]">patients</span>
+              </div>
+
+              {(() => {
+                const [s1, s2] = splitAiTwoSentences(intelData.ai_prediction);
+                return (
+                  <div className="border-l-2 border-[#00b4d8] pl-2">
+                    <p className="text-xs text-[#00b4d8]">🤖 Next 5 Days:</p>
+                    {s1 ? (
+                      <p className="mt-1 text-xs italic text-white">{s1}</p>
+                    ) : null}
+                    {s2 ? (
+                      <p className={`mt-1 text-xs ${aiSecondSentenceClass(s2)}`}>
+                        {s2}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })()}
+
+              <p className="text-xs text-[#94a3b8]">
+                {intelFooterUpdated(intelLastFetch, intelClock)}
+              </p>
+            </div>
+          ) : null}
         </div>
-      </section>
+
+        {/* Future dashboard cards */}
+        <div className="min-h-[1px]" aria-hidden />
+      </div>
 
     </div>
   );
