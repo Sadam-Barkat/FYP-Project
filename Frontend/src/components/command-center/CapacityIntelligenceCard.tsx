@@ -209,7 +209,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   itemStyle={{ fontSize: '13px' }}
                   labelStyle={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}
-                  formatter={(value: number | undefined) => [`${(value || 0).toFixed(1)}%`, undefined]}
+                  formatter={(value: number | undefined, name: string | undefined) => [`${(value || 0).toFixed(1)}%`, name || '']}
                 />
                 <Legend 
                   verticalAlign="bottom" 
@@ -224,6 +224,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
                   stroke="none" 
                   fillOpacity={1} 
                   fill="url(#colorDischarges)" 
+                  tooltipType="none"
                 />
                 <Line 
                   type="monotone" 
