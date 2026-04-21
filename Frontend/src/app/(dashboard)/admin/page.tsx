@@ -229,12 +229,6 @@ function intelFooterUpdated(at: Date | null, tick: number): string {
   return `last updated ${m} mins ago`;
 }
 
-function healthPctEmoji(pct: number): string {
-  if (pct >= 70) return "🟢";
-  if (pct >= 50) return "🟡";
-  return "🔴";
-}
-
 function healthPctClass(pct: number): string {
   if (pct >= 70) return "text-[#10b981]";
   if (pct >= 50) return "text-[#f59e0b]";
@@ -253,22 +247,6 @@ function changeVsWeekUi(delta: number): { arrow: string; cls: string; tail: stri
     };
   }
   return { arrow: "—", cls: "text-[#94a3b8]", tail: "0 vs last week" };
-}
-
-function splitAiTwoSentences(text: string): [string, string] {
-  const t = (text || "").trim();
-  if (!t) return ["", ""];
-  const m = t.match(/^(.+?[.!?])(\s+.+)$/);
-  if (m) return [m[1].trim(), m[2].trim()];
-  return [t, ""];
-}
-
-function aiSecondSentenceClass(s: string): string {
-  const x = s.toLowerCase();
-  if (/(critical|urgent|risk|danger)/.test(x)) return "text-[#ef4444] font-semibold";
-  if (/(monitor|watch|attention)/.test(x)) return "text-[#f97316] font-semibold";
-  if (/(stable|improving)/.test(x)) return "text-[#10b981] font-semibold";
-  return "text-[#f97316] font-semibold";
 }
 
 const KPI_CARD_DEFS = [
@@ -498,9 +476,25 @@ export default function AdminDashboard() {
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div className="max-h-[220px] overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <h2 className="border-b border-[#1e3a5f] pb-2 text-xs font-semibold text-[#00b4d8]">
-            🧠 Patient Intelligence
-          </h2>
+          <div className="flex items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
+            <h2 className="text-xs font-semibold text-[#00b4d8]">
+              🧠 Patient Intelligence
+            </h2>
+            {intelData && intelData.at_risk_count > 0 ? (
+              <span
+                className="relative flex h-2.5 w-2.5 shrink-0"
+                title="Patients at elevated risk (NEWS2)"
+                aria-hidden
+              >
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ef4444] opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
+              </span>
+            ) : intelData ? (
+              <span className="text-sm leading-none text-[#ef4444]" aria-hidden>
+                🔴
+              </span>
+            ) : null}
+          </div>
 
           {!intelData && !intelLoading ? (
             <p className="mt-2 text-xs text-[#94a3b8]">
@@ -512,76 +506,72 @@ export default function AdminDashboard() {
           ) : null}
 
           {intelData ? (
-            <div className="mt-2 space-y-2">
-              <div className="flex flex-wrap items-end gap-x-2 gap-y-0.5 border-b border-[#1e3a5f]/80 pb-2">
-                <span className="text-xs text-[#94a3b8]">Total:</span>
-                <span className="text-lg font-bold text-white">
-                  {intelData.total_patients}
-                </span>
-                {(() => {
-                  const u = changeVsWeekUi(intelData.change_from_last_week);
-                  return (
-                    <span className={`text-xs ${u.cls}`}>
-                      {u.arrow} {u.tail}
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 border-b border-[#1e3a5f]/80 pb-2">
+            <div className="mt-2 flex min-h-0 gap-0">
+              <div className="w-[45%] shrink-0 space-y-2 border-r border-[#1e3a5f] pr-2">
                 <div>
-                  <p className="text-xs text-[#94a3b8]">Vitals Health</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
+                    Total Patients
+                  </p>
+                  <p className="text-xl font-bold text-white">
+                    {intelData.total_patients}
+                  </p>
+                  {(() => {
+                    const u = changeVsWeekUi(intelData.change_from_last_week);
+                    return (
+                      <p className={`text-[10px] ${u.cls}`}>
+                        {u.arrow}
+                        {u.tail}
+                      </p>
+                    );
+                  })()}
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
+                    Vitals Health
+                  </p>
                   <p
-                    className={`text-lg font-bold ${healthPctClass(
+                    className={`text-base font-bold ${healthPctClass(
                       intelData.vitals_health_percentage
                     )}`}
                   >
-                    {intelData.vitals_health_percentage}%{" "}
-                    <span className="text-base" aria-hidden>
-                      {healthPctEmoji(intelData.vitals_health_percentage)}
-                    </span>
+                    {intelData.vitals_health_percentage}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-[#94a3b8]">Critical Vitals</p>
-                  <p className="text-lg font-bold text-[#ef4444]">
-                    {intelData.critical_vitals_percentage}%{" "}
-                    <span className="text-base" aria-hidden>
-                      🔴
-                    </span>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
+                    Critical Vitals
+                  </p>
+                  <p className="text-base font-bold text-[#ef4444]">
+                    {intelData.critical_vitals_percentage}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
+                    ⚠️ At Risk
+                  </p>
+                  <p className="text-base font-bold text-[#f97316]">
+                    {intelData.at_risk_count}
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-end gap-x-2 border-b border-[#1e3a5f]/80 pb-2">
-                <span className="text-xs text-[#94a3b8]">⚠️ At Risk:</span>
-                <span className="text-lg font-bold text-[#f97316]">
-                  {intelData.at_risk_count}
-                </span>
-                <span className="text-xs text-[#94a3b8]">patients</span>
+              <div className="w-[55%] shrink-0 pl-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
+                  🤖 AI Risk Forecast
+                </p>
+                <div className="mt-1 border-l-2 border-[#00b4d8] pl-2">
+                  <p className="line-clamp-6 text-[11px] italic text-white">
+                    {intelData.ai_prediction}
+                  </p>
+                </div>
               </div>
-
-              {(() => {
-                const [s1, s2] = splitAiTwoSentences(intelData.ai_prediction);
-                return (
-                  <div className="border-l-2 border-[#00b4d8] pl-2">
-                    <p className="text-xs text-[#00b4d8]">🤖 Next 5 Days:</p>
-                    {s1 ? (
-                      <p className="mt-1 text-xs italic text-white">{s1}</p>
-                    ) : null}
-                    {s2 ? (
-                      <p className={`mt-1 text-xs ${aiSecondSentenceClass(s2)}`}>
-                        {s2}
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })()}
-
-              <p className="text-xs text-[#94a3b8]">
-                {intelFooterUpdated(intelLastFetch, intelClock)}
-              </p>
             </div>
+          ) : null}
+
+          {intelData ? (
+            <p className="mt-2 text-[10px] text-[#94a3b8]">
+              {intelFooterUpdated(intelLastFetch, intelClock)}
+            </p>
           ) : null}
         </div>
 

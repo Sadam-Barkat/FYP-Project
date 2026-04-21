@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 OPENAI_SYSTEM = (
     "You are a clinical AI assistant for a hospital dashboard. "
     "Be concise, direct, and medically practical. "
-    "Respond in exactly 2 sentences only. No extra text."
+    "Use 2–3 short sentences only. No bullet lists or preamble."
 )
 
 
@@ -171,31 +171,37 @@ def _openai_summary_sync(
         raise RuntimeError("OPENAI_API_KEY missing")
 
     user_prompt = f"""
-Hospital patient summary:
+Hospital patient data:
 - Total active patients: {total_patients}
 - Patients with abnormal vitals: {at_risk_count}
-- Overall vitals health: {vitals_health_percentage}%
+- Overall vitals health score: {vitals_health_percentage}%
 - Critical vitals percentage: {critical_vitals_percentage}%
-- Change from last week: {change_from_last_week} patients
-- Top at risk patients by vitals: {top_risk_patient_names}
+- Top at risk patients: {top_risk_patient_names}
+- Change from last week: {change_from_last_week}
 
-Give exactly 2 sentences:
-Sentence 1: Overall prediction about patient
-health risk in next 5 days.
-Sentence 2: Mention the at-risk patient names
-specifically and recommend action.
+You are a clinical AI. Based on this vitals data,
+predict patient risk over the coming days.
+Do NOT use fixed time periods — decide yourself
+based on the data whether risk will happen in
+2 days, 3 days, 5 days or longer.
 
-Example:
-"Based on current vitals trends, 3 patients are likely
-to need urgent attention in the next 5 days.
-Patients Ahmed Ali, Sara Khan, and Bilal Ahmed are
-showing critical vitals — immediate review recommended."
+Respond in 2-3 short sentences:
+- Sentence 1: How many patients and in how many
+  days they will be at risk (let AI decide the days)
+- Sentence 2: Mention specific patient names at risk
+- Sentence 3: One recommended action for hospital staff
+
+Example (do not copy, just follow format):
+"3 patients show deteriorating vitals and may become
+critical within 2 days. Ahmed Ali and Sara Khan are
+at highest risk based on current trends.
+Immediate doctor review and monitoring is recommended."
 """
 
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=100,
+        max_tokens=150,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
