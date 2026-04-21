@@ -13,7 +13,6 @@ const ADMIN_TOP_NAV: NavItem[] = [
   { label: "Finance", href: "/admin/billing-finance" },
   { label: "HR", href: "/admin/hr-staff" },
   { label: "Alerts", href: "/admin/alerts" },
-  { label: "Analytics", href: "/admin/analytics" },
   { label: "AI Copilot", href: "/admin/ops-copilot" },
   { label: "User Management", href: "/admin/staff" },
 ];
