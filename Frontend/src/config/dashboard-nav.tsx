@@ -1,14 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Home,
-  BedSingle,
   Pill,
   TestTube2,
   DollarSign,
   Users,
-  Bell,
-  LineChart,
   Activity,
+  LineChart,
   UserCog,
   Bot,
 } from "lucide-react";
@@ -22,13 +20,10 @@ export type DashboardNavItem = {
 
 export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
   { name: "Dashboard", href: "/admin", icon: Home },
-  { name: "Patients & Beds", href: "/admin/patients-beds", icon: BedSingle },
   { name: "Pharmacy", href: "/admin/pharmacy", icon: Pill },
   { name: "Laboratory", href: "/admin/laboratory", icon: TestTube2 },
   { name: "Billing & Finance", href: "/admin/billing-finance", icon: DollarSign },
   { name: "HR & Staff", href: "/admin/hr-staff", icon: Users },
-  { name: "Alerts & Monitoring", href: "/admin/alerts", icon: Bell },
-  { name: "Analytics & Forecasts", href: "/admin/analytics", icon: LineChart },
   { name: "Ops Copilot", href: "/admin/ops-copilot", icon: Bot },
   { name: "User Management", href: "/admin/user-management", icon: UserCog },
 ];
@@ -36,12 +31,10 @@ export const ADMIN_NAV_ITEMS: DashboardNavItem[] = [
 export const DOCTOR_NAV_ITEMS: DashboardNavItem[] = [
   { name: "My Patients", href: "/doctor", icon: Users },
   { name: "My Analytics", href: "/doctor/analytics", icon: LineChart },
-  { name: "Alerts", href: "/doctor/alerts", icon: Bell },
 ];
 
 export const NURSE_NAV_ITEMS: DashboardNavItem[] = [
   { name: "Vitals Entry", href: "/nurse", icon: Activity },
-  { name: "My Ward", href: "/nurse/ward", icon: BedSingle },
 ];
 
 export const RECEPTION_NAV_ITEMS: DashboardNavItem[] = [
@@ -54,7 +47,6 @@ export const LAB_NAV_ITEMS: DashboardNavItem[] = [
 
 export const FINANCE_NAV_ITEMS: DashboardNavItem[] = [
   { name: "Workspace", href: "/admin/billing-finance", icon: DollarSign },
-  { name: "Revenue & reports", href: "/admin/billing-finance/analytics", icon: LineChart },
 ];
 
 /** Same route visibility rules as the desktop sidebar: admin sees full admin nav on md+. */

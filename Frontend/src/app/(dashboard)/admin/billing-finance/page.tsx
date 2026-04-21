@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
-import { LineChart } from "lucide-react";
 import {
   ADMIN_DASHBOARD_REALTIME_EVENTS,
   useRealtimeEvent,
@@ -237,8 +235,8 @@ export default function BillingFinancePage() {
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {isFinanceUser
-              ? "Queue clinical events, add charges, confirm payment. Revenue KPIs live on the reports page."
-              : "Operational billing: queue, charges, and payments. Open Revenue & reports for dashboards and trends."}
+              ? "Queue clinical events, add charges, confirm payment."
+              : "Operational billing: queue, charges, and payments."}
           </p>
           {userDisplayName ? (
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
@@ -247,13 +245,6 @@ export default function BillingFinancePage() {
             </p>
           ) : null}
         </div>
-        <Link
-          href="/admin/billing-finance/analytics"
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#0066cc] bg-white px-4 py-2.5 text-sm font-medium text-[#0066cc] shadow-sm transition-colors hover:bg-blue-50 dark:border-[#60a5fa] dark:bg-gray-800 dark:text-[#60a5fa] dark:hover:bg-gray-700 shrink-0"
-        >
-          <LineChart size={18} aria-hidden />
-          Revenue & reports
-        </Link>
       </div>
 
       {error && (
@@ -468,13 +459,6 @@ export default function BillingFinancePage() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-gray-500 mt-3 dark:text-gray-400">
-          Totals and charts use paid rows only — open{" "}
-          <Link href="/admin/billing-finance/analytics" className="text-[#0066cc] underline dark:text-[#60a5fa]">
-            Revenue & reports
-          </Link>
-          .
-        </p>
       </div>
     </div>
   );
