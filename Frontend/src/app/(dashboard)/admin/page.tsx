@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   UserCheck,
   DollarSign,
-  RefreshCw,
 } from "lucide-react";
 import {
   Bar,
@@ -221,19 +220,6 @@ function kpiTooltipContent(
   }
 }
 
-function formatDateTime(d: Date) {
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
 const KPI_CARD_DEFS = [
   {
     label: "Total Patients Today",
@@ -292,8 +278,6 @@ const KPI_CARD_DEFS = [
 ] as const;
 
 export default function AdminDashboard() {
-  const [now, setNow] = useState<Date>(() => new Date());
-  const [lastUpdated, setLastUpdated] = useState<Date>(() => new Date());
   const [kpiData, setKpiData] = useState<HospitalOverviewKpis | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpiHover, setKpiHover] = useState<string | null>(null);
@@ -310,7 +294,6 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as HospitalOverviewKpis;
       setKpiData(data);
-      setLastUpdated(new Date());
       kpiHasLoadedOnce.current = true;
     } catch {
       if (!kpiHasLoadedOnce.current) {
@@ -322,21 +305,12 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
 
   useRealtimeEvent("admin_data_changed", () => {
     void loadKpis();
   });
-
-  const handleRefreshClick = useCallback(() => {
-    void loadKpis();
-  }, [loadKpis]);
 
   // TODO: Replace with real API data
   const riskRows = [
@@ -454,38 +428,6 @@ export default function AdminDashboard() {
       id="dashboard-content"
       className="min-h-full w-full max-w-[1600px] space-y-5 bg-[#0a0f1e] p-4 text-[#ffffff] sm:space-y-6 sm:p-6"
     >
-      {/* Top header bar */}
-      <header className="flex flex-col gap-4 rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] px-4 py-4 transition-all hover:border-[#00b4d8] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="text-left text-sm font-semibold text-[#ffffff] sm:text-base">
-          Gilkari Hospital — Intelligent Dashboard
-        </div>
-        <div className="text-center text-sm text-[#94a3b8] sm:flex-1 sm:text-base">
-          <span className="font-medium text-[#00b4d8]">{formatDateTime(now)}</span>
-        </div>
-        <div className="flex items-center justify-end gap-3 text-sm text-[#94a3b8]">
-          <span className="hidden text-right sm:inline">
-            Last Updated:{" "}
-            <span className="font-medium text-[#ffffff]">
-              {formatDateTime(lastUpdated)}
-            </span>
-          </span>
-          <span className="text-right sm:hidden">
-            Updated:{" "}
-            <span className="text-[#ffffff]">
-              {lastUpdated.toLocaleTimeString()}
-            </span>
-          </span>
-          <button
-            type="button"
-            onClick={handleRefreshClick}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#1e3a5f] bg-[#0a0f1e] text-[#00b4d8] transition-all hover:border-[#00b4d8] hover:bg-[#00b4d8]/10"
-            aria-label="Refresh last updated time"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
       {/* KPI row — data from GET /api/hospital-overview */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {KPI_CARD_DEFS.map((k) => {
