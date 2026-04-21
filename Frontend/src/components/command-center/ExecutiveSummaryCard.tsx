@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Lightbulb, Check, Minus } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
+import ReportModal from "./ReportModal";
 
 interface Observation {
   id: string;
@@ -18,6 +19,7 @@ interface Action {
 
 export default function ExecutiveSummaryCard() {
   const [loading, setLoading] = useState(true);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [hospitalData, setHospitalData] = useState<any>(null);
   const [hospitalDataY, setHospitalDataY] = useState<any>(null);
   const [hrData, setHrData] = useState<any>(null);
@@ -164,7 +166,8 @@ export default function ExecutiveSummaryCard() {
   };
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+    <>
+      <section className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-100 bg-[#fcfcfd] px-6 py-3.5 dark:border-gray-800 dark:bg-gray-950/50">
         <div className="flex items-center gap-2.5">
@@ -173,7 +176,10 @@ export default function ExecutiveSummaryCard() {
           </div>
           <h2 className="text-[15px] font-semibold text-gray-800 dark:text-gray-200">Executive Summary</h2>
         </div>
-        <button className="text-[13px] font-medium text-[#0066cc] hover:underline dark:text-[#60a5fa]">
+        <button 
+          onClick={() => setIsReportOpen(true)}
+          className="text-[13px] font-medium text-[#0066cc] hover:underline dark:text-[#60a5fa]"
+        >
           View Report &gt;
         </button>
       </div>
@@ -238,7 +244,13 @@ export default function ExecutiveSummaryCard() {
             )}
           </div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+
+      <ReportModal 
+        isOpen={isReportOpen} 
+        onClose={() => setIsReportOpen(false)} 
+      />
+    </>
   );
 }
