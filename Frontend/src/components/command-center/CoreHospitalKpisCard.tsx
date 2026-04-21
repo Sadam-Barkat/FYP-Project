@@ -160,10 +160,10 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         const yStr = y.toISOString().slice(0, 10);
 
         const [tO, yO, tH, yH] = await Promise.all([
-          fetch(`${API_BASE}/api/hospital-overview?date=${todayStr}`, { headers }).then((r) => r.json()),
-          fetch(`${API_BASE}/api/hospital-overview?date=${yStr}`, { headers }).then((r) => r.json()),
-          fetch(`${API_BASE}/api/hr-staff-overview?date=${todayStr}`, { headers }).then((r) => r.json()),
-          fetch(`${API_BASE}/api/hr-staff-overview?date=${yStr}`, { headers }).then((r) => r.json()),
+          fetch(`${API_BASE}/api/hospital-overview?date=${todayStr}`, { headers }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+          fetch(`${API_BASE}/api/hospital-overview?date=${yStr}`, { headers }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+          fetch(`${API_BASE}/api/hr-staff-overview?date=${todayStr}`, { headers }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+          fetch(`${API_BASE}/api/hr-staff-overview?date=${yStr}`, { headers }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
         ]);
 
         if (cancelled) return;

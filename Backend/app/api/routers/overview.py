@@ -6,7 +6,7 @@ from sqlalchemy import select, func, and_, or_, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.bed import Bed
+from app.models.bed import Bed, BedStatus
 from app.models.admission import Admission
 from app.models.billing import Billing, BillingStatus
 from app.models.staff import Staff
@@ -260,7 +260,7 @@ async def get_hospital_overview(
                 select(func.count(func.distinct(Bed.id)))
                 .select_from(Bed)
                 .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
-                .where(Bed.status == "Occupied")
+                .where(Bed.status == BedStatus.occupied)
             )
             occ_d = occ_d_result.scalar_one() or 0
             bed_pct = (float(occ_d) / float(total_beds) * 100.0) if total_beds > 0 else 0.0
