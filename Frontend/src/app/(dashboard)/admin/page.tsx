@@ -7,6 +7,7 @@ import CapacityIntelligenceCard from "@/components/command-center/CapacityIntell
 import PharmacyIntelligenceCard from "@/components/command-center/PharmacyIntelligenceCard";
 import ClinicalRiskCard from "@/components/command-center/ClinicalRiskCard";
 import StaffIntelligenceCard from "@/components/command-center/StaffIntelligenceCard";
+import FinancialIntelligenceCard from "@/components/command-center/FinancialIntelligenceCard";
 
 export default function AdminDashboard() {
   return (
@@ -41,29 +42,7 @@ export default function AdminDashboard() {
 
         <StaffIntelligenceCard className="h-full" />
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col h-full">
-          <header className="flex items-center justify-between gap-3">
-            <h3 className="text-[15px] font-semibold text-gray-800 dark:text-gray-100">Financial Intelligence</h3>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">Placeholder</span>
-          </header>
-          <div className="mt-4 flex-1 flex flex-col gap-3">
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Revenue today</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">PKR 25.1k</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Outstanding</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">PKR 28k</p>
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-3 dark:border-gray-800 dark:bg-gray-950 flex justify-between items-center">
-              <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">Expense ratio</p>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">41%</p>
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#fbfdff] p-3 text-[12px] text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 leading-snug">
-            Revenue stable but outstanding payments are elevated; prioritize clearing aged bills.
-          </div>
-        </section>
+        <FinancialIntelligenceCard className="h-full" />
 
         <InsightPanel title="Forecast Intelligence" chartLabel="Next 7 days" className="h-full">
           <div className="flex-1 flex flex-col gap-3 mt-1">
