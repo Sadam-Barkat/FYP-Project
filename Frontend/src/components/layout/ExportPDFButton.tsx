@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
 
 /** Element to capture: content only (no sidebar, no navbar). */
 const PDF_EXPORT_ELEMENT_ID = "pdf-export-content";
@@ -106,11 +106,21 @@ export default function ExportPDFButton() {
     <button
       onClick={handleExport}
       disabled={loading}
-      className="flex items-center bg-[#1e40af] hover:bg-blue-800 disabled:opacity-60 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm"
+      className="group relative flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 px-4 py-2 text-[13px] font-bold text-white shadow-[0_4px_15px_-3px_rgba(79,70,229,0.4)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_-3px_rgba(79,70,229,0.6)] disabled:opacity-70 disabled:hover:scale-100"
       title="Export current page to PDF (screenshot)"
     >
-      <Download size={16} className="mr-2" />
-      {loading ? "Exporting…" : "Export to PDF"}
+      <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      {loading ? (
+        <>
+          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span>Exporting...</span>
+        </>
+      ) : (
+        <>
+          <FileText size={15} className="mr-1.5 transition-transform duration-300 group-hover:-translate-y-0.5" />
+          <span>Export PDF</span>
+        </>
+      )}
     </button>
   );
 }
