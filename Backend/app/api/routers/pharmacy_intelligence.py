@@ -46,6 +46,26 @@ FALLBACK_EXPIRY: Dict[str, str] = {
     "suggestion": FALLBACK_AI["suggestion"],
 }
 
+# Minimal seed set for dev/demo when `pharmacy_stock` is empty.
+# This is rule-based (pre-LLM) and runs only once per DB (idempotent).
+_DEFAULT_PHARMACY_SEED: List[Dict[str, Any]] = [
+    {"medicine_name": "Paracetamol 500mg", "quantity": 180, "unit_price": 10.0, "low_stock_threshold": 60, "expiry_in_days": 260},
+    {"medicine_name": "Ibuprofen 200mg", "quantity": 90, "unit_price": 18.0, "low_stock_threshold": 50, "expiry_in_days": 190},
+    {"medicine_name": "Amoxicillin 500mg", "quantity": 45, "unit_price": 35.0, "low_stock_threshold": 60, "expiry_in_days": 120},
+    {"medicine_name": "Azithromycin 500mg", "quantity": 20, "unit_price": 85.0, "low_stock_threshold": 40, "expiry_in_days": 75},
+    {"medicine_name": "Metronidazole 400mg", "quantity": 55, "unit_price": 22.0, "low_stock_threshold": 50, "expiry_in_days": 150},
+    {"medicine_name": "Ciprofloxacin 500mg", "quantity": 30, "unit_price": 55.0, "low_stock_threshold": 50, "expiry_in_days": 95},
+    {"medicine_name": "Omeprazole 20mg", "quantity": 60, "unit_price": 25.0, "low_stock_threshold": 45, "expiry_in_days": 210},
+    {"medicine_name": "Pantoprazole 40mg", "quantity": 35, "unit_price": 30.0, "low_stock_threshold": 45, "expiry_in_days": 160},
+    {"medicine_name": "Metformin 500mg", "quantity": 80, "unit_price": 16.0, "low_stock_threshold": 55, "expiry_in_days": 240},
+    {"medicine_name": "Insulin (Regular) 10ml", "quantity": 12, "unit_price": 650.0, "low_stock_threshold": 18, "expiry_in_days": 40},
+    {"medicine_name": "Amlodipine 5mg", "quantity": 70, "unit_price": 14.0, "low_stock_threshold": 50, "expiry_in_days": 220},
+    {"medicine_name": "Losartan 50mg", "quantity": 40, "unit_price": 20.0, "low_stock_threshold": 50, "expiry_in_days": 180},
+    {"medicine_name": "Salbutamol Inhaler", "quantity": 10, "unit_price": 420.0, "low_stock_threshold": 15, "expiry_in_days": 65},
+    {"medicine_name": "Oral Rehydration Salts (ORS)", "quantity": 0, "unit_price": 12.0, "low_stock_threshold": 40, "expiry_in_days": 330},
+    {"medicine_name": "Iron + Folic Acid", "quantity": 25, "unit_price": 9.0, "low_stock_threshold": 40, "expiry_in_days": 300},
+]
+
 
 def _infer_medicine_category(medicine_name: str) -> str:
     """
@@ -232,6 +252,34 @@ def _sorted_unique_medicine_names(names: List[str]) -> List[str]:
     return sorted(seen)
 
 
+async def _ensure_seed_pharmacy_stock(db: AsyncSession) -> None:
+    """
+    If the table is empty, insert a small, realistic demo dataset so the dashboard
+    shows meaningful pharmacy intelligence without manual data entry.
+    """
+    existing = int(
+        (await db.execute(select(func.count(PharmacyStock.id)))).scalar_one() or 0
+    )
+    if existing > 0:
+        return
+
+    today = datetime.utcnow().date()
+    rows: List[PharmacyStock] = []
+    for item in _DEFAULT_PHARMACY_SEED:
+        exp = today + timedelta(days=int(item.get("expiry_in_days") or 180))
+        rows.append(
+            PharmacyStock(
+                medicine_name=str(item["medicine_name"]),
+                quantity=int(item.get("quantity") or 0),
+                unit_price=float(item.get("unit_price") or 0.0),
+                expiry_date=exp.isoformat(),
+                low_stock_threshold=int(item.get("low_stock_threshold") or 10),
+            )
+        )
+    db.add_all(rows)
+    await db.commit()
+
+
 def _parse_expiry_suggestion_json(raw: str) -> Dict[str, str]:
     text = (raw or "").strip()
     if not text:
@@ -332,6 +380,9 @@ async def get_pharmacy_intelligence(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> Dict[str, Any]:
+    # Rule-based dataset bootstrap (only when empty) so LLM has real-looking inputs.
+    await _ensure_seed_pharmacy_stock(db)
+
     today = datetime.utcnow().date()
     until_30 = today + timedelta(days=30)
     exp_col = _expiry_as_date_col()
