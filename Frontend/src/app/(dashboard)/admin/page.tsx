@@ -514,25 +514,32 @@ export default function AdminDashboard() {
 
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="flex max-h-[220px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
+        <div className="flex max-h-[240px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1e3a5f] pb-2.5">
             <h2 className="text-xs font-semibold text-[#00b4d8]">
               🧠 Patient Intelligence
             </h2>
-            {intelData && intelData.at_risk_count > 0 ? (
-              <span
-                className="relative flex h-2.5 w-2.5 shrink-0"
-                title="Patients at elevated risk (NEWS2)"
-                aria-hidden
-              >
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ef4444] opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
-              </span>
-            ) : intelData ? (
-              <span className="text-sm leading-none text-[#ef4444]" aria-hidden>
-                🔴
-              </span>
-            ) : null}
+            <div className="flex items-center gap-2.5">
+              {intelData ? (
+                <span className="whitespace-nowrap text-[10px] text-[#94a3b8]">
+                  {intelFooterUpdated(intelLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {intelData && intelData.at_risk_count > 0 ? (
+                <span
+                  className="relative flex h-2.5 w-2.5 shrink-0"
+                  title="Patients at elevated risk (NEWS2)"
+                  aria-hidden
+                >
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ef4444] opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
+                </span>
+              ) : intelData ? (
+                <span className="text-sm leading-none text-[#ef4444]" aria-hidden>
+                  🔴
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {!intelData && !intelLoading ? (
@@ -545,10 +552,10 @@ export default function AdminDashboard() {
           ) : null}
 
           {intelData ? (
-            <div className="mt-1.5 flex min-h-0 flex-1 gap-2 overflow-hidden">
-              <div className="min-w-0 flex-[1.05] shrink-0 border-r border-[#1e3a5f] pr-2">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="flex min-h-[4.25rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+            <div className="mt-2 flex min-h-0 flex-1 gap-3 overflow-hidden">
+              <div className="min-w-0 flex-[1.05] shrink-0 border-r border-[#1e3a5f] pr-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex min-h-[4.5rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
                     <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
                       Total Patients
                     </p>
@@ -564,7 +571,7 @@ export default function AdminDashboard() {
                       );
                     })()}
                   </div>
-                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
                     <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
                       Vitals Health
                     </p>
@@ -576,7 +583,7 @@ export default function AdminDashboard() {
                       {intelData.vitals_health_percentage}%
                     </p>
                   </div>
-                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
                     <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
                       Critical Vitals
                     </p>
@@ -584,7 +591,7 @@ export default function AdminDashboard() {
                       {intelData.critical_vitals_percentage}%
                     </p>
                   </div>
-                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
                     <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
                       ⚠️ At Risk
                     </p>
@@ -595,36 +602,64 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col pl-1">
+              <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col pl-2">
                 <p className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
                   🤖 AI Risk Forecast
                 </p>
-                <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-hidden border-l-2 border-[#00b4d8] pl-2">
+                <div className="mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden border-l-2 border-[#00b4d8] pl-3">
                   {(() => {
                     const p = parseAiForecast(intelData.ai_prediction);
                     if (p.rawFallback) {
                       return (
-                        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                        <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
                           <p className="text-[10px] italic leading-snug text-white">
                             {p.rawFallback}
                           </p>
                         </div>
                       );
                     }
+                    const hasNames = p.names.length > 0;
+                    const hasSugg = Boolean(p.suggestion);
                     return (
-                      <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+                      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
                         {p.summary ? (
                           <p className="shrink-0 text-[10px] italic leading-snug text-white">
                             {p.summary}
                           </p>
                         ) : null}
-                        {p.names.length > 0 ? (
-                          <>
-                            <div
-                              className="my-1.5 shrink-0 border-t border-[#1e3a5f]/80"
-                              aria-hidden
-                            />
-                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+                        {hasNames && hasSugg ? (
+                          <div className="flex min-h-0 flex-1 flex-row gap-3 overflow-hidden">
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-[#1e3a5f]/80 pr-2">
+                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                                Patients
+                              </p>
+                              <div className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+                                <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
+                                  {p.names.map((n, i) => (
+                                    <li key={`${n}-${i}`} className="pl-0.5">
+                                      {n}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            </div>
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                                Suggestion
+                              </p>
+                              <div className="mt-1 min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin]">
+                                <p className="text-[10px] font-medium leading-snug text-[#fde68a]">
+                                  {p.suggestion}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : hasNames ? (
+                          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                              Patients
+                            </p>
+                            <div className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
                               <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
                                 {p.names.map((n, i) => (
                                   <li key={`${n}-${i}`} className="pl-0.5">
@@ -633,25 +668,18 @@ export default function AdminDashboard() {
                                 ))}
                               </ol>
                             </div>
-                          </>
-                        ) : null}
-                        {p.suggestion ? (
-                          <>
-                            {(p.summary || p.names.length > 0) ? (
-                              <div
-                                className="my-1.5 shrink-0 border-t border-[#1e3a5f]/80"
-                                aria-hidden
-                              />
-                            ) : null}
-                            <div className="shrink-0 pb-0.5">
-                              <p className="text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
-                                Suggestion
-                              </p>
-                              <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#fde68a]">
+                          </div>
+                        ) : hasSugg ? (
+                          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                              Suggestion
+                            </p>
+                            <div className="mt-1 min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin]">
+                              <p className="text-[10px] font-medium leading-snug text-[#fde68a]">
                                 {p.suggestion}
                               </p>
                             </div>
-                          </>
+                          </div>
                         ) : null}
                       </div>
                     );
@@ -659,12 +687,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-          ) : null}
-
-          {intelData ? (
-            <p className="mt-1.5 shrink-0 text-[10px] text-[#94a3b8]">
-              {intelFooterUpdated(intelLastFetch, intelClock)}
-            </p>
           ) : null}
         </div>
 

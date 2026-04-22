@@ -26,7 +26,14 @@ OPENAI_SYSTEM = (
     "Be concise, direct, and medically practical. "
     "Always follow the exact SUMMARY / NAMES / SUGGESTION section layout "
     "requested in the user message. Use real counts and timeframes you infer "
-    "from the data — do not assume a fixed number of days."
+    "from the data — do not assume a fixed number of days. "
+    "From the patient table, judge which individuals look most serious using "
+    "NEWS2 and vitals together (not NEWS2 alone). "
+    "If you state a specific number of at-risk patients in SUMMARY, the NAMES "
+    "section MUST list exactly that many distinct patients, one per numbered line, "
+    "using ONLY full names that appear in the provided table — do not invent names "
+    "or pad with duplicates. If you cannot support a count with real names, use a "
+    "qualitative summary without a precise patient count."
 )
 
 
@@ -158,6 +165,17 @@ def _score_for_vital(v: Optional[Vital]) -> int:
     )
 
 
+def _vital_snapshot(v: Optional[Vital]) -> str:
+    if not v:
+        return "no vitals on file"
+    hr = v.heart_rate if v.heart_rate is not None else "—"
+    sp = v.spo2 if v.spo2 is not None else "—"
+    t = v.temperature if v.temperature is not None else "—"
+    sys_bp = v.blood_pressure_sys if v.blood_pressure_sys is not None else "—"
+    rr = v.respiratory_rate if v.respiratory_rate is not None else "—"
+    return f"HR={hr} SpO2={sp}% Temp={t}°C BPsys={sys_bp} RR={rr}/min"
+
+
 def _openai_summary_sync(
     total_patients: int,
     at_risk_count: int,
@@ -165,6 +183,7 @@ def _openai_summary_sync(
     critical_vitals_percentage: int,
     change_from_last_week: int,
     top_risk_patient_names: str,
+    patient_risk_table: str,
 ) -> str:
     from openai import OpenAI
 
@@ -175,11 +194,14 @@ def _openai_summary_sync(
     user_prompt = f"""
 Hospital patient data:
 - Total active patients: {total_patients}
-- Patients with abnormal vitals: {at_risk_count}
+- Patients with abnormal vitals (NEWS2 >= 5): {at_risk_count}
 - Overall vitals health score: {vitals_health_percentage}%
 - Critical vitals percentage: {critical_vitals_percentage}%
-- Top at risk patients (use these exact names when relevant): {top_risk_patient_names}
 - Change from last week: {change_from_last_week}
+- Highest NEWS2 names (subset): {top_risk_patient_names}
+
+Full active-patient table (highest NEWS2 first; NEWS2 is internal severity score — use with vitals to judge who looks most serious):
+{patient_risk_table}
 
 You are a clinical AI. Based on this vitals data, predict how many patients
 may be at risk and over what approximate timeframe (you choose the horizon
@@ -193,7 +215,8 @@ One line: your risk outlook (how many patients, roughly how soon, based on the m
 NAMES:
 1. First Patient Full Name
 2. Second Patient Full Name
-(add one numbered line per at-risk patient you are calling out; use names from the list above when applicable)
+(One numbered line per patient you are flagging. If SUMMARY gives a specific patient count N, 
+include exactly N distinct names from the table above — same N, same real people. If N is large, still list every name.)
 
 SUGGESTION:
 One imperative sentence for staff (e.g. "Escalate to the duty physician and increase vitals monitoring frequency.")
@@ -201,13 +224,13 @@ One imperative sentence for staff (e.g. "Escalate to the duty physician and incr
 Rules:
 - No text before SUMMARY: or after the SUGGESTION: line.
 - NAMES must use numbered lines starting with "1.", "2.", etc.
-- Keep each section brief.
+- Use only names that appear in the full table; never invent patients.
 """
 
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=220,
+        max_tokens=1800,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
@@ -224,6 +247,7 @@ async def _fetch_ai_prediction(
     critical_vitals_percentage: int,
     change_from_last_week: int,
     top_risk_patient_names: str,
+    patient_risk_table: str,
 ) -> str:
     return await asyncio.to_thread(
         _openai_summary_sync,
@@ -233,6 +257,7 @@ async def _fetch_ai_prediction(
         critical_vitals_percentage,
         change_from_last_week,
         top_risk_patient_names,
+        patient_risk_table,
     )
 
 
@@ -274,7 +299,7 @@ async def get_patient_intelligence(
     normal_checks = 0
     total_checks = 0
     abnormal_patient_ids: set[int] = set()
-    scored: List[Tuple[int, str]] = []
+    scored: List[Tuple[int, str, int]] = []
 
     for row in adm_rows:
         patient: Patient = row.Patient
@@ -300,7 +325,7 @@ async def get_patient_intelligence(
                     abnormal_patient_ids.add(pid)
 
         sc = _score_for_vital(v)
-        scored.append((sc, name))
+        scored.append((sc, name, pid))
 
     vitals_health_percentage = (
         int(round(100 * normal_checks / total_checks)) if total_checks else 0
@@ -311,11 +336,21 @@ async def get_patient_intelligence(
         else 0
     )
 
-    at_risk_count = sum(1 for sc, _ in scored if sc >= 5)
+    at_risk_count = sum(1 for sc, _, _ in scored if sc >= 5)
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    top_names = [n for _, n in scored[:5]]
+    top_names = [n for _, n, _ in scored[:5]]
     top_risk_patients = ", ".join(top_names) if top_names else ""
+    at_risk_names = [n for sc, n, _ in scored if sc >= 5]
+    top_risk_patients_full = ", ".join(at_risk_names) if at_risk_names else ""
+
+    risk_lines: List[str] = []
+    for sc, name, pid in scored:
+        v = latest_by_pid.get(pid)
+        risk_lines.append(
+            f"- {name} | NEWS2={sc} | {_vital_snapshot(v)}"
+        )
+    patient_risk_table = "\n".join(risk_lines) if risk_lines else "(no patients)"
 
     try:
         ai_prediction = await _fetch_ai_prediction(
@@ -324,7 +359,8 @@ async def get_patient_intelligence(
             vitals_health_percentage,
             critical_vitals_percentage,
             change_from_last_week,
-            top_risk_patients or "(none listed)",
+            top_risk_patients_full or top_risk_patients or "(none listed)",
+            patient_risk_table,
         )
     except Exception:
         ai_prediction = "Prediction unavailable at this time."
@@ -336,6 +372,6 @@ async def get_patient_intelligence(
         "vitals_health_percentage": vitals_health_percentage,
         "critical_vitals_percentage": critical_vitals_percentage,
         "at_risk_count": at_risk_count,
-        "top_risk_patients": top_risk_patients,
+        "top_risk_patients": top_risk_patients_full or top_risk_patients,
         "ai_prediction": ai_prediction,
     }
