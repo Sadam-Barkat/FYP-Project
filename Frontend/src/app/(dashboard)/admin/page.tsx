@@ -95,6 +95,19 @@ export type PatientIntelResponse = {
   ai_prediction: string;
 };
 
+export type PharmacyIntelResponse = {
+  total_medicines: number;
+  out_of_stock_count: number;
+  low_stock_count: number;
+  sufficient_stock_count: number;
+  expiring_soon_count: number;
+  expired_count: number;
+  stockout_prediction: string;
+  medicines_to_reorder: string[];
+  expiry_warning: string;
+  suggestion: string;
+};
+
 function formatKpiDisplay(
   data: HospitalOverviewKpis | null,
   valueKey: keyof HospitalOverviewKpis,
@@ -367,6 +380,12 @@ export default function AdminDashboard() {
   const [intelLastFetch, setIntelLastFetch] = useState<Date | null>(null);
   const [intelClock, setIntelClock] = useState(0);
 
+  const [pharmacyData, setPharmacyData] = useState<PharmacyIntelResponse | null>(
+    null
+  );
+  const [pharmacyLoading, setPharmacyLoading] = useState(true);
+  const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
+
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
       setKpiLoading(true);
@@ -405,6 +424,23 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadPharmacy = useCallback(async () => {
+    setPharmacyLoading(true);
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/pharmacy-intelligence`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as PharmacyIntelResponse;
+      setPharmacyData(data);
+      setPharmacyLastFetch(new Date());
+    } catch {
+      setPharmacyData(null);
+    } finally {
+      setPharmacyLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
@@ -413,9 +449,14 @@ export default function AdminDashboard() {
     void loadIntel();
   }, [loadIntel]);
 
+  useEffect(() => {
+    void loadPharmacy();
+  }, [loadPharmacy]);
+
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
     void loadKpis();
     void loadIntel();
+    void loadPharmacy();
   });
 
   useEffect(() => {
@@ -701,8 +742,143 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        {/* Future dashboard cards */}
-        <div className="min-h-[1px]" aria-hidden />
+        <div className="flex max-h-[220px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
+            <h2 className="text-xs font-semibold text-[#00b4d8]">
+              💊 Pharmacy Intelligence
+            </h2>
+            <div className="flex items-center gap-2">
+              {pharmacyData ? (
+                <span className="whitespace-nowrap text-[10px] text-[#94a3b8]">
+                  {intelFooterUpdated(pharmacyLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {pharmacyData &&
+              (pharmacyData.out_of_stock_count > 0 ||
+                pharmacyData.expiring_soon_count > 0) ? (
+                <span
+                  className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500"
+                  title="Stock or expiry attention needed"
+                  aria-hidden
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {!pharmacyData && !pharmacyLoading ? (
+            <p className="mt-2 text-[10px] text-[#94a3b8]">
+              Unable to load. Check admin access and API.
+            </p>
+          ) : null}
+          {pharmacyLoading && !pharmacyData ? (
+            <div className="mt-2 h-32 animate-pulse rounded-md bg-[#1e3a5f]/50" />
+          ) : null}
+
+          {pharmacyData ? (
+            <div className="mt-2 flex min-h-0 flex-1 gap-0 overflow-hidden">
+              <div className="w-[40%] min-h-0 shrink-0 space-y-2 overflow-y-auto border-r border-[#1e3a5f] pr-2 [scrollbar-width:thin]">
+                <div>
+                  <p className="text-[10px] uppercase text-[#94a3b8]">
+                    Total medicines
+                  </p>
+                  <p className="text-lg font-bold text-white">
+                    {pharmacyData.total_medicines}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-[#94a3b8]">
+                    Out of stock
+                  </p>
+                  <p className="text-lg font-bold text-[#ef4444]">
+                    {pharmacyData.out_of_stock_count}{" "}
+                    <span className="text-sm" aria-hidden>
+                      🔴
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-[#94a3b8]">
+                    Low stock
+                  </p>
+                  <p className="text-lg font-bold text-[#f97316]">
+                    {pharmacyData.low_stock_count}{" "}
+                    <span className="text-sm" aria-hidden>
+                      🟠
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-[#94a3b8]">
+                    Expiring soon
+                  </p>
+                  <p className="text-lg font-bold text-[#f59e0b]">
+                    {pharmacyData.expiring_soon_count}{" "}
+                    <span className="text-sm" aria-hidden>
+                      🟡
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-[#94a3b8]">
+                    Expired
+                  </p>
+                  <p className="text-lg font-bold text-[#ef4444]">
+                    {pharmacyData.expired_count}{" "}
+                    <span className="text-sm" aria-hidden>
+                      🔴
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-2 overflow-y-auto pl-3 pr-0.5 [scrollbar-width:thin]">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase text-[#f97316]">
+                    ⚠️ Stockout prediction
+                  </p>
+                  <p className="text-[10px] italic leading-snug text-white">
+                    {pharmacyData.stockout_prediction}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-semibold uppercase text-[#00b4d8]">
+                    🛒 Reorder now
+                  </p>
+                  {pharmacyData.medicines_to_reorder.length > 0 ? (
+                    <div className="mt-0.5">
+                      {pharmacyData.medicines_to_reorder.map((m, i) => (
+                        <span
+                          key={`${m}-${i}`}
+                          className="mb-1 mr-1 inline-block rounded-full bg-[#1e3a5f] px-2 py-0.5 text-[9px] text-white"
+                        >
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-[#10b981]">✅ All stocked</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[9px] font-semibold uppercase text-[#f59e0b]">
+                    📅 Expiry warning
+                  </p>
+                  <p className="text-[10px] italic leading-snug text-white">
+                    {pharmacyData.expiry_warning}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-semibold uppercase text-[#10b981]">
+                    💡 Suggestion
+                  </p>
+                  <p className="text-[10px] font-medium italic leading-snug text-[#10b981]">
+                    {pharmacyData.suggestion}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
     </div>

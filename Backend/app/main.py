@@ -21,6 +21,7 @@ from app.api.routers import (
     auth,
     overview,
     patient_intelligence,
+    pharmacy_intelligence,
     patients_beds,
     pharmacy,
     laboratory,
@@ -159,6 +160,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(overview.router)
 app.include_router(patient_intelligence.router)
+app.include_router(pharmacy_intelligence.router)
 app.include_router(patients_beds.router)
 app.include_router(pharmacy.router)
 app.include_router(laboratory.router)
