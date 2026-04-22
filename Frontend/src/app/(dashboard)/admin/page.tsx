@@ -18,8 +18,8 @@ const cardBase =
 
 export type TotalPatientsBreakdown = {
   in_hospital?: number | null;
-  /** Census at end of next calendar day (from scheduled / recorded discharges only). */
-  in_hospital_tomorrow?: number | null;
+  /** Same census definition as in_hospital, for previous calendar day (trend baseline). */
+  in_hospital_yesterday?: number | null;
   admitted_today?: number | null;
   discharged_today?: number | null;
   under_observation?: number | null;
@@ -65,7 +65,6 @@ export type RevenueTodayBreakdown = {
 
 export type HospitalOverviewKpis = {
   total_patients?: number | null;
-  total_patients_tomorrow?: number | null;
   active_admissions?: number | null;
   available_beds?: number | null;
   critical_patients?: number | null;
@@ -143,19 +142,18 @@ function kpiTooltipContent(
 ): { title: string; rows: { label: string; value: string }[] } {
   const d = data;
   switch (cardLabel) {
-    case "Patients in hospital": {
+    case "Patients today": {
       const b = d?.total_patients_breakdown;
-      const tom =
-        b?.in_hospital_tomorrow != null && b.in_hospital_tomorrow !== undefined
-          ? asNum(b.in_hospital_tomorrow)
-          : asNum(d?.total_patients_tomorrow);
       return {
         title: "Patient Breakdown",
         rows: [
-          { label: "In hospital today (EOD):", value: String(asNum(b?.in_hospital)) },
           {
-            label: "In hospital tomorrow (EOD):",
-            value: String(tom),
+            label: "Patients today (census EOD):",
+            value: String(asNum(b?.in_hospital)),
+          },
+          {
+            label: "Patients yesterday (EOD):",
+            value: String(asNum(b?.in_hospital_yesterday)),
           },
           { label: "Admitted Today:", value: String(asNum(b?.admitted_today)) },
           { label: "Discharged Today:", value: String(asNum(b?.discharged_today)) },
@@ -303,7 +301,7 @@ function parseAiForecast(text: string): ParsedAiForecast {
 
 const KPI_CARD_DEFS = [
   {
-    label: "Patients in hospital",
+    label: "Patients today",
     valueKey: "total_patients" as const,
     trendKey: "total_patients_trend" as const,
     icon: Users,
@@ -440,14 +438,10 @@ export default function AdminDashboard() {
             trendRaw === null || trendRaw === undefined || trendRaw === ""
               ? "N/A"
               : String(trendRaw);
-          const trendCompareLabel =
-            k.label === "Patients in hospital"
-              ? "tomorrow (EOD census)"
-              : "yesterday";
           const trendLine =
             trendStr === "N/A"
-              ? `N/A vs ${trendCompareLabel}`
-              : `${trendStr} vs ${trendCompareLabel}`;
+              ? "N/A vs yesterday"
+              : `${trendStr} vs yesterday`;
           const { title: tipTitle, rows: tipRows } = kpiTooltipContent(
             k.label,
             kpiData
@@ -491,9 +485,7 @@ export default function AdminDashboard() {
                     kpiLoading ? "N/A" : trendStr
                   )}`}
                 >
-                  {kpiLoading
-                    ? `N/A vs ${trendCompareLabel}`
-                    : trendLine}
+                  {kpiLoading ? "N/A vs yesterday" : trendLine}
                 </p>
               </div>
 
