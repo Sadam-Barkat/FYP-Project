@@ -249,6 +249,45 @@ function changeVsWeekUi(delta: number): { arrow: string; cls: string; tail: stri
   return { arrow: "—", cls: "text-[#94a3b8]", tail: "0 vs last week" };
 }
 
+type ParsedAiForecast = {
+  summary: string;
+  names: string[];
+  suggestion: string;
+  rawFallback: string;
+};
+
+/** Parses LLM output when it follows SUMMARY: / NAMES: / SUGGESTION: sections. */
+function parseAiForecast(text: string): ParsedAiForecast {
+  const raw = (text || "").trim();
+  if (!raw) {
+    return { summary: "", names: [], suggestion: "", rawFallback: "" };
+  }
+
+  const reSummary = /SUMMARY\s*:\s*([\s\S]*?)(?=\bNAMES\s*:)/i;
+  const reNames = /NAMES\s*:\s*([\s\S]*?)(?=\bSUGGESTION\s*:)/i;
+  const reSugg = /SUGGESTION\s*:\s*([\s\S]*)$/i;
+
+  const mS = raw.match(reSummary);
+  const mN = raw.match(reNames);
+  const mG = raw.match(reSugg);
+
+  if (mS && mN && mG) {
+    const summary = mS[1].trim();
+    const namesBlock = mN[1].trim();
+    const suggestion = mG[1].trim();
+    const names: string[] = [];
+    for (const line of namesBlock.split(/\r?\n/)) {
+      const t = line.trim();
+      if (!t) continue;
+      const num = t.match(/^\d+\.\s*(.+)$/);
+      if (num) names.push(num[1].trim());
+    }
+    return { summary, names, suggestion, rawFallback: "" };
+  }
+
+  return { summary: "", names: [], suggestion: "", rawFallback: raw };
+}
+
 const KPI_CARD_DEFS = [
   {
     label: "Total Patients Today",
@@ -506,63 +545,99 @@ export default function AdminDashboard() {
           ) : null}
 
           {intelData ? (
-            <div className="mt-2 flex min-h-0 gap-0">
-              <div className="w-[45%] shrink-0 space-y-2 border-r border-[#1e3a5f] pr-2">
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
-                    Total Patients
-                  </p>
-                  <p className="text-xl font-bold text-white">
-                    {intelData.total_patients}
-                  </p>
-                  {(() => {
-                    const u = changeVsWeekUi(intelData.change_from_last_week);
-                    return (
-                      <p className={`text-[10px] ${u.cls}`}>
-                        {u.arrow}
-                        {u.tail}
-                      </p>
-                    );
-                  })()}
-                </div>
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
-                    Vitals Health
-                  </p>
-                  <p
-                    className={`text-base font-bold ${healthPctClass(
-                      intelData.vitals_health_percentage
-                    )}`}
-                  >
-                    {intelData.vitals_health_percentage}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
-                    Critical Vitals
-                  </p>
-                  <p className="text-base font-bold text-[#ef4444]">
-                    {intelData.critical_vitals_percentage}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
-                    ⚠️ At Risk
-                  </p>
-                  <p className="text-base font-bold text-[#f97316]">
-                    {intelData.at_risk_count}
-                  </p>
+            <div className="mt-1.5 flex min-h-0 gap-2">
+              <div className="min-w-0 flex-[1.35] border-r border-[#1e3a5f] pr-2">
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex min-h-[4.25rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Total Patients
+                    </p>
+                    <p className="text-lg font-bold leading-none text-white">
+                      {intelData.total_patients}
+                    </p>
+                    {(() => {
+                      const u = changeVsWeekUi(intelData.change_from_last_week);
+                      return (
+                        <p className={`text-[9px] leading-tight ${u.cls}`}>
+                          {u.arrow} {u.tail}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Vitals Health
+                    </p>
+                    <p
+                      className={`mt-auto text-base font-bold leading-none ${healthPctClass(
+                        intelData.vitals_health_percentage
+                      )}`}
+                    >
+                      {intelData.vitals_health_percentage}%
+                    </p>
+                  </div>
+                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Critical Vitals
+                    </p>
+                    <p className="mt-auto text-base font-bold leading-none text-[#ef4444]">
+                      {intelData.critical_vitals_percentage}%
+                    </p>
+                  </div>
+                  <div className="flex min-h-[4.25rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      ⚠️ At Risk
+                    </p>
+                    <p className="mt-auto text-base font-bold leading-none text-[#f97316]">
+                      {intelData.at_risk_count}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="w-[55%] shrink-0 pl-3">
+              <div className="min-w-0 max-w-[42%] shrink-0 flex-[0.65] pl-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
                   🤖 AI Risk Forecast
                 </p>
                 <div className="mt-1 border-l-2 border-[#00b4d8] pl-2">
-                  <p className="line-clamp-6 text-[11px] italic text-white">
-                    {intelData.ai_prediction}
-                  </p>
+                  {(() => {
+                    const p = parseAiForecast(intelData.ai_prediction);
+                    if (p.rawFallback) {
+                      return (
+                        <p className="line-clamp-5 text-[10px] italic leading-snug text-white">
+                          {p.rawFallback}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="space-y-1">
+                        {p.summary ? (
+                          <p className="line-clamp-3 text-[10px] italic leading-snug text-white">
+                            {p.summary}
+                          </p>
+                        ) : null}
+                        {p.names.length > 0 ? (
+                          <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
+                            {p.names.map((n, i) => (
+                              <li key={`${n}-${i}`} className="pl-0.5">
+                                {n}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : null}
+                        {p.suggestion ? (
+                          <div className="border-t border-[#1e3a5f]/70 pt-1">
+                            <p className="text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                              Suggestion
+                            </p>
+                            <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#fde68a]">
+                              {p.suggestion}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

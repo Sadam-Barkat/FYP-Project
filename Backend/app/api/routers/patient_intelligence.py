@@ -24,7 +24,9 @@ router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 OPENAI_SYSTEM = (
     "You are a clinical AI assistant for a hospital dashboard. "
     "Be concise, direct, and medically practical. "
-    "Use 2–3 short sentences only. No bullet lists or preamble."
+    "Always follow the exact SUMMARY / NAMES / SUGGESTION section layout "
+    "requested in the user message. Use real counts and timeframes you infer "
+    "from the data — do not assume a fixed number of days."
 )
 
 
@@ -176,32 +178,36 @@ Hospital patient data:
 - Patients with abnormal vitals: {at_risk_count}
 - Overall vitals health score: {vitals_health_percentage}%
 - Critical vitals percentage: {critical_vitals_percentage}%
-- Top at risk patients: {top_risk_patient_names}
+- Top at risk patients (use these exact names when relevant): {top_risk_patient_names}
 - Change from last week: {change_from_last_week}
 
-You are a clinical AI. Based on this vitals data,
-predict patient risk over the coming days.
-Do NOT use fixed time periods — decide yourself
-based on the data whether risk will happen in
-2 days, 3 days, 5 days or longer.
+You are a clinical AI. Based on this vitals data, predict how many patients
+may be at risk and over what approximate timeframe (you choose the horizon
+from the data — e.g. 2 days, 3 days, 5 days, or longer — do not use a fixed default).
 
-Respond in 2-3 short sentences:
-- Sentence 1: How many patients and in how many
-  days they will be at risk (let AI decide the days)
-- Sentence 2: Mention specific patient names at risk
-- Sentence 3: One recommended action for hospital staff
+You MUST output ONLY the following three sections, in this exact order, with these exact headers:
 
-Example (do not copy, just follow format):
-"3 patients show deteriorating vitals and may become
-critical within 2 days. Ahmed Ali and Sara Khan are
-at highest risk based on current trends.
-Immediate doctor review and monitoring is recommended."
+SUMMARY:
+One line: your risk outlook (how many patients, roughly how soon, based on the metrics).
+
+NAMES:
+1. First Patient Full Name
+2. Second Patient Full Name
+(add one numbered line per at-risk patient you are calling out; use names from the list above when applicable)
+
+SUGGESTION:
+One imperative sentence for staff (e.g. "Escalate to the duty physician and increase vitals monitoring frequency.")
+
+Rules:
+- No text before SUMMARY: or after the SUGGESTION: line.
+- NAMES must use numbered lines starting with "1.", "2.", etc.
+- Keep each section brief.
 """
 
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=150,
+        max_tokens=220,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
