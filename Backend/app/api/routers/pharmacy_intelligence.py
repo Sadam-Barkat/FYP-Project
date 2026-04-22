@@ -191,18 +191,22 @@ def _format_stockout_prediction(rows: List[Dict[str, Any]]) -> str:
             "Stock projection: all tracked lines are at or above minimum par; "
             "no immediate reorder quantities are required from this snapshot."
         )
-    chunks: List[str] = []
-    for r in rows[:10]:
-        chunks.append(
-            f"{r['name']} ({r['category']}): on hand {r['quantity']} units; "
-            f"order {r['reorder_now_units']} units now to reach minimum par of {r['min_quantity']}; "
-            f"for the next 7 days plan {r['target_stock_7d']} units on shelf "
-            f"(add {r['additional_units_7d']} vs today); over 14 days plan {r['target_stock_14d']} units "
-            f"(add {r['additional_units_14d']} vs today)."
-        )
-    more = len(rows) - 10
-    tail = f" {more} additional SKU(s) also need review." if more > 0 else ""
-    return " ".join(chunks) + tail
+    # Keep this short for UI: focus on "what to reorder now".
+    # Prefer items that actually need units now; fall back to lowest-quantity items.
+    needs_now = [r for r in rows if int(r.get("reorder_now_units") or 0) > 0]
+    pick = (needs_now or rows)[:3]
+    parts: List[str] = []
+    for r in pick:
+        name = r["name"]
+        cat = r.get("category") or "General formulary"
+        add_now = int(r.get("reorder_now_units") or 0)
+        if add_now > 0:
+            parts.append(f"{name} ({cat}) +{add_now}")
+        else:
+            parts.append(f"{name} ({cat})")
+    more = max(len(needs_now) - 3, 0)
+    tail = f"; +{more} more low items" if more > 0 else ""
+    return "Reorder now: " + ", ".join(parts) + tail
 
 
 def _deterministic_reorder_names(
@@ -311,11 +315,13 @@ def _openai_expiry_suggestion_sync(
     if not api_key:
         return dict(FALLBACK_EXPIRY)
 
+    # NOTE: We only consume expiry_warning + suggestion from the model output,
+    # but the prompt requests the full 4-key JSON (per frontend expectations).
     user_prompt = f"""
 Hospital pharmacy status:
-- Out of stock medicines: {"None" if out_of_stock_count == 0 else "(not provided)"}
-- Low stock medicines: {"None" if low_stock_count == 0 else "(not provided)"}
-- Expiring soon (within 30 days): {[m.get("name") for m in expiring_details] if expiring_details else "None"}
+- Out of stock medicines: {out_of_stock_names if out_of_stock_names else "None"}
+- Low stock medicines: {[m["name"] for m in low_stock_details] if low_stock_details else "None"}
+- Expiring soon (within 30 days): {[m["name"] for m in expiring_details] if expiring_details else "None"}
 - Expired medicines: {expired_count}
 
 Return ONLY this JSON, keep every value
