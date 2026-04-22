@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import re
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, func, select
@@ -22,18 +23,15 @@ from app.models.user import User, UserRole
 router = APIRouter(prefix="/api", tags=["pharmacy-intelligence"])
 
 OPENAI_SYSTEM = (
-    "You are an expert hospital pharmacy management AI. "
-    "Your job is to analyze real pharmacy stock data and "
-    "give intelligent, specific, actionable insights.\n"
+    "You are an expert hospital pharmacy management AI for Gilkari Hospital. "
+    "You ONLY write expiry_warning and suggestion from the JSON facts given. "
     "RULES:\n"
-    "- Never use placeholder text or generic statements\n"
-    "- Always mention specific medicine names from the data\n"
-    "- Decide timeframes yourself based on actual quantities\n"
-    "- If out_of_stock_count is 0 and low_stock_count is 0 "
-    "say stocks are healthy, do not invent problems\n"
-    "- If there are real issues be very specific and urgent\n"
-    "- Base every prediction strictly on the numbers given\n"
-    "- Respond in JSON format only, no markdown, no extra text"
+    "- Use medicine names and day counts exactly as provided; do not invent SKUs or dates\n"
+    "- Mention therapeutic category when it appears in the data (category field)\n"
+    "- expiry_warning: one or two clear sentences on soon-to-expire stock and quantities\n"
+    "- suggestion: one short imperative for pharmacy staff (quarantine expired, reorder, FEFO)\n"
+    "- If expiring_soon_count is 0 say expiry exposure is low for the 30-day window\n"
+    "- Respond in JSON only with keys expiry_warning and suggestion — no markdown, no extra text"
 )
 
 FALLBACK_AI: Dict[str, Any] = {
@@ -42,6 +40,174 @@ FALLBACK_AI: Dict[str, Any] = {
     "expiry_warning": "Expiry data unavailable.",
     "suggestion": "Please check pharmacy stock manually.",
 }
+
+FALLBACK_EXPIRY: Dict[str, str] = {
+    "expiry_warning": FALLBACK_AI["expiry_warning"],
+    "suggestion": FALLBACK_AI["suggestion"],
+}
+
+
+def _infer_medicine_category(medicine_name: str) -> str:
+    """
+    pharmacy_stock has no category FK; infer a broad therapeutic class from the name.
+    """
+    n = (medicine_name or "").lower()
+    rules: List[Tuple[Tuple[str, ...], str]] = [
+        (
+            (
+                "amoxicillin",
+                "penicillin",
+                "cef",
+                "azithro",
+                "cipro",
+                "doxy",
+                "metronidazole",
+                "clindamycin",
+                "vancomycin",
+                "antibiotic",
+            ),
+            "Antibiotics",
+        ),
+        (
+            (
+                "paracetamol",
+                "acetaminophen",
+                "ibuprofen",
+                "diclofen",
+                "tramadol",
+                "morphine",
+                "aspirin",
+                "naproxen",
+                "analges",
+                "pain",
+            ),
+            "Analgesics / anti-inflammatory",
+        ),
+        (
+            (
+                "omeprazole",
+                "pantoprazole",
+                "ranitidine",
+                "famotidine",
+                "lansoprazole",
+                "antacid",
+            ),
+            "Gastrointestinal",
+        ),
+        (
+            (
+                "metformin",
+                "insulin",
+                "gliben",
+                "glimepiride",
+                "diabet",
+            ),
+            "Endocrine / diabetes",
+        ),
+        (
+            (
+                "amlodipine",
+                "losartan",
+                "atenolol",
+                "metoprolol",
+                "lisinopril",
+                "enalapril",
+                "cardio",
+                "statin",
+                "atorvastatin",
+                "simvastatin",
+            ),
+            "Cardiovascular",
+        ),
+        (
+            (
+                "salbutamol",
+                "albuterol",
+                "montelukast",
+                "budesonide",
+                "fluticasone",
+                "asthma",
+                "inhal",
+            ),
+            "Respiratory",
+        ),
+        (
+            ("vitamin", "iron", "folic", "calcium", "b12", "zinc", "multivit"),
+            "Vitamins / minerals",
+        ),
+        (
+            ("cream", "ointment", "topical", "gel ", " lotion"),
+            "Dermatological / topical",
+        ),
+    ]
+    for keys, label in rules:
+        if any(k in n for k in keys):
+            return label
+    return "General formulary"
+
+
+def _projection_row(
+    name: str, qty: int, min_q: int
+) -> Dict[str, Any]:
+    mq = max(int(min_q or 0), 1)
+    q = max(int(qty or 0), 0)
+    reorder_now = max(mq - q, 0)
+    target_7d = max(mq, int(math.ceil(mq * 1.5)))
+    need_7d = max(target_7d - q, 0)
+    target_14d = max(mq * 2, int(math.ceil(mq * 2.25)))
+    need_14d = max(target_14d - q, 0)
+    return {
+        "name": name.strip(),
+        "category": _infer_medicine_category(name),
+        "quantity": q,
+        "min_quantity": mq,
+        "reorder_now_units": reorder_now,
+        "target_stock_7d": target_7d,
+        "additional_units_7d": need_7d,
+        "target_stock_14d": target_14d,
+        "additional_units_14d": need_14d,
+    }
+
+
+def _format_stockout_prediction(rows: List[Dict[str, Any]]) -> str:
+    if not rows:
+        return (
+            "Stock projection: all tracked lines are at or above minimum par; "
+            "no immediate reorder quantities are required from this snapshot."
+        )
+    chunks: List[str] = []
+    for r in rows[:10]:
+        chunks.append(
+            f"{r['name']} ({r['category']}): on hand {r['quantity']} units; "
+            f"order {r['reorder_now_units']} units now to reach minimum par of {r['min_quantity']}; "
+            f"for the next 7 days plan {r['target_stock_7d']} units on shelf "
+            f"(add {r['additional_units_7d']} vs today); over 14 days plan {r['target_stock_14d']} units "
+            f"(add {r['additional_units_14d']} vs today)."
+        )
+    more = len(rows) - 10
+    tail = f" {more} additional SKU(s) also need review." if more > 0 else ""
+    return " ".join(chunks) + tail
+
+
+def _deterministic_reorder_names(
+    oos_ordered: List[str], low_rows: List[Tuple[str, int, int]]
+) -> List[str]:
+    seen: set[str] = set()
+    out: List[str] = []
+    for n in oos_ordered:
+        s = n.strip()
+        if s and s not in seen:
+            seen.add(s)
+            out.append(s)
+    for name, qty, _mq in sorted(low_rows, key=lambda x: (x[1], x[0].lower())):
+        s = (name or "").strip()
+        if not s or s in seen:
+            continue
+        seen.add(s)
+        out.append(s)
+        if len(out) >= 18:
+            break
+    return out
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
@@ -66,134 +232,98 @@ def _sorted_unique_medicine_names(names: List[str]) -> List[str]:
     return sorted(seen)
 
 
-def _parse_openai_json(raw: str) -> Dict[str, Any]:
+def _parse_expiry_suggestion_json(raw: str) -> Dict[str, str]:
     text = (raw or "").strip()
     if not text:
-        return dict(FALLBACK_AI)
+        return dict(FALLBACK_EXPIRY)
     fence = re.match(r"^```(?:json)?\s*([\s\S]*?)\s*```$", text, re.IGNORECASE)
     if fence:
         text = fence.group(1).strip()
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        return dict(FALLBACK_AI)
+        return dict(FALLBACK_EXPIRY)
     if not isinstance(data, dict):
-        return dict(FALLBACK_AI)
-    out = dict(FALLBACK_AI)
-    for k in FALLBACK_AI:
-        if k not in data:
-            continue
-        if k == "medicines_to_reorder":
-            v = data[k]
-            if isinstance(v, list):
-                out[k] = [str(x) for x in v if x is not None]
-            else:
-                out[k] = []
-        else:
-            out[k] = str(data[k]) if data[k] is not None else out[k]
+        return dict(FALLBACK_EXPIRY)
+    out = dict(FALLBACK_EXPIRY)
+    for k in FALLBACK_EXPIRY:
+        if k in data and data[k] is not None:
+            out[k] = str(data[k]).strip()
     return out
 
 
-def _openai_pharmacy_sync(
+def _openai_expiry_suggestion_sync(
     total_medicines: int,
     out_of_stock_count: int,
     low_stock_count: int,
-    sufficient_stock_count: int,
     expiring_soon_count: int,
     expired_count: int,
-    out_of_stock_names: List[str],
-    low_stock_details: List[Dict[str, Any]],
     expiring_details: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    expired_sample_names: List[str],
+) -> Dict[str, str]:
     from openai import OpenAI
 
     api_key = (resolve_openai_api_key() or "").strip()
     if not api_key:
-        return dict(FALLBACK_AI)
+        return dict(FALLBACK_EXPIRY)
 
     user_prompt = f"""
-Here is the real-time pharmacy stock data for
-Gilkari Hospital right now:
+Pharmacy snapshot (Gilkari Hospital) — use ONLY these facts for expiry_warning and suggestion.
 
-STOCK STATUS:
-- Total medicines being tracked: {total_medicines}
-- Out of stock RIGHT NOW: {out_of_stock_count} medicines
-- Low stock (at or below minimum level): {low_stock_count}
-- Sufficient stock: {sufficient_stock_count}
-- Expiring within 30 days: {expiring_soon_count}
-- Already expired (must be removed): {expired_count}
+COUNTS:
+- Tracked SKUs: {total_medicines}
+- Out of stock lines: {out_of_stock_count}
+- Low stock lines (at/below par): {low_stock_count}
+- Lines expiring within 30 days (qty>0): {expiring_soon_count}
+- Expired lines still on file: {expired_count}
 
-OUT OF STOCK MEDICINES (need immediate reorder):
-{out_of_stock_names if out_of_stock_names else "None"}
+EXPIRING NEXT 30 DAYS (name, category, days until expiry, on-hand quantity):
+{json.dumps(expiring_details) if expiring_details else "[]"}
 
-LOW STOCK MEDICINES WITH ESTIMATED DAYS UNTIL STOCKOUT:
-{json.dumps(low_stock_details) if low_stock_details else "None"}
+SAMPLE EXPIRED MEDICINE NAMES (quarantine / disposal priority — examples):
+{json.dumps(expired_sample_names) if expired_sample_names else "[]"}
 
-MEDICINES EXPIRING SOON:
-{json.dumps(expiring_details) if expiring_details else "None"}
-
-Based on this REAL data analyze and return
-a JSON object with exactly these 4 fields:
-
+Return JSON with exactly two string fields:
 {{
-  "stockout_prediction": "Specific sentence about
-    which exact medicines will run out and in how
-    many days — base days on the quantity vs
-    min_quantity ratio. If no stockout risk say so.",
-
-  "medicines_to_reorder": ["list", "of", "medicine",
-    "names", "that", "need", "reorder", "urgently"],
-
-  "expiry_warning": "Specific sentence mentioning
-    exact medicine names expiring soon and in how
-    many days. If nothing expiring say stock expiry
-    is healthy.",
-
-  "suggestion": "One very specific actionable
-    instruction for pharmacy staff based on the
-    most urgent issue right now. Mention specific
-    medicine names and exact action to take."
+  "expiry_warning": "1-2 sentences: name medicines, category when given, days until expiry, and on-hand qty. If expiring_soon_count is 0 say the 30-day expiry outlook is clear.",
+  "suggestion": "1 imperative sentence for staff (FEFO, reorder soon-to-expire first, remove expired stock). Use names from the lists only."
 }}
 
-Return ONLY the JSON. No explanation. No markdown.
+Return ONLY the JSON. No markdown.
 """
 
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=250,
-        temperature=0.3,
+        max_tokens=380,
+        temperature=0.25,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
         ],
     )
     msg = resp.choices[0].message.content
-    return _parse_openai_json(msg or "")
+    return _parse_expiry_suggestion_json(msg or "")
 
 
-async def _fetch_ai_pharmacy(
+async def _fetch_ai_expiry_suggestion(
     total_medicines: int,
     out_of_stock_count: int,
     low_stock_count: int,
-    sufficient_stock_count: int,
     expiring_soon_count: int,
     expired_count: int,
-    out_of_stock_names: List[str],
-    low_stock_details: List[Dict[str, Any]],
     expiring_details: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    expired_sample_names: List[str],
+) -> Dict[str, str]:
     return await asyncio.to_thread(
-        _openai_pharmacy_sync,
+        _openai_expiry_suggestion_sync,
         total_medicines,
         out_of_stock_count,
         low_stock_count,
-        sufficient_stock_count,
         expiring_soon_count,
         expired_count,
-        out_of_stock_names,
-        low_stock_details,
         expiring_details,
+        expired_sample_names,
     )
 
 
@@ -289,7 +419,6 @@ async def get_pharmacy_intelligence(
     out_of_stock_medicines = _sorted_unique_medicine_names(
         [str(r[0]) for r in oos_all if r[0]]
     )
-    out_of_stock_names = out_of_stock_medicines[:20]
 
     low_all = (
         await db.execute(
@@ -308,37 +437,53 @@ async def get_pharmacy_intelligence(
         [str(r[0]) for r in low_all if r[0]]
     )
 
-    low_rows = (
-        await db.execute(
-            select(
-                PharmacyStock.medicine_name,
-                PharmacyStock.quantity,
-                PharmacyStock.low_stock_threshold,
-            )
-            .where(
-                and_(
-                    PharmacyStock.quantity > 0,
-                    PharmacyStock.quantity <= PharmacyStock.low_stock_threshold,
-                )
-            )
-            .order_by(PharmacyStock.quantity.asc())
-            .limit(5)
+    oos_proj_r = await db.execute(
+        select(
+            PharmacyStock.medicine_name,
+            PharmacyStock.quantity,
+            PharmacyStock.low_stock_threshold,
         )
-    ).all()
-    low_stock_details: List[Dict[str, Any]] = []
-    for name, qty, min_q in low_rows:
-        mq = int(min_q or 0)
-        q = int(qty or 0)
-        low_stock_details.append(
-            {
-                "name": str(name),
-                "quantity": q,
-                "min_quantity": mq,
-                "days_until_stockout": int(
-                    round((q / max(1, mq)) * 7),
-                ),
-            }
+        .where(PharmacyStock.quantity == 0)
+        .order_by(PharmacyStock.medicine_name.asc())
+        .limit(35)
+    )
+    low_proj_r = await db.execute(
+        select(
+            PharmacyStock.medicine_name,
+            PharmacyStock.quantity,
+            PharmacyStock.low_stock_threshold,
         )
+        .where(
+            and_(
+                PharmacyStock.quantity > 0,
+                PharmacyStock.quantity <= PharmacyStock.low_stock_threshold,
+            )
+        )
+        .order_by(PharmacyStock.quantity.asc(), PharmacyStock.medicine_name.asc())
+        .limit(35)
+    )
+    oos_proj_rows = list(oos_proj_r.all())
+    low_proj_rows = list(low_proj_r.all())
+    raw_projections: List[Dict[str, Any]] = []
+    for name, q, mq in oos_proj_rows + low_proj_rows:
+        raw_projections.append(
+            _projection_row(str(name), int(q or 0), int(mq or 0))
+        )
+    by_name: Dict[str, Dict[str, Any]] = {}
+    for row in raw_projections:
+        n = row["name"]
+        if n not in by_name or row["quantity"] < by_name[n]["quantity"]:
+            by_name[n] = row
+    projection_list = sorted(
+        by_name.values(), key=lambda r: (r["quantity"], r["name"].lower())
+    )
+    stockout_prediction = _format_stockout_prediction(projection_list)
+    low_tuples = [
+        (str(a), int(b or 0), int(c or 0)) for a, b, c in low_proj_rows
+    ]
+    medicines_to_reorder = _deterministic_reorder_names(
+        out_of_stock_medicines, low_tuples
+    )
 
     exp_rows = (
         await db.execute(
@@ -357,7 +502,7 @@ async def get_pharmacy_intelligence(
                 )
             )
             .order_by(exp_col.asc())
-            .limit(5)
+            .limit(14)
         )
     ).all()
     expiring_details: List[Dict[str, Any]] = []
@@ -371,9 +516,11 @@ async def get_pharmacy_intelligence(
         else:
             continue
         days_until = (exp_d - today).days
+        nm = str(name)
         expiring_details.append(
             {
-                "name": str(name),
+                "name": nm,
+                "category": _infer_medicine_category(nm),
                 "days_until_expiry": int(days_until),
                 "quantity": int(qty or 0),
             }
@@ -417,20 +564,20 @@ async def get_pharmacy_intelligence(
         [str(r[0]) for r in expired_rows if r[0]]
     )
 
+    expired_sample_names = expired_medicines[:18]
+
     try:
-        ai = await _fetch_ai_pharmacy(
+        ai_exp = await _fetch_ai_expiry_suggestion(
             total_medicines,
             out_of_stock_count,
             low_stock_count,
-            sufficient_stock_count,
             expiring_soon_count,
             expired_count,
-            out_of_stock_names,
-            low_stock_details,
             expiring_details,
+            expired_sample_names,
         )
     except Exception:
-        ai = dict(FALLBACK_AI)
+        ai_exp = dict(FALLBACK_EXPIRY)
 
     return {
         "total_medicines": total_medicines,
@@ -443,8 +590,8 @@ async def get_pharmacy_intelligence(
         "low_stock_medicines": low_stock_medicines,
         "expiring_soon_medicines": expiring_soon_medicines,
         "expired_medicines": expired_medicines,
-        "stockout_prediction": ai["stockout_prediction"],
-        "medicines_to_reorder": ai["medicines_to_reorder"],
-        "expiry_warning": ai["expiry_warning"],
-        "suggestion": ai["suggestion"],
+        "stockout_prediction": stockout_prediction,
+        "medicines_to_reorder": medicines_to_reorder,
+        "expiry_warning": ai_exp["expiry_warning"],
+        "suggestion": ai_exp["suggestion"],
     }
