@@ -514,8 +514,8 @@ export default function AdminDashboard() {
 
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="max-h-[220px] overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <div className="flex items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
+        <div className="flex max-h-[220px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
             <h2 className="text-xs font-semibold text-[#00b4d8]">
               🧠 Patient Intelligence
             </h2>
@@ -545,8 +545,8 @@ export default function AdminDashboard() {
           ) : null}
 
           {intelData ? (
-            <div className="mt-1.5 flex min-h-0 gap-2">
-              <div className="min-w-0 flex-[1.35] border-r border-[#1e3a5f] pr-2">
+            <div className="mt-1.5 flex min-h-0 flex-1 gap-2 overflow-hidden">
+              <div className="min-w-0 flex-[1.05] shrink-0 border-r border-[#1e3a5f] pr-2">
                 <div className="grid grid-cols-2 gap-1.5">
                   <div className="flex min-h-[4.25rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
                     <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
@@ -595,45 +595,63 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="min-w-0 max-w-[42%] shrink-0 flex-[0.65] pl-1">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
+              <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col pl-1">
+                <p className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
                   🤖 AI Risk Forecast
                 </p>
-                <div className="mt-1 border-l-2 border-[#00b4d8] pl-2">
+                <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-hidden border-l-2 border-[#00b4d8] pl-2">
                   {(() => {
                     const p = parseAiForecast(intelData.ai_prediction);
                     if (p.rawFallback) {
                       return (
-                        <p className="line-clamp-5 text-[10px] italic leading-snug text-white">
-                          {p.rawFallback}
-                        </p>
+                        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                          <p className="text-[10px] italic leading-snug text-white">
+                            {p.rawFallback}
+                          </p>
+                        </div>
                       );
                     }
                     return (
-                      <div className="space-y-1">
+                      <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                         {p.summary ? (
-                          <p className="line-clamp-3 text-[10px] italic leading-snug text-white">
+                          <p className="shrink-0 text-[10px] italic leading-snug text-white">
                             {p.summary}
                           </p>
                         ) : null}
                         {p.names.length > 0 ? (
-                          <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
-                            {p.names.map((n, i) => (
-                              <li key={`${n}-${i}`} className="pl-0.5">
-                                {n}
-                              </li>
-                            ))}
-                          </ol>
+                          <>
+                            <div
+                              className="my-1.5 shrink-0 border-t border-[#1e3a5f]/80"
+                              aria-hidden
+                            />
+                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+                              <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
+                                {p.names.map((n, i) => (
+                                  <li key={`${n}-${i}`} className="pl-0.5">
+                                    {n}
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          </>
                         ) : null}
                         {p.suggestion ? (
-                          <div className="border-t border-[#1e3a5f]/70 pt-1">
-                            <p className="text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
-                              Suggestion
-                            </p>
-                            <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#fde68a]">
-                              {p.suggestion}
-                            </p>
-                          </div>
+                          <>
+                            {(p.summary || p.names.length > 0) ? (
+                              <div
+                                className="my-1.5 shrink-0 border-t border-[#1e3a5f]/80"
+                                aria-hidden
+                              />
+                            ) : null}
+                            <div className="shrink-0 pb-0.5">
+                              <p className="text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                                Suggestion
+                              </p>
+                              <p className="mt-0.5 text-[10px] font-medium leading-snug text-[#fde68a]">
+                                {p.suggestion}
+                              </p>
+                            </div>
+                          </>
                         ) : null}
                       </div>
                     );
@@ -644,7 +662,7 @@ export default function AdminDashboard() {
           ) : null}
 
           {intelData ? (
-            <p className="mt-2 text-[10px] text-[#94a3b8]">
+            <p className="mt-1.5 shrink-0 text-[10px] text-[#94a3b8]">
               {intelFooterUpdated(intelLastFetch, intelClock)}
             </p>
           ) : null}
