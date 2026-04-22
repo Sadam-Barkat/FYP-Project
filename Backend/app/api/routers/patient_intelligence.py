@@ -25,15 +25,19 @@ OPENAI_SYSTEM = (
     "You are a clinical AI assistant for a hospital dashboard. "
     "Be concise, direct, and medically practical. "
     "Always follow the exact SUMMARY / NAMES / SUGGESTION section layout "
-    "requested in the user message. Use real counts and timeframes you infer "
-    "from the data — do not assume a fixed number of days. "
-    "From the patient table, judge which individuals look most serious using "
-    "NEWS2 and vitals together (not NEWS2 alone). "
-    "If you state a specific number of at-risk patients in SUMMARY, the NAMES "
-    "section MUST list exactly that many distinct patients, one per numbered line, "
-    "using ONLY full names that appear in the provided table — do not invent names "
-    "or pad with duplicates. If you cannot support a count with real names, use a "
-    "qualitative summary without a precise patient count."
+    "requested in the user message. "
+    "Base every risk judgment ONLY on the patient table and aggregate metrics "
+    "provided — no outside assumptions. "
+    "From the table, judge severity using NEWS2 together with vitals (not NEWS2 alone). "
+    "Time horizon: you may name ONLY 1, 2, 3, 4, 5, 6, or 7 days ahead (pick one window "
+    "from the data); never predict beyond 7 days. Prefer the shortest justified window. "
+    "In SUMMARY you MUST use explicit integers: say exactly how many patients (e.g. "
+    "\"5 patients\", \"6 patients\") and exactly which day window (e.g. \"within 2 days\", "
+    "\"within 7 days\") — never use vague phrases like \"some patients\", \"several\", or "
+    "\"a few\". "
+    "If you give a specific patient count N in SUMMARY, NAMES must list exactly N distinct "
+    "names from the table, one per numbered line; do not invent names. If you cannot match "
+    "N to real names, lower N or omit a precise count."
 )
 
 
@@ -203,20 +207,24 @@ Hospital patient data:
 Full active-patient table (highest NEWS2 first; NEWS2 is internal severity score — use with vitals to judge who looks most serious):
 {patient_risk_table}
 
-You are a clinical AI. Based on this vitals data, predict how many patients
-may be at risk and over what approximate timeframe (you choose the horizon
-from the data — e.g. 2 days, 3 days, 5 days, or longer — do not use a fixed default).
+You are a clinical AI. From ONLY the metrics and patient table above, estimate how many
+patients need heightened attention and when (choose a single lookahead window of
+1, 2, 3, 4, 5, 6, or 7 days — maximum one week; never beyond 7 days; pick the shortest
+window the data supports).
 
 You MUST output ONLY the following three sections, in this exact order, with these exact headers:
 
 SUMMARY:
-One line: your risk outlook (how many patients, roughly how soon, based on the metrics).
+Exactly one line. It MUST include: (1) an explicit integer count of patients, e.g. "5 patients"
+or "6 patients" (digits + the word patients), and (2) an explicit day window using digits,
+e.g. "within 2 days" or "within 7 days" — only 1–7 days. No vague wording ("some", "several",
+"a few", "many"). Tie the count and window strictly to what the table and metrics justify.
 
 NAMES:
 1. First Patient Full Name
 2. Second Patient Full Name
-(One numbered line per patient you are flagging. If SUMMARY gives a specific patient count N, 
-include exactly N distinct names from the table above — same N, same real people. If N is large, still list every name.)
+(One numbered line per patient you flag. If SUMMARY states N patients, include exactly N
+distinct names from the table — same N, same people. List every name if N is large.)
 
 SUGGESTION:
 One imperative sentence for staff (e.g. "Escalate to the duty physician and increase vitals monitoring frequency.")
@@ -225,6 +233,7 @@ Rules:
 - No text before SUMMARY: or after the SUGGESTION: line.
 - NAMES must use numbered lines starting with "1.", "2.", etc.
 - Use only names that appear in the full table; never invent patients.
+- Do not predict risk later than 7 days from now; if data suggests longer risk, cap wording at "within 7 days".
 """
 
     client = OpenAI(api_key=api_key)
