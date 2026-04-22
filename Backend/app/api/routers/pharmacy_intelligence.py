@@ -23,11 +23,12 @@ from app.models.user import User, UserRole
 router = APIRouter(prefix="/api", tags=["pharmacy-intelligence"])
 
 OPENAI_SYSTEM = (
-    "You are a hospital pharmacy AI assistant. "
-    "Be extremely concise and to the point. "
-    "No calculations. No unit breakdowns. No formulas. "
-    "Just short, clear, actionable sentences. "
-    "Respond in JSON format only, no markdown, no extra text."
+    "You are a clinical pharmacy AI for a hospital. "
+    "Analyze the stock data and respond like a smart "
+    "pharmacy manager. Be specific, short, and helpful. "
+    "Always clean medicine names — remove any words in "
+    "brackets like (General formulary) from names. "
+    "Respond in JSON only. No markdown. No extra text."
 )
 
 FALLBACK_AI: Dict[str, Any] = {
@@ -306,6 +307,8 @@ def _openai_expiry_suggestion_sync(
     low_stock_count: int,
     expiring_soon_count: int,
     expired_count: int,
+    out_of_stock_names: List[str],
+    low_stock_details: List[Dict[str, Any]],
     expiring_details: List[Dict[str, Any]],
     expired_sample_names: List[str],
 ) -> Dict[str, str]:
@@ -315,41 +318,41 @@ def _openai_expiry_suggestion_sync(
     if not api_key:
         return dict(FALLBACK_EXPIRY)
 
-    # NOTE: We only consume expiry_warning + suggestion from the model output,
-    # but the prompt requests the full 4-key JSON (per frontend expectations).
     user_prompt = f"""
-Hospital pharmacy status:
-- Out of stock medicines: {out_of_stock_names if out_of_stock_names else "None"}
-- Low stock medicines: {[m["name"] for m in low_stock_details] if low_stock_details else "None"}
-- Expiring soon (within 30 days): {[m["name"] for m in expiring_details] if expiring_details else "None"}
-- Expired medicines: {expired_count}
+Current pharmacy stock at Gilkari Hospital:
 
-Return ONLY this JSON, keep every value
-under 15 words, no calculations, no unit details:
+Out of stock: {out_of_stock_names if out_of_stock_names else "None"}
+Low stock: {[m['name'] for m in low_stock_details] if low_stock_details else "None"}
+Expiring soon: {[m['name'] + ' in ' + str(m['days_until_expiry']) + ' days' for m in expiring_details] if expiring_details else "None"}
+Expired count: {expired_count}
+
+Analyze this and return JSON:
 {{
-  "stockout_prediction": "short sentence,
-    which medicines at risk of running out soon",
-
-  "medicines_to_reorder": ["only", "medicine", "names"],
-
-  "expiry_warning": "short sentence,
-    which medicines expiring and roughly when",
-
-  "suggestion": "one short action for staff"
+  "stockout_prediction": "Based on stock levels, 
+    which medicines will run out soon and when. 
+    Keep under 20 words. Clean medicine names.",
+    
+  "medicines_to_reorder": ["clean medicine names 
+    without brackets, only most urgent ones"],
+    
+  "expiry_warning": "Which medicines expiring soon 
+    and in how many days. Under 20 words. 
+    If none say: All medicines have healthy expiry dates.",
+    
+  "suggestion": "One specific action for pharmacy 
+    staff right now. Under 15 words."
 }}
 
-Example of good response:
-{{
-  "stockout_prediction": "Paracetamol and Aspirin
-    are critically low and may run out within 2 days.",
-  "medicines_to_reorder": ["Paracetamol", "Aspirin"],
-  "expiry_warning": "Red Syrup expires in 1 day,
-    Brother tablets in 7 days — remove immediately.",
-  "suggestion": "Reorder Paracetamol urgently
-    and dispose expired Red Syrup today."
-}}
-
-Return ONLY the JSON. No extra text.
+IMPORTANT:
+- Remove (General formulary) or any brackets from names
+- If expiring_details is empty or None write 
+  expiry_warning as: "All medicines have healthy 
+  expiry dates."
+- If out_of_stock and low_stock are both empty write
+  stockout_prediction as: "All medicine stocks 
+  are currently sufficient."
+- Keep every sentence SHORT and CLEAN
+- Return ONLY JSON nothing else
 """
 
     client = OpenAI(api_key=api_key)
@@ -372,6 +375,8 @@ async def _fetch_ai_expiry_suggestion(
     low_stock_count: int,
     expiring_soon_count: int,
     expired_count: int,
+    out_of_stock_names: List[str],
+    low_stock_details: List[Dict[str, Any]],
     expiring_details: List[Dict[str, Any]],
     expired_sample_names: List[str],
 ) -> Dict[str, str]:
@@ -382,6 +387,8 @@ async def _fetch_ai_expiry_suggestion(
         low_stock_count,
         expiring_soon_count,
         expired_count,
+        out_of_stock_names,
+        low_stock_details,
         expiring_details,
         expired_sample_names,
     )
@@ -547,11 +554,23 @@ async def get_pharmacy_intelligence(
     medicines_to_reorder = _deterministic_reorder_names(
         out_of_stock_medicines, low_tuples
     )
+    out_of_stock_names = out_of_stock_medicines[:10]
+    low_stock_details: List[Dict[str, Any]] = []
+    seen_low: set[str] = set()
+    for name, _q, _mq in low_proj_rows:
+        s = (str(name) if name is not None else "").strip()
+        if not s or s in seen_low:
+            continue
+        seen_low.add(s)
+        low_stock_details.append({"name": s})
+        if len(low_stock_details) >= 10:
+            break
 
     exp_rows = (
         await db.execute(
             select(
                 PharmacyStock.medicine_name,
+                PharmacyStock.expiry_date,
                 PharmacyStock.quantity,
                 exp_col.label("exp_dt"),
             )
@@ -565,11 +584,11 @@ async def get_pharmacy_intelligence(
                 )
             )
             .order_by(exp_col.asc())
-            .limit(14)
+            .limit(5)
         )
     ).all()
     expiring_details: List[Dict[str, Any]] = []
-    for name, qty, exp_dt in exp_rows:
+    for name, _expiry_raw, qty, exp_dt in exp_rows:
         if exp_dt is None:
             continue
         if isinstance(exp_dt, datetime):
@@ -636,6 +655,8 @@ async def get_pharmacy_intelligence(
             low_stock_count,
             expiring_soon_count,
             expired_count,
+            out_of_stock_names,
+            low_stock_details,
             expiring_details,
             expired_sample_names,
         )
