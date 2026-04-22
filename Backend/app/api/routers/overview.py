@@ -619,20 +619,26 @@ async def get_hospital_overview(
         today_kpis = await _compute_admin_kpi_snapshot(db, base_date)
         yesterday_date = base_date - timedelta(days=1)
         yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
+        tomorrow_date = base_date + timedelta(days=1)
+        tomorrow_kpis = await _compute_admin_kpi_snapshot(db, tomorrow_date)
         kpi_breakdowns = await _compute_admin_kpi_breakdowns(db, base_date)
         tpb = kpi_breakdowns.get("total_patients_breakdown")
         if isinstance(tpb, dict):
             tpb["in_hospital"] = int(today_kpis["total_patients"])
+            tpb["in_hospital_tomorrow"] = int(tomorrow_kpis["total_patients"])
 
         admin_dashboard_kpis = {
             "total_patients": int(today_kpis["total_patients"]),
+            # Census at end of the next calendar day (from known admits/discharges only).
+            "total_patients_tomorrow": int(tomorrow_kpis["total_patients"]),
             "active_admissions": int(today_kpis["active_admissions"]),
             "available_beds": int(today_kpis["available_beds"]),
             "critical_patients": int(today_kpis["critical_patients"]),
             "staff_on_duty": int(today_kpis["staff_on_duty"]),
             "revenue_today": float(today_kpis["revenue_today"]),
+            # Inpatient KPI: compare today's census to tomorrow's end-of-day census.
             "total_patients_trend": _format_kpi_trend_pct(
-                today_kpis["total_patients"], yesterday_kpis["total_patients"]
+                tomorrow_kpis["total_patients"], today_kpis["total_patients"]
             ),
             "active_admissions_trend": _format_kpi_trend_pct(
                 today_kpis["active_admissions"], yesterday_kpis["active_admissions"]

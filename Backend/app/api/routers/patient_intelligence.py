@@ -40,7 +40,11 @@ OPENAI_SYSTEM = (
     "not only a count plus a day window. "
     "If you give a specific patient count N in SUMMARY, NAMES must list exactly N distinct "
     "names from the table, one per numbered line; do not invent names. If you cannot match "
-    "N to real names, lower N or omit a precise count."
+    "N to real names, lower N or omit a precise count. "
+    "SUGGESTION must be one imperative sentence grounded ONLY in this snapshot (who to watch, "
+    "what to verify, bed flow, labs, observation frequency, etc.). Do NOT reuse canned "
+    "template lines from instructions; do NOT copy example phrasing; vary wording when the "
+    "underlying issue differs."
 )
 
 
@@ -233,7 +237,10 @@ NAMES:
 distinct names from the table — same N, same people. List every name if N is large.)
 
 SUGGESTION:
-One imperative sentence for staff (e.g. "Escalate to the duty physician and increase vitals monitoring frequency.")
+One imperative sentence for clinical or operational staff, written specifically for the
+patterns in the table above (name the lever: reviews, monitoring, investigations, bed moves,
+senior review, etc.). It must read like a fresh recommendation for THIS census and vitals
+picture — not a generic safety slogan.
 
 Rules:
 - No text before SUMMARY: or after the SUGGESTION: line.
@@ -246,6 +253,7 @@ Rules:
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         max_tokens=1800,
+        temperature=0.75,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
