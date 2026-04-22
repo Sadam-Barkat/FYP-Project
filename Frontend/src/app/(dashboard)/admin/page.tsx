@@ -17,6 +17,7 @@ const cardBase =
   "rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 transition-all hover:border-[#00b4d8] sm:p-5";
 
 export type TotalPatientsBreakdown = {
+  in_hospital?: number | null;
   admitted_today?: number | null;
   discharged_today?: number | null;
   under_observation?: number | null;
@@ -139,11 +140,12 @@ function kpiTooltipContent(
 ): { title: string; rows: { label: string; value: string }[] } {
   const d = data;
   switch (cardLabel) {
-    case "Total Patients Today": {
+    case "Patients in hospital": {
       const b = d?.total_patients_breakdown;
       return {
         title: "Patient Breakdown",
         rows: [
+          { label: "In hospital (census):", value: String(asNum(b?.in_hospital)) },
           { label: "Admitted Today:", value: String(asNum(b?.admitted_today)) },
           { label: "Discharged Today:", value: String(asNum(b?.discharged_today)) },
           { label: "Under Observation:", value: String(asNum(b?.under_observation)) },
@@ -290,7 +292,7 @@ function parseAiForecast(text: string): ParsedAiForecast {
 
 const KPI_CARD_DEFS = [
   {
-    label: "Total Patients Today",
+    label: "Patients in hospital",
     valueKey: "total_patients" as const,
     trendKey: "total_patients_trend" as const,
     icon: Users,

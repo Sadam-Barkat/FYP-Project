@@ -45,11 +45,16 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
     day_start = datetime.combine(base_date, time.min)
     day_end = datetime.combine(base_date, time.max)
 
+    # Distinct patients still admitted as of end of this calendar day (census),
+    # not "admitted today only" — matches "patients currently in hospital" for the KPI.
     total_patients_result = await db.execute(
         select(func.count(func.distinct(Admission.patient_id))).where(
             and_(
-                Admission.admission_date >= day_start,
                 Admission.admission_date <= day_end,
+                or_(
+                    Admission.discharge_date.is_(None),
+                    Admission.discharge_date > day_end,
+                ),
             )
         )
     )
@@ -615,6 +620,9 @@ async def get_hospital_overview(
         yesterday_date = base_date - timedelta(days=1)
         yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
         kpi_breakdowns = await _compute_admin_kpi_breakdowns(db, base_date)
+        tpb = kpi_breakdowns.get("total_patients_breakdown")
+        if isinstance(tpb, dict):
+            tpb["in_hospital"] = int(today_kpis["total_patients"])
 
         admin_dashboard_kpis = {
             "total_patients": int(today_kpis["total_patients"]),

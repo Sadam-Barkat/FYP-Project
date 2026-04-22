@@ -35,6 +35,9 @@ OPENAI_SYSTEM = (
     "\"5 patients\", \"6 patients\") and exactly which day window (e.g. \"within 2 days\", "
     "\"within 7 days\") — never use vague phrases like \"some patients\", \"several\", or "
     "\"a few\". "
+    "SUMMARY must also say WHAT those patients are in plain clinical terms (e.g. \"are at "
+    "elevated risk of deterioration\", \"need closer monitoring\", \"warrant urgent review\") — "
+    "not only a count plus a day window. "
     "If you give a specific patient count N in SUMMARY, NAMES must list exactly N distinct "
     "names from the table, one per numbered line; do not invent names. If you cannot match "
     "N to real names, lower N or omit a precise count."
@@ -215,10 +218,13 @@ window the data supports).
 You MUST output ONLY the following three sections, in this exact order, with these exact headers:
 
 SUMMARY:
-Exactly one line. It MUST include: (1) an explicit integer count of patients, e.g. "5 patients"
-or "6 patients" (digits + the word patients), and (2) an explicit day window using digits,
-e.g. "within 2 days" or "within 7 days" — only 1–7 days. No vague wording ("some", "several",
-"a few", "many"). Tie the count and window strictly to what the table and metrics justify.
+Exactly one line (may use two short clauses joined by a comma if needed). It MUST include:
+(1) an explicit integer count, e.g. "5 patients" or "6 patients";
+(2) a short phrase stating WHAT they are, e.g. "are at elevated risk of clinical deterioration",
+"need closer vitals monitoring", or "warrant urgent review" — grounded in the table;
+(3) an explicit day window, e.g. "within 2 days" or "within 7 days" (only 1–7 days).
+Example shape: "6 patients are at elevated risk of deterioration within 7 days."
+No vague wording ("some", "several", "many"). Tie count, risk phrase, and window to the data.
 
 NAMES:
 1. First Patient Full Name
