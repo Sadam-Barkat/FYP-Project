@@ -23,15 +23,11 @@ from app.models.user import User, UserRole
 router = APIRouter(prefix="/api", tags=["pharmacy-intelligence"])
 
 OPENAI_SYSTEM = (
-    "You are an expert hospital pharmacy management AI for Gilkari Hospital. "
-    "You ONLY write expiry_warning and suggestion from the JSON facts given. "
-    "RULES:\n"
-    "- Use medicine names and day counts exactly as provided; do not invent SKUs or dates\n"
-    "- Mention therapeutic category when it appears in the data (category field)\n"
-    "- expiry_warning: one or two clear sentences on soon-to-expire stock and quantities\n"
-    "- suggestion: one short imperative for pharmacy staff (quarantine expired, reorder, FEFO)\n"
-    "- If expiring_soon_count is 0 say expiry exposure is low for the 30-day window\n"
-    "- Respond in JSON only with keys expiry_warning and suggestion — no markdown, no extra text"
+    "You are a hospital pharmacy AI assistant. "
+    "Be extremely concise and to the point. "
+    "No calculations. No unit breakdowns. No formulas. "
+    "Just short, clear, actionable sentences. "
+    "Respond in JSON format only, no markdown, no extra text."
 )
 
 FALLBACK_AI: Dict[str, Any] = {
@@ -316,35 +312,45 @@ def _openai_expiry_suggestion_sync(
         return dict(FALLBACK_EXPIRY)
 
     user_prompt = f"""
-Pharmacy snapshot (Gilkari Hospital) — use ONLY these facts for expiry_warning and suggestion.
+Hospital pharmacy status:
+- Out of stock medicines: {"None" if out_of_stock_count == 0 else "(not provided)"}
+- Low stock medicines: {"None" if low_stock_count == 0 else "(not provided)"}
+- Expiring soon (within 30 days): {[m.get("name") for m in expiring_details] if expiring_details else "None"}
+- Expired medicines: {expired_count}
 
-COUNTS:
-- Tracked SKUs: {total_medicines}
-- Out of stock lines: {out_of_stock_count}
-- Low stock lines (at/below par): {low_stock_count}
-- Lines expiring within 30 days (qty>0): {expiring_soon_count}
-- Expired lines still on file: {expired_count}
-
-EXPIRING NEXT 30 DAYS (name, category, days until expiry, on-hand quantity):
-{json.dumps(expiring_details) if expiring_details else "[]"}
-
-SAMPLE EXPIRED MEDICINE NAMES (quarantine / disposal priority — examples):
-{json.dumps(expired_sample_names) if expired_sample_names else "[]"}
-
-Return JSON with exactly two string fields:
+Return ONLY this JSON, keep every value
+under 15 words, no calculations, no unit details:
 {{
-  "expiry_warning": "1-2 sentences: name medicines, category when given, days until expiry, and on-hand qty. If expiring_soon_count is 0 say the 30-day expiry outlook is clear.",
-  "suggestion": "1 imperative sentence for staff (FEFO, reorder soon-to-expire first, remove expired stock). Use names from the lists only."
+  "stockout_prediction": "short sentence,
+    which medicines at risk of running out soon",
+
+  "medicines_to_reorder": ["only", "medicine", "names"],
+
+  "expiry_warning": "short sentence,
+    which medicines expiring and roughly when",
+
+  "suggestion": "one short action for staff"
 }}
 
-Return ONLY the JSON. No markdown.
+Example of good response:
+{{
+  "stockout_prediction": "Paracetamol and Aspirin
+    are critically low and may run out within 2 days.",
+  "medicines_to_reorder": ["Paracetamol", "Aspirin"],
+  "expiry_warning": "Red Syrup expires in 1 day,
+    Brother tablets in 7 days — remove immediately.",
+  "suggestion": "Reorder Paracetamol urgently
+    and dispose expired Red Syrup today."
+}}
+
+Return ONLY the JSON. No extra text.
 """
 
     client = OpenAI(api_key=api_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        max_tokens=380,
-        temperature=0.25,
+        max_tokens=200,
+        temperature=0.2,
         messages=[
             {"role": "system", "content": OPENAI_SYSTEM},
             {"role": "user", "content": user_prompt},
