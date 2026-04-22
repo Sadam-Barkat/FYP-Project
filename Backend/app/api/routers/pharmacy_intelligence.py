@@ -57,6 +57,15 @@ def _expiry_as_date_col():
     return func.to_date(PharmacyStock.expiry_date, "YYYY-MM-DD")
 
 
+# Cap rows fetched for tooltip lists (avoids huge payloads).
+_NAME_LIST_CAP = 800
+
+
+def _sorted_unique_medicine_names(names: List[str]) -> List[str]:
+    seen = {n.strip() for n in names if n and str(n).strip()}
+    return sorted(seen)
+
+
 def _parse_openai_json(raw: str) -> Dict[str, Any]:
     text = (raw or "").strip()
     if not text:
@@ -269,15 +278,35 @@ async def get_pharmacy_intelligence(
         or 0
     )
 
-    oos_rows = (
+    oos_all = (
         await db.execute(
             select(PharmacyStock.medicine_name)
             .where(PharmacyStock.quantity == 0)
             .order_by(PharmacyStock.medicine_name.asc())
-            .limit(5)
+            .limit(_NAME_LIST_CAP)
         )
     ).all()
-    out_of_stock_names = [str(r[0]) for r in oos_rows if r[0]]
+    out_of_stock_medicines = _sorted_unique_medicine_names(
+        [str(r[0]) for r in oos_all if r[0]]
+    )
+    out_of_stock_names = out_of_stock_medicines[:20]
+
+    low_all = (
+        await db.execute(
+            select(PharmacyStock.medicine_name)
+            .where(
+                and_(
+                    PharmacyStock.quantity > 0,
+                    PharmacyStock.quantity <= PharmacyStock.low_stock_threshold,
+                )
+            )
+            .order_by(PharmacyStock.medicine_name.asc())
+            .limit(_NAME_LIST_CAP)
+        )
+    ).all()
+    low_stock_medicines = _sorted_unique_medicine_names(
+        [str(r[0]) for r in low_all if r[0]]
+    )
 
     low_rows = (
         await db.execute(
@@ -350,6 +379,44 @@ async def get_pharmacy_intelligence(
             }
         )
 
+    expiring_name_rows = (
+        await db.execute(
+            select(PharmacyStock.medicine_name)
+            .where(
+                and_(
+                    PharmacyStock.expiry_date.is_not(None),
+                    PharmacyStock.expiry_date != "",
+                    PharmacyStock.quantity > 0,
+                    exp_col >= today,
+                    exp_col <= until_30,
+                )
+            )
+            .order_by(PharmacyStock.medicine_name.asc())
+            .limit(_NAME_LIST_CAP)
+        )
+    ).all()
+    expiring_soon_medicines = _sorted_unique_medicine_names(
+        [str(r[0]) for r in expiring_name_rows if r[0]]
+    )
+
+    expired_rows = (
+        await db.execute(
+            select(PharmacyStock.medicine_name)
+            .where(
+                and_(
+                    PharmacyStock.expiry_date.is_not(None),
+                    PharmacyStock.expiry_date != "",
+                    exp_col < today,
+                )
+            )
+            .order_by(PharmacyStock.medicine_name.asc())
+            .limit(_NAME_LIST_CAP)
+        )
+    ).all()
+    expired_medicines = _sorted_unique_medicine_names(
+        [str(r[0]) for r in expired_rows if r[0]]
+    )
+
     try:
         ai = await _fetch_ai_pharmacy(
             total_medicines,
@@ -372,6 +439,10 @@ async def get_pharmacy_intelligence(
         "sufficient_stock_count": sufficient_stock_count,
         "expiring_soon_count": expiring_soon_count,
         "expired_count": expired_count,
+        "out_of_stock_medicines": out_of_stock_medicines,
+        "low_stock_medicines": low_stock_medicines,
+        "expiring_soon_medicines": expiring_soon_medicines,
+        "expired_medicines": expired_medicines,
         "stockout_prediction": ai["stockout_prediction"],
         "medicines_to_reorder": ai["medicines_to_reorder"],
         "expiry_warning": ai["expiry_warning"],

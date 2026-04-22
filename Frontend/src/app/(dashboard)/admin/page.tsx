@@ -102,11 +102,56 @@ export type PharmacyIntelResponse = {
   sufficient_stock_count: number;
   expiring_soon_count: number;
   expired_count: number;
+  out_of_stock_medicines?: string[];
+  low_stock_medicines?: string[];
+  expiring_soon_medicines?: string[];
+  expired_medicines?: string[];
   stockout_prediction: string;
   medicines_to_reorder: string[];
   expiry_warning: string;
   suggestion: string;
 };
+
+type PharmacyStatHover = "oos" | "low" | "soon" | "expired" | null;
+
+function PharmacyMedicineTooltip({
+  open,
+  title,
+  names,
+}: {
+  open: boolean;
+  title: string;
+  names: string[];
+}) {
+  if (!open) return null;
+  const needsScroll = names.length > 10;
+  return (
+    <div className="absolute left-full top-1/2 z-[60] ml-2 min-w-[180px] max-w-[220px] -translate-y-1/2">
+      <div
+        className={`pointer-events-auto rounded-lg border border-[#00b4d8] bg-[#0d1b2a] px-2.5 py-2 shadow-lg ${
+          needsScroll
+            ? "max-h-44 overflow-y-auto overscroll-contain [scrollbar-width:thin]"
+            : ""
+        }`}
+      >
+        <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-[#00b4d8]">
+          {title}
+        </p>
+        {names.length === 0 ? (
+          <p className="text-[10px] text-[#94a3b8]">None</p>
+        ) : (
+          <ul className="space-y-0.5 text-[10px] leading-snug text-[#e2e8f0]">
+            {names.map((n, i) => (
+              <li key={`${n}-${i}`} className="break-words">
+                {n}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function formatKpiDisplay(
   data: HospitalOverviewKpis | null,
@@ -385,6 +430,8 @@ export default function AdminDashboard() {
   );
   const [pharmacyLoading, setPharmacyLoading] = useState(true);
   const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
+  const [pharmacyStatHover, setPharmacyStatHover] =
+    useState<PharmacyStatHover>(null);
 
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
@@ -742,7 +789,7 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="flex max-h-[220px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+        <div className="flex max-h-[220px] flex-col overflow-x-visible overflow-y-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
             <h2 className="text-xs font-semibold text-[#00b4d8]">
               💊 Pharmacy Intelligence
@@ -775,8 +822,8 @@ export default function AdminDashboard() {
           ) : null}
 
           {pharmacyData ? (
-            <div className="mt-2 flex min-h-0 flex-1 gap-0 overflow-hidden">
-              <div className="w-[40%] min-h-0 shrink-0 space-y-2 overflow-y-auto border-r border-[#1e3a5f] pr-2 [scrollbar-width:thin]">
+            <div className="mt-2 flex min-h-0 flex-1 gap-0 overflow-visible">
+              <div className="w-[40%] min-h-0 shrink-0 space-y-2 overflow-visible border-r border-[#1e3a5f] pr-2">
                 <div>
                   <p className="text-[10px] uppercase text-[#94a3b8]">
                     Total medicines
@@ -785,7 +832,11 @@ export default function AdminDashboard() {
                     {pharmacyData.total_medicines}
                   </p>
                 </div>
-                <div>
+                <div
+                  className="relative cursor-default"
+                  onMouseEnter={() => setPharmacyStatHover("oos")}
+                  onMouseLeave={() => setPharmacyStatHover(null)}
+                >
                   <p className="text-[10px] uppercase text-[#94a3b8]">
                     Out of stock
                   </p>
@@ -795,8 +846,17 @@ export default function AdminDashboard() {
                       🔴
                     </span>
                   </p>
+                  <PharmacyMedicineTooltip
+                    open={pharmacyStatHover === "oos"}
+                    title="Out of stock"
+                    names={pharmacyData.out_of_stock_medicines ?? []}
+                  />
                 </div>
-                <div>
+                <div
+                  className="relative cursor-default"
+                  onMouseEnter={() => setPharmacyStatHover("low")}
+                  onMouseLeave={() => setPharmacyStatHover(null)}
+                >
                   <p className="text-[10px] uppercase text-[#94a3b8]">
                     Low stock
                   </p>
@@ -806,8 +866,17 @@ export default function AdminDashboard() {
                       🟠
                     </span>
                   </p>
+                  <PharmacyMedicineTooltip
+                    open={pharmacyStatHover === "low"}
+                    title="Low stock"
+                    names={pharmacyData.low_stock_medicines ?? []}
+                  />
                 </div>
-                <div>
+                <div
+                  className="relative cursor-default"
+                  onMouseEnter={() => setPharmacyStatHover("soon")}
+                  onMouseLeave={() => setPharmacyStatHover(null)}
+                >
                   <p className="text-[10px] uppercase text-[#94a3b8]">
                     Expiring soon
                   </p>
@@ -817,8 +886,17 @@ export default function AdminDashboard() {
                       🟡
                     </span>
                   </p>
+                  <PharmacyMedicineTooltip
+                    open={pharmacyStatHover === "soon"}
+                    title="Expiring soon (30d)"
+                    names={pharmacyData.expiring_soon_medicines ?? []}
+                  />
                 </div>
-                <div>
+                <div
+                  className="relative cursor-default"
+                  onMouseEnter={() => setPharmacyStatHover("expired")}
+                  onMouseLeave={() => setPharmacyStatHover(null)}
+                >
                   <p className="text-[10px] uppercase text-[#94a3b8]">
                     Expired
                   </p>
@@ -828,6 +906,11 @@ export default function AdminDashboard() {
                       🔴
                     </span>
                   </p>
+                  <PharmacyMedicineTooltip
+                    open={pharmacyStatHover === "expired"}
+                    title="Expired"
+                    names={pharmacyData.expired_medicines ?? []}
+                  />
                 </div>
               </div>
 
