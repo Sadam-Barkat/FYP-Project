@@ -789,12 +789,12 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="flex max-h-[220px] flex-col overflow-x-visible overflow-y-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-3 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#1e3a5f] pb-2">
+        <div className="flex max-h-[240px] flex-col overflow-x-visible overflow-y-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1e3a5f] pb-2.5">
             <h2 className="text-xs font-semibold text-[#00b4d8]">
               💊 Pharmacy Intelligence
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {pharmacyData ? (
                 <span className="whitespace-nowrap text-[10px] text-[#94a3b8]">
                   {intelFooterUpdated(pharmacyLastFetch, intelClock)}
@@ -822,104 +822,106 @@ export default function AdminDashboard() {
           ) : null}
 
           {pharmacyData ? (
-            <div className="mt-2 flex min-h-0 flex-1 gap-0 overflow-visible">
-              <div className="w-[40%] min-h-0 shrink-0 space-y-2 overflow-visible border-r border-[#1e3a5f] pr-2">
-                <div>
-                  <p className="text-[10px] uppercase text-[#94a3b8]">
-                    Total medicines
-                  </p>
-                  <p className="text-lg font-bold text-white">
-                    {pharmacyData.total_medicines}
-                  </p>
-                </div>
-                <div
-                  className="relative cursor-default"
-                  onMouseEnter={() => setPharmacyStatHover("oos")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                >
-                  <p className="text-[10px] uppercase text-[#94a3b8]">
-                    Out of stock
-                  </p>
-                  <p className="text-lg font-bold text-[#ef4444]">
-                    {pharmacyData.out_of_stock_count}{" "}
-                    <span className="text-sm" aria-hidden>
-                      🔴
-                    </span>
-                  </p>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "oos"}
-                    title="Out of stock"
-                    names={pharmacyData.out_of_stock_medicines ?? []}
-                  />
-                </div>
-                <div
-                  className="relative cursor-default"
-                  onMouseEnter={() => setPharmacyStatHover("low")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                >
-                  <p className="text-[10px] uppercase text-[#94a3b8]">
-                    Low stock
-                  </p>
-                  <p className="text-lg font-bold text-[#f97316]">
-                    {pharmacyData.low_stock_count}{" "}
-                    <span className="text-sm" aria-hidden>
-                      🟠
-                    </span>
-                  </p>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "low"}
-                    title="Low stock"
-                    names={pharmacyData.low_stock_medicines ?? []}
-                  />
-                </div>
-                <div
-                  className="relative cursor-default"
-                  onMouseEnter={() => setPharmacyStatHover("soon")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                >
-                  <p className="text-[10px] uppercase text-[#94a3b8]">
-                    Expiring soon
-                  </p>
-                  <p className="text-lg font-bold text-[#f59e0b]">
-                    {pharmacyData.expiring_soon_count}{" "}
-                    <span className="text-sm" aria-hidden>
-                      🟡
-                    </span>
-                  </p>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "soon"}
-                    title="Expiring soon (30d)"
-                    names={pharmacyData.expiring_soon_medicines ?? []}
-                  />
-                </div>
-                <div
-                  className="relative cursor-default"
-                  onMouseEnter={() => setPharmacyStatHover("expired")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                >
-                  <p className="text-[10px] uppercase text-[#94a3b8]">
-                    Expired
-                  </p>
-                  <p className="text-lg font-bold text-[#ef4444]">
-                    {pharmacyData.expired_count}{" "}
-                    <span className="text-sm" aria-hidden>
-                      🔴
-                    </span>
-                  </p>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "expired"}
-                    title="Expired"
-                    names={pharmacyData.expired_medicines ?? []}
-                  />
+            <div className="mt-2 flex min-h-0 flex-1 gap-3 overflow-visible">
+              <div className="min-w-0 flex-[1.05] shrink-0 overflow-visible border-r border-[#1e3a5f] pr-3">
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex min-h-[3.25rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Total medicines
+                    </p>
+                    <p className="text-base font-bold leading-none text-white">
+                      {pharmacyData.total_medicines}
+                    </p>
+                  </div>
+                  <div
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    onMouseEnter={() => setPharmacyStatHover("oos")}
+                    onMouseLeave={() => setPharmacyStatHover(null)}
+                  >
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Out of stock
+                    </p>
+                    <p className="text-base font-bold leading-none text-[#ef4444]">
+                      {pharmacyData.out_of_stock_count}{" "}
+                      <span className="text-xs" aria-hidden>
+                        🔴
+                      </span>
+                    </p>
+                    <PharmacyMedicineTooltip
+                      open={pharmacyStatHover === "oos"}
+                      title="Out of stock"
+                      names={pharmacyData.out_of_stock_medicines ?? []}
+                    />
+                  </div>
+                  <div
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    onMouseEnter={() => setPharmacyStatHover("low")}
+                    onMouseLeave={() => setPharmacyStatHover(null)}
+                  >
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Low stock
+                    </p>
+                    <p className="text-base font-bold leading-none text-[#f97316]">
+                      {pharmacyData.low_stock_count}{" "}
+                      <span className="text-xs" aria-hidden>
+                        🟠
+                      </span>
+                    </p>
+                    <PharmacyMedicineTooltip
+                      open={pharmacyStatHover === "low"}
+                      title="Low stock"
+                      names={pharmacyData.low_stock_medicines ?? []}
+                    />
+                  </div>
+                  <div
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    onMouseEnter={() => setPharmacyStatHover("soon")}
+                    onMouseLeave={() => setPharmacyStatHover(null)}
+                  >
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Expiring soon
+                    </p>
+                    <p className="text-base font-bold leading-none text-[#f59e0b]">
+                      {pharmacyData.expiring_soon_count}{" "}
+                      <span className="text-xs" aria-hidden>
+                        🟡
+                      </span>
+                    </p>
+                    <PharmacyMedicineTooltip
+                      open={pharmacyStatHover === "soon"}
+                      title="Expiring soon (30d)"
+                      names={pharmacyData.expiring_soon_medicines ?? []}
+                    />
+                  </div>
+                  <div
+                    className="relative col-span-2 flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    onMouseEnter={() => setPharmacyStatHover("expired")}
+                    onMouseLeave={() => setPharmacyStatHover(null)}
+                  >
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                      Expired
+                    </p>
+                    <p className="text-base font-bold leading-none text-[#ef4444]">
+                      {pharmacyData.expired_count}{" "}
+                      <span className="text-xs" aria-hidden>
+                        🔴
+                      </span>
+                    </p>
+                    <PharmacyMedicineTooltip
+                      open={pharmacyStatHover === "expired"}
+                      title="Expired"
+                      names={pharmacyData.expired_medicines ?? []}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="min-w-0 flex-1 space-y-2 overflow-y-auto pl-3 pr-0.5 [scrollbar-width:thin]">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase text-[#f97316]">
+              <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col space-y-1 overflow-y-auto pl-2 pr-0.5 [scrollbar-width:thin]">
+                <div className="shrink-0">
+                  <p className="text-[9px] font-semibold uppercase leading-none text-[#f97316]">
                     ⚠️ Stockout prediction
                   </p>
-                  <p className="text-[10px] italic leading-snug text-white">
+                  <p className="mt-0.5 text-[10px] italic leading-tight text-white">
                     {pharmacyData.stockout_prediction}
                   </p>
                 </div>
