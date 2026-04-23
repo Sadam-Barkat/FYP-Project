@@ -1405,9 +1405,16 @@ export default function AdminDashboard() {
                   </p>
                   {(() => {
                     const pack = derivePrediction(pharmacyData.total_medicines, undefined, undefined);
+                    const total = Math.max(1, pharmacyData.total_medicines);
+                    const oos = Math.max(0, pharmacyData.out_of_stock_count);
+                    const low = Math.max(0, pharmacyData.low_stock_count);
+                    const soon = Math.max(0, pharmacyData.expiring_soon_count);
+                    const expired = Math.max(0, pharmacyData.expired_count);
+                    const safe = Math.max(0, total - (oos + low + soon + expired));
+                    const pct = (n: number) => Math.max(2, Math.min(100, Math.round((n / total) * 100)));
                     return (
                       <>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1430,6 +1437,30 @@ export default function AdminDashboard() {
                               />
                             </AreaChart>
                           </ResponsiveContainer>
+                        </div>
+                        <div className="mt-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-tx-muted">
+                              Inventory risk mix
+                            </p>
+                            <p className="text-[10px] text-tx-secondary tabular-nums">
+                              {pct(safe)}% healthy
+                            </p>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                            <div className="h-full flex">
+                              <span className="h-full bg-emerald-500/70" style={{ width: `${pct(safe)}%` }} />
+                              <span className="h-full bg-orange-500/70" style={{ width: `${pct(low)}%` }} />
+                              <span className="h-full bg-yellow-500/70" style={{ width: `${pct(soon)}%` }} />
+                              <span className="h-full bg-red-500/70" style={{ width: `${pct(oos + expired)}%` }} />
+                            </div>
+                          </div>
+                          <div className="mt-1 grid grid-cols-4 gap-1 text-[10px] text-tx-secondary">
+                            <span className="truncate">Safe {safe}</span>
+                            <span className="truncate text-kpi-orange">Low {low}</span>
+                            <span className="truncate text-tx-yellow">Soon {soon}</span>
+                            <span className="truncate text-kpi-red">Risk {oos + expired}</span>
+                          </div>
                         </div>
                         <p className="mt-1 text-[10px] text-tx-secondary">
                           {miniInsightText("patients", pack)}
@@ -1468,9 +1499,10 @@ export default function AdminDashboard() {
                   />
                   {(() => {
                     const pack = derivePrediction(pharmacyData.out_of_stock_count, undefined, undefined);
+                    const top = (pharmacyData.out_of_stock_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1494,6 +1526,29 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
+                        {top.length ? (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {top.map((n, i) => (
+                              <span
+                                key={`${n}-${i}`}
+                                className="max-w-[120px] truncate rounded-lg bg-red-500/10 border border-red-500/15 px-2 py-0.5 text-[10px] text-red-300"
+                                title={n}
+                              >
+                                {n}
+                              </span>
+                            ))}
+                            {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? (
+                              <span className="text-[10px] text-tx-secondary">
+                                +{(pharmacyData.out_of_stock_medicines ?? []).length - 2} more
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400/70" aria-hidden />
+                            Review substitution list and vendor lead-times
+                          </div>
+                        )}
                         <p className="mt-1 text-[10px] text-tx-secondary">
                           Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} out-of-stock in 3 days.
                         </p>
@@ -1528,9 +1583,10 @@ export default function AdminDashboard() {
                   />
                   {(() => {
                     const pack = derivePrediction(pharmacyData.low_stock_count, undefined, undefined);
+                    const top = (pharmacyData.low_stock_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1554,6 +1610,29 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
+                        {top.length ? (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {top.map((n, i) => (
+                              <span
+                                key={`${n}-${i}`}
+                                className="max-w-[120px] truncate rounded-lg bg-orange-500/10 border border-orange-500/15 px-2 py-0.5 text-[10px] text-orange-300"
+                                title={n}
+                              >
+                                {n}
+                              </span>
+                            ))}
+                            {(pharmacyData.low_stock_medicines ?? []).length > 2 ? (
+                              <span className="text-[10px] text-tx-secondary">
+                                +{(pharmacyData.low_stock_medicines ?? []).length - 2} more
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-orange-400/70" aria-hidden />
+                            Bundle reorders to avoid near-term stockouts
+                          </div>
+                        )}
                         <p className="mt-1 text-[10px] text-tx-secondary">
                           Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} low-stock in 3 days.
                         </p>
@@ -1588,9 +1667,10 @@ export default function AdminDashboard() {
                   />
                   {(() => {
                     const pack = derivePrediction(pharmacyData.expiring_soon_count, undefined, undefined);
+                    const top = (pharmacyData.expiring_soon_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1614,6 +1694,29 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
+                        {top.length ? (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {top.map((n, i) => (
+                              <span
+                                key={`${n}-${i}`}
+                                className="max-w-[120px] truncate rounded-lg bg-yellow-500/10 border border-yellow-500/15 px-2 py-0.5 text-[10px] text-yellow-200"
+                                title={n}
+                              >
+                                {n}
+                              </span>
+                            ))}
+                            {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? (
+                              <span className="text-[10px] text-tx-secondary">
+                                +{(pharmacyData.expiring_soon_medicines ?? []).length - 2} more
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-yellow-300/70" aria-hidden />
+                            Prioritize FEFO allocation this week
+                          </div>
+                        )}
                         <p className="mt-1 text-[10px] text-tx-secondary">
                           Review expiry list; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
                         </p>
@@ -1648,9 +1751,10 @@ export default function AdminDashboard() {
                   />
                   {(() => {
                     const pack = derivePrediction(pharmacyData.expired_count, undefined, undefined);
+                    const top = (pharmacyData.expired_medicines ?? []).slice(0, 3);
                     return (
                       <>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1674,6 +1778,29 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
+                        {top.length ? (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {top.map((n, i) => (
+                              <span
+                                key={`${n}-${i}`}
+                                className="max-w-[160px] truncate rounded-lg bg-red-500/10 border border-red-500/15 px-2 py-0.5 text-[10px] text-red-300"
+                                title={n}
+                              >
+                                {n}
+                              </span>
+                            ))}
+                            {(pharmacyData.expired_medicines ?? []).length > 3 ? (
+                              <span className="text-[10px] text-tx-secondary">
+                                +{(pharmacyData.expired_medicines ?? []).length - 3} more
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
+                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400/70" aria-hidden />
+                            Quarantine & log disposal today
+                          </div>
+                        )}
                         <p className="mt-1 text-[10px] text-tx-secondary">
                           Immediate action: quarantine/dispose; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
                         </p>
