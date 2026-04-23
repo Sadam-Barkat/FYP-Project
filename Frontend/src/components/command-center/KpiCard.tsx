@@ -17,31 +17,31 @@ export default function KpiCard({
   trend?: { tone: TrendTone; text: string };
   accent?: "blue" | "green" | "amber" | "rose" | "violet";
 }) {
-  const accentMap: Record<string, { ring: string; dot: string; value: string }> = {
+  const accentMap: Record<string, { surface: string; dot: string; value: string }> = {
     blue: {
-      ring: "ring-blue-100 dark:ring-blue-950/40",
-      dot: "bg-blue-500",
-      value: "text-[#0066cc] dark:text-[#60a5fa]",
+      surface: "bg-card-blue shadow-card-blue border-brand-blue/20",
+      dot: "bg-brand-blue",
+      value: "text-text-bright",
     },
     green: {
-      ring: "ring-emerald-100 dark:ring-emerald-950/40",
-      dot: "bg-emerald-500",
-      value: "text-emerald-700 dark:text-emerald-300",
+      surface: "bg-card-green shadow-card-green border-status-success/20",
+      dot: "bg-status-success",
+      value: "text-text-bright",
     },
     amber: {
-      ring: "ring-amber-100 dark:ring-amber-950/40",
-      dot: "bg-amber-500",
-      value: "text-amber-700 dark:text-amber-300",
+      surface: "bg-card-amber shadow-card-amber border-status-warning/20",
+      dot: "bg-status-warning",
+      value: "text-text-bright",
     },
     rose: {
-      ring: "ring-rose-100 dark:ring-rose-950/40",
-      dot: "bg-rose-500",
-      value: "text-rose-700 dark:text-rose-300",
+      surface: "bg-card-red shadow-card-red border-status-danger/20",
+      dot: "bg-status-danger",
+      value: "text-text-bright",
     },
     violet: {
-      ring: "ring-violet-100 dark:ring-violet-950/40",
-      dot: "bg-violet-500",
-      value: "text-violet-700 dark:text-violet-300",
+      surface: "bg-card-purple shadow-card border-brand-purple/20",
+      dot: "bg-brand-purple",
+      value: "text-text-bright",
     },
   };
 
@@ -49,31 +49,32 @@ export default function KpiCard({
 
   const trendToneClasses =
     trend.tone === "up"
-      ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-900/60"
+      ? "text-status-success bg-status-success/10 border-status-success/30"
       : trend.tone === "down"
-        ? "text-rose-700 bg-rose-50 border-rose-100 dark:text-rose-300 dark:bg-rose-950/40 dark:border-rose-900/60"
-        : "text-gray-600 bg-gray-50 border-gray-100 dark:text-gray-300 dark:bg-gray-900/40 dark:border-gray-800";
+        ? "text-status-danger bg-status-danger/10 border-status-danger/30"
+        : "text-text-secondary bg-base-muted/30 border-base-border";
 
   return (
     <div
       className={[
-        "rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-transparent transition-colors dark:border-gray-800 dark:bg-gray-900",
-        a.ring,
+        "rounded-2xl border p-5 shadow-card backdrop-blur-md transition-all duration-200 hover:-translate-y-1",
+        "bg-base-card/70 border-base-border hover:bg-base-hover",
+        a.surface,
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{title}</p>
-          <p className={["mt-2 text-3xl font-semibold tracking-tight", a.value].join(" ")}>{value}</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{description}</p>
+          <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">{title}</p>
+          <p className={["mt-2 text-3xl font-bold tracking-tight tabular-nums", a.value].join(" ")}>{value}</p>
+          <p className="mt-1 text-text-secondary text-xs">{description}</p>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className={["inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs", trendToneClasses].join(" ")}>
+          <div className={["inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium", trendToneClasses].join(" ")}>
             <span className={["h-1.5 w-1.5 rounded-full", a.dot].join(" ")} aria-hidden />
             <span className="font-medium">{trend.text}</span>
           </div>
-          <div className="hidden h-8 w-14 rounded-lg border border-gray-100 bg-[#f7fbff] dark:border-gray-800 dark:bg-gray-950 xl:block" />
+          <div className="hidden h-8 w-14 rounded-lg border border-base-border bg-base-muted/30 xl:block" />
         </div>
       </div>
     </div>

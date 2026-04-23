@@ -56,8 +56,8 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
   const healthPct = totalMedicines > 0 ? Math.max(0, Math.round(((totalMedicines - lowStockItems) / totalMedicines) * 100)) : 100;
   
   let healthStatus = "Good";
-  let healthColorClass = "text-[#16a34a]";
-  let healthBadgeClass = "bg-[#2563eb] hover:bg-[#1d4ed8]";
+  let healthColorClass = "text-status-success";
+  let healthBadgeClass = "bg-btn-primary hover:shadow-glow-blue";
   
   if (healthPct < 50) {
     healthStatus = "Critical";
@@ -106,12 +106,12 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
     >
       <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[#0066cc] dark:text-[#60a5fa]">
+          <span className="text-brand-blue dark:text-brand-blue">
             <Pill size={20} strokeWidth={2} aria-hidden />
           </span>
           <h3 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100">Pharmacy Intelligence</h3>
         </div>
-        <span className="flex items-center text-[13px] font-medium text-gray-600 dark:text-gray-400 hover:text-[#0066cc] cursor-pointer transition-colors">
+        <span className="flex items-center text-[13px] font-medium text-gray-600 dark:text-gray-400 hover:text-brand-blue cursor-pointer transition-colors">
           Inventory Health <ChevronRight size={14} className="ml-0.5" />
         </span>
       </div>
@@ -134,7 +134,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
         <div className="mt-5 flex items-end justify-between">
           <div>
             <p className="text-[14px] text-gray-700 dark:text-gray-300">
-              <span className="text-[#16a34a] font-semibold text-[16px] mr-1">{loading ? "-" : lowStockItems}</span>
+              <span className="text-status-success font-semibold text-[16px] mr-1">{loading ? "-" : lowStockItems}</span>
               Below Safe Stock Level
             </p>
             <div className="mt-2 flex items-center text-[14px] font-medium">
@@ -199,7 +199,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
           {/* Low Stock */}
           <div>
             <p className="text-[14px] font-medium text-gray-900 dark:text-gray-100 mb-3">
-              Low Stock: <span className="text-[#16a34a]">{lowCount}</span>
+              Low Stock: <span className="text-status-success">{lowCount}</span>
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
             </p>
           </div>
           <div className="flex gap-2.5 text-[13px] text-gray-700 dark:text-gray-300">
-            <BriefcaseMedical size={16} className="text-[#16a34a] shrink-0 mt-0.5" />
+            <BriefcaseMedical size={16} className="text-status-success shrink-0 mt-0.5" />
             <p>
               {criticalCount > 0 ? (
                 <>Prioritize restocking of critical medicines {criticalMed1?.medicine_name}{criticalMed2 ? ` and ${criticalMed2.medicine_name}` : ""}. </>
@@ -270,7 +270,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
         </div>
 
         {/* Bottom Comparison */}
-        <div className="mt-6 rounded-xl bg-[#f8fafc] border border-gray-100 dark:bg-gray-950 dark:border-gray-800 overflow-hidden">
+        <div className="mt-6 rounded-xl bg-base-card/40 border border-gray-100 dark:bg-gray-950 dark:border-gray-800 overflow-hidden">
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -287,7 +287,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.current_7_days.critical_drugs} 
-                  <span className={`ml-2 text-[12px] ${critChange.dir === 'down' ? 'text-[#16a34a]' : critChange.dir === 'up' ? 'text-red-600' : 'text-gray-500'}`}>
+                  <span className={`ml-2 text-[12px] ${critChange.dir === 'down' ? 'text-status-success' : critChange.dir === 'up' ? 'text-red-600' : 'text-gray-500'}`}>
                     {critChange.dir === 'down' ? '↓' : critChange.dir === 'up' ? '↑' : '-'} {critChange.pct}%
                   </span>
                 </td>
@@ -302,7 +302,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   {comparison.current_7_days.low_stock_drugs}
-                  <span className={`ml-2 text-[12px] ${lowChange.dir === 'down' ? 'text-[#16a34a]' : lowChange.dir === 'up' ? 'text-amber-600' : 'text-gray-500'}`}>
+                  <span className={`ml-2 text-[12px] ${lowChange.dir === 'down' ? 'text-status-success' : lowChange.dir === 'up' ? 'text-amber-600' : 'text-gray-500'}`}>
                     {lowChange.dir === 'down' ? '↓' : lowChange.dir === 'up' ? '↑' : '-'} {lowChange.pct}%
                   </span>
                 </td>
@@ -313,7 +313,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
             </tbody>
           </table>
           <div className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-800">
-            <Link2 size={14} className="text-[#3b82f6] shrink-0" />
+            <Link2 size={14} className="text-brand-blue shrink-0" />
             <span>
               Critical and low stock drugs averaged {totalAvg}, down 40% compared to last week.
             </span>

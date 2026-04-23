@@ -21,11 +21,11 @@ export default function LiveClock() {
 
   // Return a placeholder during SSR to avoid hydration mismatch
   if (!time) {
-    return <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block w-[75px]">--:--:--</span>;
+    return <span className="text-sm font-semibold text-text-bright hidden sm:block w-[75px] tabular-nums">--:--:--</span>;
   }
 
   return (
-    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 hidden sm:block tracking-wide">
+    <span className="text-sm font-semibold text-text-bright hidden sm:block tracking-wide tabular-nums">
       {time}
     </span>
   );

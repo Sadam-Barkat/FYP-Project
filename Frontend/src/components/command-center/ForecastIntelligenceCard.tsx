@@ -111,7 +111,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
     <section className={`rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex items-center justify-center text-[#0066cc] dark:text-blue-400">
+        <div className="flex items-center justify-center text-brand-blue dark:text-brand-blue">
           <TrendingUp size={24} strokeWidth={2.5} />
         </div>
         <h3 className="text-[18px] font-semibold text-gray-900 dark:text-gray-100">Forecast Intelligence</h3>
@@ -121,12 +121,12 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
       <div className="mb-5">
         <div className="flex justify-between items-center mb-2">
           <p className="text-[15px] font-medium text-gray-800 dark:text-gray-200">Next 7 Days</p>
-          <div className="flex items-center gap-1 bg-[#f8fafc] text-gray-500 px-2.5 py-1 rounded-md text-[12px] font-medium dark:bg-gray-800 dark:text-gray-400">
+          <div className="flex items-center gap-1 bg-base-card/40 text-gray-500 px-2.5 py-1 rounded-md text-[12px] font-medium dark:bg-gray-800 dark:text-gray-400">
             Next 7 Days
             <ChevronRight size={14} />
           </div>
         </div>
-        <div className="h-32 w-full bg-[#fcfcfd] dark:bg-gray-950/30 rounded-lg pt-4 pb-1 pr-4 pl-0">
+        <div className="h-32 w-full bg-base-card/30 dark:bg-gray-950/30 rounded-lg pt-4 pb-1 pr-4 pl-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -189,7 +189,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
       {/* Insights List */}
       <div className="flex flex-col gap-3 mb-5">
         <div className="flex items-start gap-2.5">
-          <BriefcaseMedical size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" strokeWidth={2} />
+          <BriefcaseMedical size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" strokeWidth={2} />
           <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
             {loading ? "..." : (
               <>{riskLabel} capacity risk at {riskScore}; predicted admissions to {admWow >= 0 ? 'rise' : 'fall'} by {Math.abs(admWow)}% in the coming week.</>
@@ -197,7 +197,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
           </p>
         </div>
         <div className="flex items-start gap-2.5">
-          <CheckSquare size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" strokeWidth={2} />
+          <CheckSquare size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" strokeWidth={2} />
           <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
             {loading ? "..." : (
               <>Occupancy forecasted to reach {predOcc}%; evaluate plans for {predOcc > 80 ? 'expanding short-term bed capacity' : 'maintaining current staffing levels'}.</>
@@ -207,7 +207,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
       </div>
 
       {/* Bottom Comparison */}
-      <div className="mt-auto bg-[#f8fafc] dark:bg-gray-800/50 rounded-xl p-4 border border-gray-50 dark:border-gray-800">
+      <div className="mt-auto bg-base-card/40 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-50 dark:border-gray-800">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
             <div className="w-1/3">
@@ -218,8 +218,8 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
               </div>
             </div>
             <div className="w-1/2 flex flex-col gap-1.5">
-              <div className="h-3 w-full bg-[#93c5fd] rounded-sm"></div>
-              <div className="h-3 w-4/5 bg-[#dbeafe] rounded-sm"></div>
+              <div className="h-3 w-full bg-brand-blue/40 rounded-sm"></div>
+              <div className="h-3 w-4/5 bg-brand-blue/20 rounded-sm"></div>
             </div>
             <div className="w-1/6 text-right">
               <p className="text-[18px] font-bold text-gray-900 dark:text-gray-100">{loading ? "..." : predAdm}</p>
@@ -238,8 +238,8 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
               </div>
             </div>
             <div className="w-1/2 flex flex-col gap-1.5">
-              <div className="h-3 w-full bg-[#93c5fd] rounded-sm"></div>
-              <div className="h-3 w-[85%] bg-[#dbeafe] rounded-sm"></div>
+              <div className="h-3 w-full bg-brand-blue/40 rounded-sm"></div>
+              <div className="h-3 w-[85%] bg-brand-blue/20 rounded-sm"></div>
             </div>
             <div className="w-1/6 text-right">
               <p className="text-[18px] font-bold text-gray-900 dark:text-gray-100">{loading ? "..." : predOcc}%</p>

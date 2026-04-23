@@ -31,24 +31,24 @@ function severityIconAndColors(severity: string) {
   if (severity === "critical") {
     return {
       icon: <AlertTriangle size={16} />,
-      bg: "bg-red-100",
-      text: "text-red-700",
-      dot: "bg-red-500",
+      bg: "bg-status-danger/15",
+      text: "text-status-danger",
+      dot: "bg-status-danger",
     };
   }
   if (severity === "high" || severity === "medium") {
     return {
       icon: <AlertTriangle size={16} />,
-      bg: "bg-orange-100",
-      text: "text-orange-700",
-      dot: "bg-orange-500",
+      bg: "bg-status-warning/15",
+      text: "text-status-warning",
+      dot: "bg-status-warning",
     };
   }
   return {
     icon: <Activity size={16} />,
-    bg: "bg-blue-100",
-    text: "text-blue-700",
-    dot: "bg-blue-500",
+    bg: "bg-brand-blue/15",
+    text: "text-brand-blue",
+    dot: "bg-brand-blue",
   };
 }
 
@@ -187,42 +187,42 @@ export default function NavbarNotificationButton() {
             return next;
           });
         }}
-        className="relative hover:text-[#0066cc] dark:hover:text-[#60a5fa] focus:outline-none"
+        className="relative text-text-secondary hover:text-text-bright focus:outline-none transition-colors duration-150"
         aria-label="Notifications"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white px-0.5">
+          <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-status-danger text-[10px] font-semibold text-text-bright px-0.5 shadow-glow-red">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-xl bg-white shadow-xl border border-gray-200 z-40">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-base-card/85 shadow-nav border border-base-border z-40 backdrop-blur-md overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-base-border bg-base-muted/30">
             <div>
-              <p className="text-sm font-semibold text-gray-800">Notifications</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm font-semibold text-text-bright">Notifications</p>
+              <p className="text-xs text-text-secondary">
                 Critical & high alerts from your patients
               </p>
             </div>
             {loading && (
-              <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+              <span className="text-[10px] text-text-muted uppercase tracking-widest font-medium">
                 Loading...
               </span>
             )}
           </div>
 
           {error && (
-            <div className="px-4 py-2 text-xs text-red-600 border-b border-gray-100">
+            <div className="px-4 py-3 text-xs text-status-danger border-b border-base-border bg-status-danger/10">
               {error}
             </div>
           )}
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+          <div className="max-h-80 overflow-y-auto divide-y divide-base-border">
             {criticalOrHigh.length === 0 && !loading ? (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
+              <div className="px-4 py-10 text-center text-sm text-text-secondary">
                 No critical notifications right now.
               </div>
             ) : (
@@ -231,7 +231,7 @@ export default function NavbarNotificationButton() {
                 return (
                   <div
                     key={alert.id}
-                    className={`px-4 py-3 flex items-start gap-3 hover:bg-gray-50 ${
+                    className={`px-4 py-3 flex items-start gap-3 hover:bg-base-hover transition-colors duration-150 ${
                       alert.patient_id ? "cursor-pointer" : "cursor-default"
                     }`}
                     onClick={(e) => {
@@ -248,17 +248,17 @@ export default function NavbarNotificationButton() {
                       {ui.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-text-bright truncate">
                         {alert.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        <span className="font-medium text-gray-700">Patient:</span>{" "}
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        <span className="font-medium text-text-primary">Patient:</span>{" "}
                         {alert.patient_id ? `#${alert.patient_id}` : "Unknown"}{" "}
                         <span className="mx-1">•</span>
-                        <span className="font-medium text-gray-700">Dept:</span>{" "}
+                        <span className="font-medium text-text-primary">Dept:</span>{" "}
                         {alert.department}
                       </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                      <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1">
                         <Clock size={10} />
                         {formatTimeAgo(alert.created_at)}
                         <span className="mx-1">•</span>

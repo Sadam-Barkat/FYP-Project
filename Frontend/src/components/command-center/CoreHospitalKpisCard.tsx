@@ -124,9 +124,9 @@ function TinyTrendChart({ data, color }: { data: number[], color: "orange" | "gr
 
 function StatusBadge({ type, text }: { type: "success" | "warning" | "error", text: string }) {
   const colors = {
-    success: "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800",
-    warning: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800",
-    error: "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800",
+    success: "text-status-success bg-status-success/10 border-status-success/30",
+    warning: "text-status-warning bg-status-warning/10 border-status-warning/30",
+    error: "text-status-danger bg-status-danger/10 border-status-danger/30",
   };
   
   return (
@@ -242,41 +242,41 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
   return (
     <section
       className={[
-        "rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col",
+        "rounded-2xl border border-base-border bg-base-card/70 shadow-card backdrop-blur-md flex flex-col transition-all duration-200 hover:-translate-y-1",
         className,
       ].join(" ")}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800 shrink-0">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-[#1d4ed8] text-white shadow-sm">
+      <div className="flex items-center gap-3 border-b border-base-border px-6 py-4 bg-base-muted/20 shrink-0">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-brand-blue text-text-bright shadow-glow-blue">
           <LayoutDashboard size={16} />
         </span>
-        <h2 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100">Core Hospital KPIs</h2>
+        <h2 className="text-[17px] font-semibold text-text-bright">Core Hospital KPIs</h2>
       </div>
 
       {/* Grid */}
       <div className="grid flex-1 grid-cols-2 grid-rows-3">
         {/* Cell 1: Bed Occupancy */}
-        <div className="flex flex-col justify-between border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-col justify-between border-b border-r border-base-border px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Bed Occupancy</p>
+            <p className="text-[13px] font-semibold text-text-secondary">Bed Occupancy</p>
             <div className="mt-2 flex items-center gap-3">
-              <p className="text-3xl font-bold text-[#d97706]">
+              <p className="text-3xl font-bold text-status-warning tabular-nums">
                 {Math.round(clampPct(bedOccupancy))}
                 <span className="text-2xl ml-0.5">%</span>
               </p>
-              <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              <div className="flex h-7 items-center rounded-full bg-base-muted/30 px-2.5 border border-base-border">
                 {bedTrend.tone === "down" ? <MiniChartDown /> : bedTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{bedTrend.text}</span>
+                <span className="text-xs font-semibold text-text-secondary ml-1 tabular-nums">{bedTrend.text}</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              <p className="text-[11px] text-text-muted">
                 7-Day Avg: {Math.round(clampPct(bed7dAvg))}%
               </p>
               <TinyTrendChart data={todayOverview?.bed_occupancy_trend || [65, 66, 68, 69, 70, 69, 68]} color="orange" />
             </div>
-            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-3 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : bedOccupancy < 80 ? "Bed availability is good, demand has eased today." : "High demand for beds today."}
             </p>
           </div>
@@ -284,12 +284,12 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         </div>
 
         {/* Cell 2: Active Patients */}
-        <div className="flex flex-col justify-between border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-col justify-between border-b border-base-border px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Active Patients</p>
+            <p className="text-[13px] font-semibold text-text-secondary">Active Patients</p>
             <div className="mt-2 flex items-center gap-3">
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activePatients}</p>
-              <div className="flex h-7 items-center gap-1.5 rounded-full bg-[#f0f5ff] px-2.5 text-[#0066cc] dark:bg-[#0b2a52] dark:text-[#60a5fa]">
+              <p className="text-3xl font-bold text-text-bright tabular-nums">{activePatients}</p>
+              <div className="flex h-7 items-center gap-1.5 rounded-full bg-brand-blue/10 px-2.5 text-brand-blue border border-brand-blue/20">
                 <TrendingUp size={12} strokeWidth={2.5} />
                 <span className="text-[11px] font-semibold">
                   {activePatients - (yesterdayOverview?.active_patients?.total ?? 0) > 0 ? "+" : ""}
@@ -297,7 +297,7 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
                 </span>
               </div>
             </div>
-            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-3 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : `${yesterdayOverview?.active_patients?.total ?? 0} patients yesterday. Inflow is ${activePatients > (yesterdayOverview?.active_patients?.total ?? 0) ? "increasing" : "decreasing"} compared to yesterday.`}
             </p>
           </div>
@@ -305,26 +305,26 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         </div>
 
         {/* Cell 3: ICU Occupancy */}
-        <div className="flex flex-col justify-between border-b border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-col justify-between border-b border-r border-base-border px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">ICU Occupancy</p>
+            <p className="text-[13px] font-semibold text-text-secondary">ICU Occupancy</p>
             <div className="mt-2 flex items-center gap-3">
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-3xl font-bold text-text-bright tabular-nums">
                 {Math.round(clampPct(icuOcc))}
-                <span className="text-2xl text-[#d97706] ml-0.5">%</span>
+                <span className="text-2xl text-status-warning ml-0.5">%</span>
               </p>
-              <div className="flex h-7 items-center rounded-full bg-gray-50 px-2.5 border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              <div className="flex h-7 items-center rounded-full bg-base-muted/30 px-2.5 border border-base-border">
                 {icuTrend.tone === "down" ? <MiniChartDown /> : icuTrend.tone === "up" ? <MiniChartUp /> : <MiniChartFlat />}
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 ml-1">{icuTrend.text}</span>
+                <span className="text-xs font-semibold text-text-secondary ml-1 tabular-nums">{icuTrend.text}</span>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              <p className="text-[11px] text-text-muted">
                 7-Day Avg: {Math.round(clampPct(icu7dAvg))}%
               </p>
               <TinyTrendChart data={todayOverview?.icu_occupancy_trend || [40, 42, 45, 46, 45, 42, 39]} color="orange" />
             </div>
-            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-3 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : icuOcc < 75 ? "ICU has good capacity available." : "ICU capacity is limited."}
             </p>
           </div>
@@ -332,34 +332,34 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         </div>
 
         {/* Cell 4: High-Risk Patients */}
-        <div className="flex flex-col justify-between border-b border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-col justify-between border-b border-base-border px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">High-Risk Patients</p>
+            <p className="text-[13px] font-semibold text-text-secondary">High-Risk Patients</p>
             
             <div className="mt-2 flex items-end gap-6">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-rose-500"></div>
-                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Critical</span>
+                  <div className="h-1.5 w-1.5 rounded-full bg-status-danger"></div>
+                  <span className="text-[11px] font-medium text-text-muted">Critical</span>
                 </div>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{criticalPatients}</p>
-                  <span className="text-[10px] font-medium text-gray-500 ml-1">{criticalPatientsY}</span>
+                  <p className="text-2xl font-bold text-text-bright tabular-nums">{criticalPatients}</p>
+                  <span className="text-[10px] font-medium text-text-muted ml-1 tabular-nums">{criticalPatientsY}</span>
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-amber-500"></div>
-                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Emergency</span>
+                  <div className="h-1.5 w-1.5 rounded-full bg-status-warning"></div>
+                  <span className="text-[11px] font-medium text-text-muted">Emergency</span>
                 </div>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{emergencyCases}</p>
-                  <span className="text-[10px] font-medium text-gray-500 ml-1">{emergencyCasesY}</span>
+                  <p className="text-2xl font-bold text-text-bright tabular-nums">{emergencyCases}</p>
+                  <span className="text-[10px] font-medium text-text-muted ml-1 tabular-nums">{emergencyCasesY}</span>
                 </div>
               </div>
             </div>
             
-            <p className="mt-4 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-4 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : highRiskInsight}
             </p>
           </div>
@@ -367,25 +367,25 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         </div>
 
         {/* Cell 5: Today's Revenue */}
-        <div className="flex flex-col justify-between border-r border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-col justify-between border-r border-base-border px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Revenue</p>
+            <p className="text-[13px] font-semibold text-text-secondary">Today&apos;s Revenue</p>
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-3xl font-bold text-text-bright tabular-nums">
                 <span className="text-[20px] font-semibold mr-1.5">PKR</span>
                 {Math.round(revenue).toLocaleString("en-PK")}
               </p>
-              <span className={`text-[13px] font-semibold ${revTone === "up" ? "text-emerald-600" : "text-rose-600"}`}>
+              <span className={`text-[13px] font-semibold ${revTone === "up" ? "text-status-success" : "text-status-danger"}`}>
                 {revTone === "up" ? "↑" : "↓"}{revTone === "up" ? "+" : ""}{Math.round(revPct)}%
               </span>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              <p className="text-[11px] text-text-muted">
                 7-Day Avg: PKR {Math.round(rev7dAvg).toLocaleString("en-PK")}
               </p>
               <TinyTrendChart data={todayOverview?.revenue_trend || [2000, 2200, 2500, 2400, 2800, 3000, 3399]} color="green" />
             </div>
-            <p className="mt-3 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-3 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : "Revenue is stable, but clearance of aged pending payments is advised."}
             </p>
           </div>
@@ -394,16 +394,16 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
         {/* Cell 6: Staff Available */}
         <div className="flex flex-col justify-between px-6 py-5">
           <div>
-            <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">Staff Available</p>
+            <p className="text-[13px] font-semibold text-text-secondary">Staff Available</p>
             
             <div className="mt-2 flex items-baseline gap-2">
-              <p className={`text-3xl font-bold ${staffAvailable < totalStaff * 0.8 ? 'text-rose-600' : 'text-gray-900 dark:text-gray-100'}`}>{staffAvailable}</p>
-              <p className="text-[12px] font-medium text-gray-500 mb-1">of</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-0.5">{totalStaff}</p>
+              <p className={`text-3xl font-bold tabular-nums ${staffAvailable < totalStaff * 0.8 ? 'text-status-danger' : 'text-text-bright'}`}>{staffAvailable}</p>
+              <p className="text-[12px] font-medium text-text-muted mb-1">of</p>
+              <p className="text-xl font-bold text-text-bright tabular-nums mb-0.5">{totalStaff}</p>
               
               {staffAbsent > 0 && (
-                <div className="ml-2 flex items-center gap-1 text-[11px] font-semibold text-rose-600">
-                  <span className="bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded flex items-center gap-1 dark:bg-rose-900/20">
+                <div className="ml-2 flex items-center gap-1 text-[11px] font-semibold text-status-danger">
+                  <span className="bg-status-danger/10 text-status-danger px-1.5 py-0.5 rounded flex items-center gap-1 border border-status-danger/30">
                     <AlertTriangle size={10} />
                     +{staffAbsent} ill <ChevronRight size={10} className="ml-0.5" />
                   </span>
@@ -412,13 +412,13 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
             </div>
 
             {staffAvailable < totalStaff * 0.8 && (
-              <div className="mt-3 flex items-center gap-1.5 text-amber-600">
+              <div className="mt-3 flex items-center gap-1.5 text-status-warning">
                 <AlertTriangle size={14} />
                 <span className="text-[13px] font-semibold">Limited Staff</span>
               </div>
             )}
             
-            <p className="mt-2 text-[12px] text-gray-600 dark:text-gray-400 leading-snug">
+            <p className="mt-2 text-[12px] text-text-secondary leading-snug">
               {loading ? "..." : (staffAvailable / (totalStaff || 1) < 0.8 ? "Ensure adequate coverage for critical departments." : "Coverage is optimal for current patient load.")}
             </p>
           </div>

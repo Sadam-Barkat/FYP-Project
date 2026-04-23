@@ -69,7 +69,7 @@ function MessageModal({
               e.preventDefault();
               onClose();
             }}
-            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+            className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
             OK
           </button>
@@ -386,7 +386,7 @@ export default function NurseDashboardPage() {
               setResult(null);
             }}
             disabled={loadingPatients}
-            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full md:max-w-md focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full md:max-w-md focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 appearance-none"
           >
             <option value="">-- Choose a patient --</option>
             {loadingPatients ? (
@@ -407,7 +407,7 @@ export default function NurseDashboardPage() {
               Selected patient
             </p>
             <div className="flex items-center gap-3 p-4 bg-base-muted rounded-xl border border-base-border">
-              <div className="w-12 h-12 rounded-full bg-brand-primary/15 flex items-center justify-center text-brand-primary shrink-0">
+              <div className="w-12 h-12 rounded-full bg-brand-blue/15 flex items-center justify-center text-brand-blue shrink-0">
                 <User size={24} />
               </div>
               <div>
@@ -430,7 +430,7 @@ export default function NurseDashboardPage() {
                   value={formData.heartRate}
                   onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                     errors.heartRate ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                   }`}
                   placeholder="e.g. 75"
@@ -451,7 +451,7 @@ export default function NurseDashboardPage() {
                       value={formData.bpSys}
                       onChange={(e) => setFormData({ ...formData, bpSys: e.target.value })}
                       disabled={!selectedPatientId || isSubmitting}
-                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                         errors.bpSys ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                       }`}
                       placeholder="Sys"
@@ -464,7 +464,7 @@ export default function NurseDashboardPage() {
                       value={formData.bpDia}
                       onChange={(e) => setFormData({ ...formData, bpDia: e.target.value })}
                       disabled={!selectedPatientId || isSubmitting}
-                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                         errors.bpDia ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                       }`}
                       placeholder="Dia"
@@ -485,7 +485,7 @@ export default function NurseDashboardPage() {
                   value={formData.spo2}
                   onChange={(e) => setFormData({ ...formData, spo2: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                     errors.spo2 ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                   }`}
                   placeholder="e.g. 98"
@@ -503,7 +503,7 @@ export default function NurseDashboardPage() {
                   value={formData.temperature}
                   onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                     errors.temperature ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                   }`}
                   placeholder="e.g. 37.2"
@@ -522,7 +522,7 @@ export default function NurseDashboardPage() {
                   value={formData.respRate}
                   onChange={(e) => setFormData({ ...formData, respRate: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 ${
                     errors.respRate ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
                   }`}
                   placeholder="e.g. 16"
@@ -538,14 +538,14 @@ export default function NurseDashboardPage() {
                 type="button"
                 onClick={handleReset}
                 disabled={isSubmitting}
-                className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 disabled:opacity-50"
+                className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 disabled:opacity-50"
               >
                 Clear Form
               </button>
               <button
                 type="submit"
                 disabled={!selectedPatientId || isSubmitting}
-                className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -583,7 +583,7 @@ export default function NurseDashboardPage() {
                   {v.temperature != null && <span>Temp: {v.temperature}°C</span>}
                   {v.respiratory_rate != null && <span>RR: {v.respiratory_rate}</span>}
                   {v.condition_level && (
-                    <span className="bg-brand-primary/10 text-brand-primary text-xs font-medium px-2.5 py-1 rounded-full">
+                    <span className="bg-brand-blue/15 text-brand-blue text-xs font-medium px-2.5 py-1 rounded-full">
                       {v.condition_level}
                     </span>
                   )}
@@ -641,7 +641,7 @@ export default function NurseDashboardPage() {
             </div>
             <button
               onClick={handleReset}
-              className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
+              className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
             >
               <RefreshCw size={16} /> Next Patient
             </button>

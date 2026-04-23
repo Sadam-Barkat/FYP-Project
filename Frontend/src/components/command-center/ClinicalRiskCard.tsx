@@ -140,7 +140,7 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <Activity className="text-[#9f1239] dark:text-rose-500" size={22} strokeWidth={2} />
+          <Activity className="text-status-danger dark:text-status-danger" size={22} strokeWidth={2} />
           <h3 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100">Clinical Risk Intelligence</h3>
         </div>
         <ChevronRight size={18} className="text-gray-400" />
@@ -198,7 +198,7 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
       <div className="pt-4 flex flex-col gap-4">
         {/* Row 1: Alerts */}
         <div className="flex gap-3">
-          <Bell className={`${criticalAlerts > 5 ? 'text-rose-600 dark:text-rose-500' : 'text-[#9f1239] dark:text-rose-400'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
+          <Bell className={`${criticalAlerts > 5 ? 'text-rose-600 dark:text-rose-500' : 'text-status-danger dark:text-status-danger'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
           <div>
             <p className="text-[14px] text-gray-900 dark:text-gray-100">
               {loading ? "..." : row1Title}
@@ -213,7 +213,7 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
 
         {/* Row 2: ICU */}
         <div className="flex gap-3">
-          <BarChart3 className={`${icuOcc > 85 ? 'text-rose-600 dark:text-rose-500' : 'text-[#0066cc] dark:text-blue-400'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
+          <BarChart3 className={`${icuOcc > 85 ? 'text-rose-600 dark:text-rose-500' : 'text-brand-blue dark:text-brand-blue'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
           <div>
             <p className="text-[14px] text-gray-900 dark:text-gray-100">
               {loading ? "..." : row2Title}
@@ -228,9 +228,9 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
         <div className={`flex gap-3 p-3.5 rounded-xl border mt-1 transition-colors ${
           emergencyPct > 85 || emCases > emCasesY * 1.5 
             ? 'bg-amber-50 border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30' 
-            : 'bg-[#f4f7fb] border-gray-50 dark:bg-gray-800/50 dark:border-gray-800'
+            : 'bg-base-card/30 border-gray-50 dark:bg-gray-800/50 dark:border-gray-800'
         }`}>
-          <ClipboardList className={`${emergencyPct > 85 || emCases > emCasesY * 1.5 ? 'text-amber-600 dark:text-amber-500' : 'text-[#0066cc] dark:text-blue-400'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
+          <ClipboardList className={`${emergencyPct > 85 || emCases > emCasesY * 1.5 ? 'text-amber-600 dark:text-amber-500' : 'text-brand-blue dark:text-brand-blue'} shrink-0 mt-0.5`} size={20} strokeWidth={2} />
           <div>
             <p className="text-[14px] text-gray-900 dark:text-gray-100">
               {loading ? "..." : row3Title}

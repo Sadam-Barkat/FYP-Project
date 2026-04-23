@@ -19,12 +19,12 @@ export default function InsightPanel({
   return (
     <section
       className={[
-        "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900",
+        "rounded-2xl border border-base-border bg-base-card/70 p-6 shadow-card backdrop-blur-md hover:-translate-y-1 transition-all duration-200",
         className,
       ].join(" ")}
     >
       <header className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
+        <h3 className="text-base font-semibold text-text-bright">{title}</h3>
         {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
       </header>
 
@@ -32,7 +32,7 @@ export default function InsightPanel({
         <TrendPlaceholder label={chartLabel ?? "Chart"} className="h-36" />
 
         {children ? (
-          <div className="rounded-xl border border-gray-100 bg-[#fbfdff] p-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200">
+          <div className="rounded-xl border border-base-border bg-base-muted/30 p-4 text-sm text-text-primary">
             {children}
           </div>
         ) : null}

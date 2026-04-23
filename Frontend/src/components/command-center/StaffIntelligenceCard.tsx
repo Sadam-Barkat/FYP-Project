@@ -101,7 +101,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
     <section className={`rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-5">
-        <div className="flex items-center justify-center text-[#0066cc] dark:text-blue-400">
+        <div className="flex items-center justify-center text-brand-blue dark:text-brand-blue">
           <UserCheck size={24} strokeWidth={2} />
         </div>
         <h3 className="text-[18px] font-semibold text-gray-900 dark:text-gray-100">Staff Intelligence</h3>
@@ -123,7 +123,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
           {/* Mini Horizontal Bar Chart */}
           <div className="mt-3 flex flex-col gap-1.5 h-10 justify-end">
             {presentTrend.slice(-3).map((val: number, i: number) => (
-              <div key={i} className="h-2 bg-[#bfdbfe] dark:bg-blue-900/50 rounded-r-full" style={{ width: `${(val / maxPresent) * 100}%`, opacity: 0.5 + (i * 0.25) }}></div>
+              <div key={i} className="h-2 bg-brand-blue/20 dark:bg-brand-blue/20 rounded-r-full" style={{ width: `${(val / maxPresent) * 100}%`, opacity: 0.5 + (i * 0.25) }}></div>
             ))}
           </div>
         </div>
@@ -154,22 +154,22 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
           {/* Mini Vertical Bar Chart */}
           <div className="mt-2 flex items-end gap-1.5 h-8">
             {absentTrend.slice(-4).map((val: number, i: number) => (
-              <div key={i} className="w-3 bg-[#fde047] dark:bg-yellow-600/50 rounded-t-sm" style={{ height: `${Math.max(10, (val / maxAbsent) * 100)}%`, opacity: 0.4 + (i * 0.2) }}></div>
+              <div key={i} className="w-3 bg-status-warning/60 dark:bg-status-warning/40 rounded-t-sm" style={{ height: `${Math.max(10, (val / maxAbsent) * 100)}%`, opacity: 0.4 + (i * 0.2) }}></div>
             ))}
           </div>
         </div>
       </div>
 
       {/* Shift Coverage Bar */}
-      <div className="mb-6 rounded-xl border border-gray-100 bg-[#fbfdff] p-4 dark:border-gray-800 dark:bg-gray-950">
+      <div className="mb-6 rounded-xl border border-gray-100 bg-base-card/40 p-4 dark:border-gray-800 dark:bg-base-card">
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
-            <MessageSquareWarning size={16} className="text-[#0066cc] dark:text-blue-400" />
+            <MessageSquareWarning size={16} className="text-brand-blue dark:text-brand-blue" />
             <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200">Shift Coverage</p>
           </div>
           <p className={`text-[14px] font-semibold ${coverageColor}`}>{loading ? "..." : coverageLabel}</p>
         </div>
-        <div className="relative h-3 w-full rounded-full bg-gradient-to-r from-[#60a5fa] via-[#34d399] via-[#facc15] to-[#f87171] overflow-hidden">
+        <div className="relative h-3 w-full rounded-full bg-gradient-to-r from-brand-blue via-status-success via-status-warning to-status-danger overflow-hidden">
           {/* Dividers */}
           <div className="absolute top-0 bottom-0 left-1/3 w-[2px] bg-white dark:bg-gray-950"></div>
           <div className="absolute top-0 bottom-0 left-2/3 w-[2px] bg-white dark:bg-gray-950"></div>
@@ -193,7 +193,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
       {/* Staff Optimization Insights */}
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-3">
-          <MessageSquareWarning size={16} className="text-[#0066cc] dark:text-blue-400" />
+          <MessageSquareWarning size={16} className="text-brand-blue dark:text-brand-blue" />
           <h4 className="text-[14px] font-semibold text-gray-800 dark:text-gray-200">Staff Optimization Insights</h4>
         </div>
         
@@ -203,7 +203,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
             {absentDiff > 0 ? (
               <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
             ) : (
-              <CheckSquare size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" />
+              <CheckSquare size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" />
             )}
             <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
               {loading ? "..." : absentDiff > 0 ? (
@@ -220,7 +220,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
 
           {/* Insight 2: Emergency Capacity */}
           <div className="flex items-start gap-2.5">
-            <CheckSquare size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" />
+            <CheckSquare size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" />
             <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
               {loading ? "..." : (
                 <>
@@ -233,7 +233,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
       </div>
 
       {/* Shift Breakdown */}
-      <div className="mt-auto bg-[#f8fafc] dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
+      <div className="mt-auto bg-base-card/40 dark:bg-base-card/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
         <div className="grid grid-cols-2 gap-4 mb-3">
           {/* Day Shift */}
           <div>

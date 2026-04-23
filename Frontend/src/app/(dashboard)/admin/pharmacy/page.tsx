@@ -148,7 +148,7 @@ export default function PharmacyPage() {
   return (
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="text-center mb-6">
-        <h2 className="text-3xl font-semibold text-[#0066cc]">
+        <h2 className="text-3xl font-semibold text-brand-blue">
           Pharmacy Overview
         </h2>
         {isLoading && (
@@ -166,11 +166,11 @@ export default function PharmacyPage() {
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#3b82f6]"
-          icon={<Pill className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          borderLeftClass="border-l-4 border-l-brand-blue"
+          icon={<Pill className="absolute top-4 left-4 text-brand-blue" size={24} />}
           label="Total Medications"
           value={
-            <h3 className="text-4xl font-bold text-[#3b82f6] mt-3">
+            <h3 className="text-4xl font-bold text-brand-blue mt-3">
               {totalMedications.toLocaleString()}
             </h3>
           }
@@ -185,11 +185,11 @@ export default function PharmacyPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          icon={<CheckCircle2 className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-success"
+          icon={<CheckCircle2 className="absolute top-4 left-4 text-status-success" size={24} />}
           label="Healthy Stock"
           value={
-            <h3 className="text-4xl font-bold text-[#22c55e] mt-3">
+            <h3 className="text-4xl font-bold text-status-success mt-3">
               {Math.round(healthyPercentage)}%
             </h3>
           }
@@ -208,12 +208,12 @@ export default function PharmacyPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#f97316]"
-          icon={<PackageX className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-warning"
+          icon={<PackageX className="absolute top-4 left-4 text-status-warning" size={24} />}
           label="Low Stock Items"
-          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{lowStockItems}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-warning mt-3">{lowStockItems}</h3>}
           footnote={
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-[#f97316] font-medium">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-status-warning font-medium">
               Needs reorder
             </p>
           }
@@ -227,10 +227,10 @@ export default function PharmacyPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#ef4444]"
-          icon={<AlertCircle className="absolute top-4 left-4 text-[#ef4444]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-danger"
+          icon={<AlertCircle className="absolute top-4 left-4 text-status-danger" size={24} />}
           label="Critical Shortage"
-          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3">{criticalItems}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-danger mt-3">{criticalItems}</h3>}
           footnote={
             <>
               <p className="text-xs text-gray-500 mt-1 text-red-500 font-medium">

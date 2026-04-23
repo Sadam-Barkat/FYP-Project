@@ -77,7 +77,7 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
     <section className={`rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center gap-2.5 mb-5">
-        <div className="flex items-center justify-center text-[#0066cc] dark:text-blue-400">
+        <div className="flex items-center justify-center text-brand-blue dark:text-brand-blue">
           <BarChart3 size={24} strokeWidth={2} />
         </div>
         <h3 className="text-[18px] font-semibold text-gray-900 dark:text-gray-100">Financial Intelligence</h3>
@@ -93,7 +93,7 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
             </p>
           </div>
           <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1 bg-[#f0f5ff] text-[#475569] px-2.5 py-1 rounded-md text-[12px] font-medium dark:bg-[#0b2a52] dark:text-gray-300">
+            <div className="flex items-center gap-1 bg-base-card/40 text-text-secondary px-2.5 py-1 rounded-md text-[12px] font-medium dark:bg-base-card dark:text-text-secondary">
               About {goalPct}% of goal
               <ChevronDown size={14} />
             </div>
@@ -115,7 +115,7 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
       <div className="mb-5">
         <p className="text-[14px] font-medium text-gray-800 dark:text-gray-200 mb-2">Outstanding Payments</p>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[#b45309] dark:text-amber-600">
+          <div className="flex items-center gap-2 text-status-warning dark:text-status-warning">
             <FolderOpen size={18} strokeWidth={2} />
             <p className="text-[22px] font-bold leading-none">{loading ? "..." : formatK(outstanding)}</p>
           </div>
@@ -143,7 +143,7 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
       <div className="mb-5">
         <p className="text-[14px] font-medium text-gray-800 dark:text-gray-200 mb-3">Expense Ratio</p>
         <div className="flex items-center gap-4">
-          <div className="flex-1 bg-[#f8fafc] dark:bg-gray-800/50 rounded-xl p-3 flex items-center gap-3 border border-gray-50 dark:border-gray-800">
+          <div className="flex-1 bg-base-card/40 dark:bg-gray-800/50 rounded-xl p-3 flex items-center gap-3 border border-gray-50 dark:border-gray-800">
             <p className="text-[28px] font-bold text-gray-900 dark:text-gray-100 leading-none">{loading ? "..." : `${expenseRatio}%`}</p>
             <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-snug">
               <span className="font-medium text-gray-700 dark:text-gray-300">Moderate spending;</span><br/>
@@ -183,7 +183,7 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
       {/* Section 4: Insights List */}
       <div className="flex flex-col gap-3 mt-auto">
         <div className="flex items-start gap-2.5">
-          <TrendingUp size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" strokeWidth={2.5} />
+          <TrendingUp size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" strokeWidth={2.5} />
           <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
             {loading ? "..." : (
               <><span className="font-medium text-gray-900 dark:text-gray-100">Revenue {revenue >= avgRevenue ? 'stable' : 'below average'}</span> but high-risk payments {formatK(outstanding)} outstanding.</>
@@ -198,8 +198,8 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
           </p>
         </div>
 
-        <div className="flex items-start gap-2.5 bg-[#f8fafc] dark:bg-gray-800/50 p-2.5 rounded-lg border border-gray-50 dark:border-gray-800">
-          <CheckSquare size={16} className="text-[#0066cc] dark:text-blue-400 mt-0.5 shrink-0" strokeWidth={2.5} />
+        <div className="flex items-start gap-2.5 bg-base-card/40 dark:bg-gray-800/50 p-2.5 rounded-lg border border-gray-50 dark:border-gray-800">
+          <CheckSquare size={16} className="text-brand-blue dark:text-brand-blue mt-0.5 shrink-0" strokeWidth={2.5} />
           <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-snug">
             {loading ? "..." : (
               <><span className="font-medium text-gray-900 dark:text-gray-100">Expense ratio healthy</span> at {expenseRatio}%. Operational costs are well within the acceptable margin.</>

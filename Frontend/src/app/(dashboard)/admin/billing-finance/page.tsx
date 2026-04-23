@@ -227,8 +227,8 @@ export default function BillingFinancePage() {
           <h2
             className={
               isFinanceUser
-                ? "text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl"
-                : "text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl"
+                ? "text-2xl font-semibold text-brand-blue dark:text-brand-blue sm:text-3xl"
+                : "text-2xl font-semibold text-brand-blue dark:text-brand-blue sm:text-3xl"
             }
           >
             {isFinanceUser ? "Billing workspace" : "Billing & Finance"}
@@ -241,7 +241,7 @@ export default function BillingFinancePage() {
           {userDisplayName ? (
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
               Logged in as{" "}
-              <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
+              <span className="text-brand-blue dark:text-brand-blue">{userDisplayName}</span>
             </p>
           ) : null}
         </div>
@@ -336,7 +336,7 @@ export default function BillingFinancePage() {
                   </span>{" "}
                   <button
                     type="button"
-                    className="text-[#0066cc] hover:underline dark:text-[#60a5fa]"
+                    className="text-brand-blue hover:underline dark:text-brand-blue"
                     onClick={clearPatient}
                   >
                     Clear
@@ -397,7 +397,7 @@ export default function BillingFinancePage() {
             <button
               type="submit"
               disabled={chargeSubmitting || !selectedPatient}
-              className="w-full bg-[#0066cc] text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:opacity-60"
+              className="w-full bg-btn-primary text-white py-2 rounded-md font-medium shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-60"
             >
               {chargeSubmitting ? "Saving…" : "Create pending charge"}
             </button>

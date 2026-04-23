@@ -7,7 +7,7 @@ export default function LogoutButton() {
   return (
     <Link 
       href="/login" 
-      className="group relative flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 py-2 text-[13px] font-bold text-white shadow-[0_4px_15px_-3px_rgba(225,29,72,0.4)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_6px_20px_-3px_rgba(225,29,72,0.6)]"
+      className="group relative flex items-center justify-center overflow-hidden rounded-xl bg-btn-danger px-4 py-2 text-[13px] font-bold text-text-bright shadow-card-red transition-all duration-300 hover:scale-[1.02] hover:shadow-glow-red"
       onClick={() => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("userRole");

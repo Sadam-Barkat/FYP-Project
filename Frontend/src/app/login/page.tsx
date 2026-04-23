@@ -92,9 +92,9 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen bg-base-bg flex items-center justify-center px-4 py-10 overflow-hidden">
-      <div className="absolute w-[500px] h-[500px] bg-brand-primary/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-10 w-full max-w-md relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-primary to-transparent" />
+      <div className="absolute w-[520px] h-[520px] bg-brand-blue/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="bg-base-card/75 border border-base-border rounded-2xl shadow-card backdrop-blur-md p-10 w-full max-w-md relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-blue to-transparent" />
         <div className="text-center mb-8">
           <h1 className="text-text-primary font-bold text-2xl tracking-tight mb-2">
             Real Time Intelligent Dashboard
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 setEmail(e.target.value);
                 setError(null);
               }}
-              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
               placeholder="user@hospital.com"
               required
               disabled={isLoading}
@@ -139,7 +139,7 @@ export default function LoginPage() {
                   setPassword(e.target.value);
                   setError(null);
                 }}
-                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 pr-11 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 pr-11 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
@@ -160,7 +160,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-3 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_32px_rgba(59,130,246,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-3 shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>

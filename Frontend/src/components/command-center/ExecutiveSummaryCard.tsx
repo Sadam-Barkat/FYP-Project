@@ -169,23 +169,23 @@ export default function ExecutiveSummaryCard() {
     <>
       <section className="rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 bg-[#fcfcfd] px-6 py-3.5 dark:border-gray-800 dark:bg-gray-950/50">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-base-card/30 px-6 py-3.5 dark:border-gray-800 dark:bg-gray-950/50">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fff4e5] text-[#d97706] dark:bg-[#451a03] dark:text-[#f59e0b]">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-status-warning/10 text-status-warning dark:bg-status-warning/20 dark:text-status-warning">
             <Lightbulb size={15} strokeWidth={2.5} />
           </div>
           <h2 className="text-[15px] font-semibold text-gray-800 dark:text-gray-200">Executive Summary</h2>
         </div>
         <button 
           onClick={() => setIsReportOpen(true)}
-          className="text-[13px] font-medium text-[#0066cc] hover:underline dark:text-[#60a5fa]"
+          className="text-[13px] font-medium text-brand-blue hover:underline dark:text-brand-blue"
         >
           View Report &gt;
         </button>
       </div>
 
       {/* Content */}
-      <div className="p-6 bg-[#fffdfa] dark:bg-gray-900">
+      <div className="p-6 bg-base-card/20 dark:bg-gray-900">
         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           {titleText}
         </h3>

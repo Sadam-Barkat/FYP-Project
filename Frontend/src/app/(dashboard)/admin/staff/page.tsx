@@ -139,7 +139,7 @@ function DeleteConfirmModal({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-              className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+              className="px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-lg hover:bg-brand-indigo"
             >
               OK
             </button>
@@ -208,7 +208,7 @@ function MessageModal({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+            className="px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-lg hover:bg-brand-indigo"
           >
             OK
           </button>
@@ -270,7 +270,7 @@ function ReplaceFirstModal({
           <button
             type="button"
             onClick={onAddClick}
-            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+            className="px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-lg hover:bg-brand-indigo"
           >
             Add new {staffType === "Laboratorian" ? "Laboratory staff" : staffType}
           </button>
@@ -492,7 +492,7 @@ export default function StaffAndPatientsPage() {
           onClick={() => setActiveTab("staff")}
           className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "staff"
-              ? "border-brand-primary text-text-primary"
+              ? "border-brand-blue text-text-bright"
               : "border-transparent text-text-secondary hover:text-text-primary"
           }`}
         >
@@ -503,7 +503,7 @@ export default function StaffAndPatientsPage() {
           onClick={() => setActiveTab("patients")}
           className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "patients"
-              ? "border-brand-primary text-text-primary"
+              ? "border-brand-blue text-text-bright"
               : "border-transparent text-text-secondary hover:text-text-primary"
           }`}
         >
@@ -804,13 +804,13 @@ function StaffTab() {
             placeholder="Search by email, occupation, name, phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 w-72"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 w-72"
           />
         </div>
         <button
           type="button"
           onClick={() => setShowAddForm(true)}
-          className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 shrink-0"
+          className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 shrink-0"
         >
           <UserPlus size={18} />
           Add staff
@@ -899,7 +899,7 @@ function StaffTab() {
                 type="button"
                 onClick={handleAdd}
                 disabled={inviteLoading || !canAdd || !addEmail.trim()}
-                className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3] disabled:opacity-50 inline-flex items-center gap-2"
+                className="px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-lg hover:bg-brand-indigo disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {inviteLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                 {inviteLoading ? "Saving..." : "Save"}
@@ -953,7 +953,7 @@ function StaffTab() {
         {paginatedStaff.map((s) => (
             <div
               key={s.id}
-              className="bg-base-card border border-base-border rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.35)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 group flex flex-col overflow-hidden"
+              className="bg-base-card/70 border border-base-border rounded-2xl p-5 shadow-card backdrop-blur-md hover:bg-base-hover hover:-translate-y-1 transition-all duration-200 group flex flex-col overflow-hidden"
             >
               {/* Profile header: role + name */}
               <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-2 flex-wrap">
@@ -1014,7 +1014,7 @@ function StaffTab() {
                 <button
                   type="button"
                   onClick={() => startEdit(s)}
-                  className="flex-1 bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 inline-flex items-center justify-center gap-2"
+                  className="flex-1 bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 inline-flex items-center justify-center gap-2"
                 >
                   <Pencil size={14} />
                   Edit
@@ -1198,7 +1198,7 @@ function PatientsTab() {
           placeholder="Search patients by name, ID, contact, address, gender..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 w-72"
+          className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 w-72"
         />
       </div>
 
@@ -1213,7 +1213,7 @@ function PatientsTab() {
         {paginatedPatients.map((p) => (
           <div
             key={p.id}
-            className="bg-base-card border border-base-border rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.35)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 group"
+            className="bg-base-card/70 border border-base-border rounded-2xl p-5 shadow-card backdrop-blur-md hover:bg-base-hover hover:-translate-y-1 transition-all duration-200 group"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">

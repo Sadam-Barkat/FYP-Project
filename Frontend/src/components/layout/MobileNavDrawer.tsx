@@ -41,7 +41,7 @@ export default function MobileNavDrawer() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-800 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-base-border bg-base-card text-text-secondary shadow-card transition-all duration-200 hover:bg-base-hover hover:text-text-bright hover:-translate-y-0.5"
         aria-expanded={open}
         aria-controls="mobile-nav-drawer"
         aria-label="Open menu"
@@ -59,17 +59,17 @@ export default function MobileNavDrawer() {
           />
           <div
             id="mobile-nav-drawer"
-            className="fixed inset-y-0 left-0 z-[70] flex w-[min(18rem,88vw)] flex-col border-r border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
+            className="fixed inset-y-0 left-0 z-[70] flex w-[min(18rem,88vw)] flex-col border-r border-base-border bg-base-card/85 shadow-nav backdrop-blur-md"
             role="dialog"
             aria-modal="true"
             aria-label="Main navigation"
           >
-            <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4 dark:border-gray-800">
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Menu</span>
+            <div className="flex h-14 items-center justify-between border-b border-base-border px-4 bg-base-muted/30">
+              <span className="text-sm font-semibold text-text-bright">Menu</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-text-secondary hover:bg-base-hover hover:text-text-bright transition-colors duration-150"
                 aria-label="Close menu"
               >
                 <X size={20} />
@@ -88,8 +88,8 @@ export default function MobileNavDrawer() {
                     onClick={() => setOpen(false)}
                     className={`flex items-center gap-3 border-l-4 px-4 py-3 text-sm font-medium transition-colors ${
                       isActive
-                        ? "border-[#0066cc] bg-[#e6f2ff] text-[#0066cc] dark:border-[#60a5fa] dark:bg-[#1e3a8a] dark:text-[#60a5fa]"
-                        : "border-transparent text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+                        ? "border-brand-blue bg-brand-blue/10 text-text-bright"
+                        : "border-transparent text-text-secondary hover:bg-base-hover hover:text-text-bright"
                     }`}
                   >
                     <Icon size={20} className="shrink-0" />

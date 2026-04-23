@@ -148,7 +148,7 @@ export default function DoctorDashboardPage() {
         <div className="flex w-full flex-col gap-2 xs:flex-row xs:flex-wrap sm:w-auto sm:items-center sm:gap-3">
           <Link
             href="/doctor/analytics"
-            className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 inline-flex items-center justify-center gap-2"
+            className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 inline-flex items-center justify-center gap-2"
           >
             <Activity size={16} />
             View My Analytics
@@ -157,7 +157,7 @@ export default function DoctorDashboardPage() {
             type="button"
             onClick={handleManualRefresh}
             disabled={isRefreshing || loading}
-            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCcw size={16} className={isRefreshing ? "animate-spin" : ""} />
             {isRefreshing ? "Refreshing" : "Refresh"}
@@ -173,7 +173,7 @@ export default function DoctorDashboardPage() {
       )}
 
       {!loading && patients.length === 0 && (
-        <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] p-12 text-center text-text-muted">
+        <div className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md p-12 text-center text-text-secondary">
           No patients assigned to you. The list updates when reception assigns new patients.
         </div>
       )}
@@ -202,7 +202,7 @@ export default function DoctorDashboardPage() {
               <Link
                 key={patient.id}
                 href={`/doctor/patients/${patient.id}`}
-                className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 flex flex-col justify-between min-h-[160px] group"
+                className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md hover:bg-base-hover hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between min-h-[160px] group"
               >
                 <div className="p-5 flex-1 flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
@@ -231,7 +231,7 @@ export default function DoctorDashboardPage() {
                 </div>
                 <div className="px-5 py-3 border-t border-base-border flex items-center justify-between text-text-muted text-xs bg-base-muted/30 rounded-b-2xl">
                   <span>Assigned patient</span>
-                  <span className="group-hover:text-brand-primary font-medium transition-colors duration-150">
+                  <span className="group-hover:text-brand-blue font-medium transition-colors duration-150">
                     View details →
                   </span>
                 </div>

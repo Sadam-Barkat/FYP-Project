@@ -39,80 +39,80 @@ export default function DoctorAnalyticsPage() {
   return (
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-start sm:gap-4">
+      <div className="flex flex-col gap-3 border-b border-base-border pb-4 sm:flex-row sm:items-start sm:gap-4">
         <button 
           onClick={() => router.back()}
-          className="mt-0 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 sm:mt-1"
+          className="mt-0 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-base-border bg-base-card text-text-secondary shadow-card transition-all duration-200 hover:bg-base-hover hover:text-text-bright hover:-translate-y-0.5 sm:mt-1"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="min-w-0">
-          <h2 className="text-2xl font-semibold text-[#1e40af] sm:text-3xl">My Performance Analytics</h2>
-          <p className="text-sm text-gray-500 mt-1">Overview of treated patients and metrics.</p>
+          <h2 className="text-text-bright font-semibold tracking-tight text-2xl sm:text-3xl">My Performance Analytics</h2>
+          <p className="text-text-secondary text-sm mt-1">Overview of treated patients and metrics.</p>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-brand-blue/20 bg-card-blue shadow-card-blue p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Treated</span>
-            <Users size={18} className="text-[#1e40af]" />
+            <Users size={18} className="text-brand-blue" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">{analytics.totalTreated}</p>
+          <p className="text-3xl font-bold text-text-bright tabular-nums">{analytics.totalTreated}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-status-success/20 bg-card-green shadow-card-green p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Discharges</span>
-            <CheckCircle size={18} className="text-[#10b981]" />
+            <CheckCircle size={18} className="text-status-success" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">{analytics.discharges}</p>
+          <p className="text-3xl font-bold text-text-bright tabular-nums">{analytics.discharges}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-brand-purple/20 bg-card-purple shadow-card p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Avg Recovery</span>
-            <Clock size={18} className="text-[#8b5cf6]" />
+            <Clock size={18} className="text-brand-purple" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">
-            {analytics.avgRecovery} <span className="text-base font-medium text-gray-500">days</span>
+          <p className="text-3xl font-bold text-text-bright tabular-nums">
+            {analytics.avgRecovery} <span className="text-base font-medium text-text-secondary">days</span>
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-status-success/20 bg-card-green shadow-card-green p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Recovery Rate</span>
-            <TrendingUp size={18} className="text-[#10b981]" />
+            <TrendingUp size={18} className="text-status-success" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">{analytics.recoveryRate}%</p>
+          <p className="text-3xl font-bold text-text-bright tabular-nums">{analytics.recoveryRate}%</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-status-warning/20 bg-card-amber shadow-card-amber p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Alerts Resolved</span>
-            <BellRing size={18} className="text-[#f59e0b]" />
+            <BellRing size={18} className="text-status-warning" />
           </div>
-          <p className="text-3xl font-bold text-gray-900">{analytics.alertsResolved}</p>
+          <p className="text-3xl font-bold text-text-bright tabular-nums">{analytics.alertsResolved}</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-gray-500 mb-2">
+        <div className="rounded-2xl border border-brand-blue/20 bg-card-teal shadow-card-teal p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
+          <div className="flex items-center justify-between text-text-secondary mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Condition Split</span>
-            <Activity size={18} className="text-[#0ea5e9]" />
+            <Activity size={18} className="text-status-info" />
           </div>
-          <div className="flex flex-col gap-1 text-xs font-medium text-gray-600 mt-1">
-            <div className="flex justify-between"><span className="text-[#10b981]">Normal</span><span>{analytics.conditions.normal}%</span></div>
-            <div className="flex justify-between"><span className="text-[#f59e0b]">Critical</span><span>{analytics.conditions.critical}%</span></div>
-            <div className="flex justify-between"><span className="text-[#ef4444]">Emergency</span><span>{analytics.conditions.emergency}%</span></div>
+          <div className="flex flex-col gap-1 text-xs font-medium text-text-secondary mt-1">
+            <div className="flex justify-between"><span className="text-status-success">Normal</span><span className="tabular-nums text-text-bright">{analytics.conditions.normal}%</span></div>
+            <div className="flex justify-between"><span className="text-status-warning">Critical</span><span className="tabular-nums text-text-bright">{analytics.conditions.critical}%</span></div>
+            <div className="flex justify-between"><span className="text-status-danger">Emergency</span><span className="tabular-nums text-text-bright">{analytics.conditions.emergency}%</span></div>
           </div>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-[350px]">
-          <h3 className="font-semibold text-gray-800 mb-4">Treatment Trend (Last 5 Weeks)</h3>
+        <div className="lg:col-span-2 rounded-2xl border border-base-border bg-base-card/70 shadow-card backdrop-blur-md p-6 flex flex-col h-[350px]">
+          <h3 className="font-semibold text-text-bright mb-4">Treatment Trend (Last 5 Weeks)</h3>
           <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <LineChart data={analytics.treatmentTrend} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
@@ -126,8 +126,8 @@ export default function DoctorAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col h-[350px]">
-          <h3 className="font-semibold text-gray-800 mb-4">Patient Condition Distribution</h3>
+        <div className="rounded-2xl border border-base-border bg-base-card/70 shadow-card backdrop-blur-md p-6 flex flex-col h-[350px]">
+          <h3 className="font-semibold text-text-bright mb-4">Patient Condition Distribution</h3>
           <div className="flex-1 w-full flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
@@ -154,25 +154,25 @@ export default function DoctorAnalyticsPage() {
       </div>
 
       {/* Recent Discharges */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Recent Discharges</h3>
+      <div className="rounded-2xl border border-base-border bg-base-card/70 shadow-card backdrop-blur-md p-6">
+        <h3 className="font-semibold text-text-bright mb-4">Recent Discharges</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 text-sm text-gray-500">
-                <th className="py-3 px-4 font-medium">Patient Name</th>
-                <th className="py-3 px-4 font-medium">Discharge Date</th>
-                <th className="py-3 px-4 font-medium">Outcome</th>
+              <tr className="border-b border-base-border text-sm text-text-secondary bg-base-muted/30">
+                <th className="py-3 px-4 font-medium uppercase tracking-widest text-xs">Patient Name</th>
+                <th className="py-3 px-4 font-medium uppercase tracking-widest text-xs">Discharge Date</th>
+                <th className="py-3 px-4 font-medium uppercase tracking-widest text-xs">Outcome</th>
               </tr>
             </thead>
             <tbody>
               {analytics.recentDischarges.map((discharge, idx) => (
-                <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-900">{discharge.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{discharge.date}</td>
+                <tr key={idx} className="border-b border-base-border last:border-0 hover:bg-base-hover transition-colors duration-150">
+                  <td className="py-3 px-4 text-sm font-medium text-text-bright">{discharge.name}</td>
+                  <td className="py-3 px-4 text-sm text-text-secondary">{discharge.date}</td>
                   <td className="py-3 px-4">
                     <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                      discharge.outcome === 'Recovered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      discharge.outcome === 'Recovered' ? 'bg-status-success/10 text-status-success border border-status-success/30' : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/30'
                     }`}>
                       {discharge.outcome}
                     </span>
@@ -182,7 +182,7 @@ export default function DoctorAnalyticsPage() {
             </tbody>
           </table>
         </div>
-        <button className="w-full mt-4 flex items-center justify-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <button className="w-full mt-4 flex items-center justify-center gap-1 text-sm text-text-secondary hover:text-text-bright transition-colors duration-150">
           View all discharges <ChevronDown size={16} />
         </button>
       </div>

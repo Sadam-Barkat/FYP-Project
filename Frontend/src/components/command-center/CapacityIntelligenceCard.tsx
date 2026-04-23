@@ -162,12 +162,12 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
     >
       <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 dark:border-gray-800 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[#0066cc] dark:text-[#60a5fa]">
+          <span className="text-brand-blue dark:text-brand-blue">
             <Building2 size={20} strokeWidth={2} aria-hidden />
           </span>
           <h3 className="text-[17px] font-semibold text-gray-900 dark:text-gray-100">Capacity Intelligence</h3>
         </div>
-        <span className="flex items-center text-[13px] font-medium text-gray-600 dark:text-gray-400 hover:text-[#0066cc] cursor-pointer transition-colors">
+        <span className="flex items-center text-[13px] font-medium text-gray-600 dark:text-gray-400 hover:text-brand-blue cursor-pointer transition-colors">
           Past 7 Days <ChevronRight size={14} className="ml-0.5" />
         </span>
       </div>
@@ -255,7 +255,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
             <p>
               {insight1.startsWith('+') ? (
                 <>
-                  <span className="font-semibold text-[#f59e0b]">{insight1.split(' ')[0]}</span> {insight1.substring(insight1.indexOf(' ') + 1)}
+                  <span className="font-semibold text-status-warning">{insight1.split(' ')[0]}</span> {insight1.substring(insight1.indexOf(' ') + 1)}
                 </>
               ) : (
                 insight1
@@ -269,19 +269,19 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
         </div>
 
         <div className="mt-5">
-          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-[#f8fafc] px-4 py-3 text-[13px] text-gray-700 dark:bg-gray-950 dark:text-gray-300">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl bg-base-card/40 px-4 py-3 text-[13px] text-gray-700 dark:bg-gray-950 dark:text-gray-300">
             <span className="inline-flex items-center gap-2">
-              <Activity size={16} aria-hidden className="text-[#3b82f6]" />
+              <Activity size={16} aria-hidden className="text-brand-blue" />
               <span className="font-medium">System Alert:</span>
             </span>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${occupancyRate > 75 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-[#e2e8f0] text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${occupancyRate > 75 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-base-muted/40 text-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}>
               {alertText}
             </span>
           </div>
         </div>
 
         {/* Bottom Comparison */}
-        <div className="mt-5 rounded-xl bg-[#f8fafc] border border-gray-100 dark:bg-gray-950 dark:border-gray-800 overflow-hidden">
+        <div className="mt-5 rounded-xl bg-base-card/40 border border-gray-100 dark:bg-gray-950 dark:border-gray-800 overflow-hidden">
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -292,9 +292,9 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               <tr>
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                  <span className="text-[#0066cc] dark:text-[#60a5fa] font-semibold text-[15px] mr-1.5">{curAdmPct}%</span>
+                  <span className="text-brand-blue dark:text-brand-blue font-semibold text-[15px] mr-1.5">{curAdmPct}%</span>
                   <span className="text-gray-800 dark:text-gray-200">Admissions</span>
-                  <span className={`ml-2 text-[12px] ${admChange.dir === 'down' ? 'text-[#16a34a]' : admChange.dir === 'up' ? 'text-[#16a34a]' : 'text-gray-500'}`}>
+                  <span className={`ml-2 text-[12px] ${admChange.dir === 'down' ? 'text-status-success' : admChange.dir === 'up' ? 'text-status-success' : 'text-gray-500'}`}>
                     {admChange.dir === 'down' ? '↓' : admChange.dir === 'up' ? '↑' : ''}{admChange.dir !== 'flat' ? '+' : ''}{admChange.pct}%
                   </span>
                 </td>
@@ -307,7 +307,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
                 <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                   <span className="text-gray-900 dark:text-gray-100 font-semibold text-[15px] mr-1.5">{curDisPct}%</span>
                   <span className="text-gray-800 dark:text-gray-200">Discharges</span>
-                  <span className={`ml-2 text-[12px] ${disChange.dir === 'down' ? 'text-[#16a34a]' : disChange.dir === 'up' ? 'text-[#16a34a]' : 'text-gray-500'}`}>
+                  <span className={`ml-2 text-[12px] ${disChange.dir === 'down' ? 'text-status-success' : disChange.dir === 'up' ? 'text-status-success' : 'text-gray-500'}`}>
                     {disChange.dir === 'down' ? '↓' : disChange.dir === 'up' ? '↑' : ''}{disChange.dir !== 'flat' ? '+' : ''}{disChange.pct}%
                   </span>
                 </td>
@@ -319,7 +319,7 @@ export default function CapacityIntelligenceCard({ className = "" }: { className
             </tbody>
           </table>
           <div className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-800">
-            <Activity size={14} className="text-[#3b82f6] shrink-0" />
+            <Activity size={14} className="text-brand-blue shrink-0" />
             <span>
               Admissions {admChange.dir === 'up' ? 'increased' : admChange.dir === 'down' ? 'decreased' : 'changed'} {admChange.pct}%, discharges {disChange.dir === 'up' ? 'surged' : disChange.dir === 'down' ? 'dropped' : 'changed'} {disChange.pct}% compared to last week.
             </span>

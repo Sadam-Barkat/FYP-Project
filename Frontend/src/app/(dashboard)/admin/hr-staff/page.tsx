@@ -101,7 +101,7 @@ export default function HRStaffPage() {
   return (
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-        <h2 className="text-3xl font-semibold text-[#0066cc] text-center md:text-left">
+        <h2 className="text-3xl font-semibold text-brand-blue text-center md:text-left">
           HR & Staff Overview
         </h2>
         <div className="flex items-center gap-2">
@@ -128,10 +128,10 @@ export default function HRStaffPage() {
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          icon={<Stethoscope className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-success"
+          icon={<Stethoscope className="absolute top-4 left-4 text-status-success" size={24} />}
           label="Staff On Duty"
-          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{onDutyCount}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-success mt-3">{onDutyCount}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Currently active in hospital</p>}
           tooltipTitle="On-duty context"
           tooltipContent={
@@ -143,10 +143,10 @@ export default function HRStaffPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#3b82f6]"
-          icon={<Clock className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          borderLeftClass="border-l-4 border-l-brand-blue"
+          icon={<Clock className="absolute top-4 left-4 text-brand-blue" size={24} />}
           label="Active Shifts"
-          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{activeShifts}</h3>}
+          value={<h3 className="text-4xl font-bold text-brand-blue mt-3">{activeShifts}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Across all departments</p>}
           tooltipTitle="Shift note"
           tooltipContent={
@@ -160,10 +160,10 @@ export default function HRStaffPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#f97316]"
-          icon={<UserX className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-warning"
+          icon={<UserX className="absolute top-4 left-4 text-status-warning" size={24} />}
           label="Absent Today"
-          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{absentToday}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-warning mt-3">{absentToday}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Requires cover assignment</p>}
           tooltipTitle="Absence context"
           tooltipContent={
@@ -175,10 +175,10 @@ export default function HRStaffPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#a855f7]"
-          icon={<Users className="absolute top-4 left-4 text-[#a855f7]" size={24} />}
+          borderLeftClass="border-l-4 border-l-brand-purple"
+          icon={<Users className="absolute top-4 left-4 text-brand-purple" size={24} />}
           label="On Leave"
-          value={<h3 className="text-4xl font-bold text-[#a855f7] mt-3">{onLeaveCount}</h3>}
+          value={<h3 className="text-4xl font-bold text-brand-purple mt-3">{onLeaveCount}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400">Approved vacations/sick leave</p>}
           tooltipTitle="Leave note"
           tooltipContent={

@@ -188,7 +188,7 @@ export default function OpsCopilotPage() {
   if (loading) {
     return (
       <div className="dashboard-page-shell max-w-7xl">
-        <p className="text-sm text-gray-500">Loading Ops Copilot…</p>
+        <p className="text-sm text-text-secondary">Loading Ops Copilot…</p>
       </div>
     );
   }
@@ -196,7 +196,7 @@ export default function OpsCopilotPage() {
   if (error) {
     return (
       <div className="dashboard-page-shell max-w-7xl">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-status-danger">{error}</p>
       </div>
     );
   }
@@ -205,19 +205,19 @@ export default function OpsCopilotPage() {
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl space-y-6 pb-10">
       {openaiEnvOk === false && (
         <div
-          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          className="rounded-2xl border border-status-warning/30 bg-status-warning/10 px-5 py-4 text-sm text-status-warning shadow-card backdrop-blur-md"
           role="status"
         >
-          This backend URL (<code className="rounded bg-amber-100/80 px-1">{API_BASE}</code>) does not
-          see <code className="rounded bg-amber-100/80 px-1">OPENAI_API_KEY</code> in its process
+          This backend URL (<code className="rounded bg-base-muted/40 px-1">{API_BASE}</code>) does not
+          see <code className="rounded bg-base-muted/40 px-1">OPENAI_API_KEY</code> in its process
           environment. In Railway, open the <strong>same</strong> service that serves this URL →
-          Variables → add <code className="rounded bg-amber-100/80 px-1">OPENAI_API_KEY</code> (exact
+          Variables → add <code className="rounded bg-base-muted/40 px-1">OPENAI_API_KEY</code> (exact
           name, no spaces) → <strong>Redeploy</strong>. On Vercel, confirm{" "}
-          <code className="rounded bg-amber-100/80 px-1">NEXT_PUBLIC_API_URL</code> matches that service.
+          <code className="rounded bg-base-muted/40 px-1">NEXT_PUBLIC_API_URL</code> matches that service.
         </div>
       )}
       {/* Page header strip (matches supervisor mock: strong blue band + title) */}
-      <div className="rounded-xl bg-[#0066cc] px-5 py-4 text-white shadow-md sm:px-6">
+      <div className="rounded-2xl bg-card-blue border border-brand-blue/25 px-5 py-4 text-text-bright shadow-card-blue sm:px-6 transition-all duration-200 hover:-translate-y-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/30">
@@ -225,7 +225,7 @@ export default function OpsCopilotPage() {
             </div>
             <div>
               <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">AI Hospital Ops Copilot</h2>
-              <p className="text-sm text-blue-100">
+              <p className="text-sm text-text-secondary">
                 Agentic triage + action plan from live operational signals
               </p>
             </div>
@@ -234,7 +234,7 @@ export default function OpsCopilotPage() {
             type="button"
             onClick={() => generateBriefing()}
             disabled={genLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#0066cc] shadow-sm transition hover:bg-blue-50 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-base-card/60 border border-base-border px-4 py-2.5 text-sm font-semibold text-text-bright shadow-card backdrop-blur-md transition-all duration-200 hover:bg-base-hover hover:-translate-y-0.5 disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${genLoading ? "animate-spin" : ""}`} />
             {genLoading ? "Generating…" : "Generate new briefing"}
@@ -248,46 +248,46 @@ export default function OpsCopilotPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* Current briefing */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="rounded-2xl border border-base-border bg-base-card/70 p-5 shadow-card backdrop-blur-md sm:p-6 transition-all duration-200 hover:-translate-y-1">
+            <h3 className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
               Current briefing
             </h3>
             {!briefing ? (
-              <p className="mt-6 text-sm text-gray-500">
+              <p className="mt-6 text-sm text-text-secondary">
                 No briefing yet. Click <strong>Generate new briefing</strong> to run the agent on
-                live metrics (requires <code className="rounded bg-gray-100 px-1">OPENAI_API_KEY</code>{" "}
+                live metrics (requires <code className="rounded bg-base-muted/40 px-1">OPENAI_API_KEY</code>{" "}
                 on the server).
               </p>
             ) : (
               <div className="mt-4 space-y-4">
                 <div className="flex items-start gap-3">
-                  <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-red-600" />
-                  <h4 className="text-lg font-bold text-gray-900">{briefing.title}</h4>
+                  <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-status-danger" />
+                  <h4 className="text-lg font-bold text-text-bright">{briefing.title}</h4>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase text-gray-500">What changed</p>
-                  <p className="mt-1 text-sm leading-relaxed text-gray-700">{briefing.what_changed}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">What changed</p>
+                  <p className="mt-1 text-sm leading-relaxed text-text-primary">{briefing.what_changed}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase text-gray-500">Why it matters</p>
-                  <p className="mt-1 text-sm leading-relaxed text-gray-700">{briefing.why_it_matters}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">Why it matters</p>
+                  <p className="mt-1 text-sm leading-relaxed text-text-primary">{briefing.why_it_matters}</p>
                 </div>
-                <div className="rounded-lg bg-sky-50 px-4 py-3 ring-1 ring-sky-100">
-                  <p className="text-xs font-semibold uppercase text-sky-800">Recommended actions</p>
-                  <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-gray-800">
+                <div className="rounded-2xl bg-brand-blue/10 px-4 py-3 ring-1 ring-brand-blue/25">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-brand-blue">Recommended actions</p>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-text-primary">
                     {briefing.recommended_actions.map((a, i) => (
                       <li key={i}>{a}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase text-gray-500">Evidence</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">Evidence</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {briefing.evidence_links.map((ev, i) => (
                       <Link
                         key={i}
                         href={ev.href}
-                        className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#0066cc] ring-1 ring-blue-100 hover:bg-blue-100"
+                        className="inline-flex items-center gap-1 rounded-xl bg-brand-blue/10 px-2.5 py-1 text-xs font-medium text-brand-blue ring-1 ring-brand-blue/25 hover:bg-brand-blue/15 transition-colors duration-150"
                       >
                         {ev.label}
                         <ChevronRight className="h-3 w-3" />
@@ -300,14 +300,14 @@ export default function OpsCopilotPage() {
           </section>
 
           {/* History */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="rounded-2xl border border-base-border bg-base-card/70 p-5 shadow-card backdrop-blur-md sm:p-6 transition-all duration-200 hover:-translate-y-1">
+            <h3 className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
               Briefing history
             </h3>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-xs uppercase text-gray-500">
+                  <tr className="border-b border-base-border text-xs uppercase tracking-widest text-text-secondary bg-base-muted/30">
                     <th className="py-2 pr-4 font-medium">Time</th>
                     <th className="py-2 pr-4 font-medium">Briefing</th>
                     <th className="py-2 pr-4 font-medium">Status</th>
@@ -316,14 +316,14 @@ export default function OpsCopilotPage() {
                 <tbody>
                   {history.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-gray-500">
+                      <td colSpan={3} className="py-6 text-text-secondary">
                         No history yet.
                       </td>
                     </tr>
                   ) : (
                     history.map((b) => (
-                      <tr key={b.id} className="border-b border-gray-100 last:border-0">
-                        <td className="py-3 pr-4 align-top text-gray-600 whitespace-nowrap">
+                      <tr key={b.id} className="border-b border-base-border last:border-0 hover:bg-base-hover transition-colors duration-150">
+                        <td className="py-3 pr-4 align-top text-text-secondary whitespace-nowrap">
                           {b.created_at
                             ? new Date(b.created_at).toLocaleString(undefined, {
                                 dateStyle: "medium",
@@ -331,12 +331,12 @@ export default function OpsCopilotPage() {
                               })
                             : "—"}
                         </td>
-                        <td className="py-3 pr-4 align-top font-medium text-gray-900">{b.title}</td>
+                        <td className="py-3 pr-4 align-top font-medium text-text-bright">{b.title}</td>
                         <td className="py-3 align-top">
                           <select
                             value={b.status}
                             onChange={(e) => updateStatus(b.id, e.target.value)}
-                            className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusBadgeClass(b.status)}`}
+                            className={`rounded-full border px-2 py-1 text-xs font-semibold bg-base-card ${statusBadgeClass(b.status)}`}
                           >
                             <option value="open">Open</option>
                             <option value="resolved">Resolved</option>
@@ -354,54 +354,54 @@ export default function OpsCopilotPage() {
 
         <div className="space-y-5">
           {/* Notification card */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          <section className="rounded-2xl border border-base-border bg-base-card/70 p-5 shadow-card backdrop-blur-md transition-all duration-200 hover:-translate-y-1">
+            <h3 className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
               Notification alert
             </h3>
             {hasUnread && briefing ? (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="mt-4 rounded-2xl border border-status-warning/30 bg-status-warning/10 p-4">
                 <div className="flex gap-2">
-                  <Bell className="h-5 w-5 shrink-0 text-amber-700" />
-                  <p className="text-sm font-medium text-amber-900">
+                  <Bell className="h-5 w-5 shrink-0 text-status-warning" />
+                  <p className="text-sm font-medium text-text-bright">
                     New briefing available: {briefing.title}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={markSeen}
-                  className="mt-3 w-full rounded-lg bg-[#0066cc] py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="mt-3 w-full rounded-xl bg-btn-primary py-2 text-sm font-semibold text-text-bright shadow-btn hover:shadow-glow-blue transition-all duration-200 hover:-translate-y-0.5"
                 >
                   Mark as read
                 </button>
               </div>
             ) : briefing ? (
-              <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+              <div className="mt-4 rounded-2xl border border-base-border bg-base-muted/30 p-4 text-sm text-text-secondary">
                 You are up to date with the latest briefing.
               </div>
             ) : (
-              <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+              <div className="mt-4 rounded-2xl border border-base-border bg-base-muted/30 p-4 text-sm text-text-secondary">
                 Generate a briefing to receive alerts here.
               </div>
             )}
           </section>
 
           {/* Daily summary */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-base-border bg-base-card/70 p-5 shadow-card backdrop-blur-md transition-all duration-200 hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
                 Daily summary
               </h3>
-              <button type="button" className="text-gray-400 hover:text-gray-600" aria-label="More">
+              <button type="button" className="text-text-muted hover:text-text-secondary transition-colors duration-150" aria-label="More">
                 <MoreHorizontal className="h-5 w-5" />
               </button>
             </div>
             {summary ? (
               <ul className="mt-4 space-y-3 text-sm">
                 <li className="flex justify-between gap-2">
-                  <span className="text-gray-600">Occupancy</span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="text-text-secondary">Occupancy</span>
+                  <span className="font-semibold text-text-bright tabular-nums">
                     {summary.occupancy_pct}%{" "}
-                    <span className="text-xs font-normal text-gray-500">
+                    <span className="text-xs font-normal text-text-secondary">
                       ({summary.occupancy_label} vs yesterday {summary.occupancy_prior_pct}%)
                     </span>
                   </span>

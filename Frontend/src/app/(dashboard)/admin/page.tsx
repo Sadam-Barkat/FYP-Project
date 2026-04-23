@@ -14,7 +14,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 
 const cardBase =
-  "bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] hover:border-brand-primary/20 hover:bg-base-hover transition-all duration-200";
+  "bg-base-card/70 border border-base-border rounded-2xl p-6 shadow-card backdrop-blur-md hover:bg-base-hover hover:-translate-y-1 transition-all duration-200";
 
 export type TotalPatientsBreakdown = {
   in_hospital?: number | null;
@@ -128,19 +128,19 @@ function PharmacyMedicineTooltip({
   return (
     <div className="absolute left-full top-1/2 z-[60] ml-2 min-w-[180px] max-w-[220px] -translate-y-1/2">
       <div
-        className={`pointer-events-auto rounded-lg border border-[#00b4d8] bg-[#0d1b2a] px-2.5 py-2 shadow-lg ${
+        className={`pointer-events-auto rounded-2xl border border-brand-blue/30 bg-base-card/90 px-3 py-2 shadow-nav backdrop-blur-md ${
           needsScroll
             ? "max-h-44 overflow-y-auto overscroll-contain [scrollbar-width:thin]"
             : ""
         }`}
       >
-        <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-[#00b4d8]">
+        <p className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-brand-blue">
           {title}
         </p>
         {names.length === 0 ? (
-          <p className="text-[10px] text-[#94a3b8]">None</p>
+          <p className="text-[10px] text-text-secondary">None</p>
         ) : (
-          <ul className="space-y-0.5 text-[10px] leading-snug text-[#e2e8f0]">
+          <ul className="space-y-0.5 text-[10px] leading-snug text-text-primary">
             {names.map((n, i) => (
               <li key={`${n}-${i}`} className="break-words">
                 {n}
@@ -176,10 +176,10 @@ function formatKpiDisplay(
 
 function trendTextClass(trend: string | null | undefined): string {
   const s = (trend ?? "").trim();
-  if (!s || s === "N/A") return "text-[#94a3b8]";
-  if (s.startsWith("+")) return "text-[#10b981]";
-  if (s.startsWith("-")) return "text-[#ef4444]";
-  return "text-[#94a3b8]";
+  if (!s || s === "N/A") return "text-text-secondary";
+  if (s.startsWith("+")) return "text-status-success";
+  if (s.startsWith("-")) return "text-status-danger";
+  return "text-text-secondary";
 }
 
 function asNum(v: unknown): number {
@@ -299,23 +299,23 @@ function intelFooterUpdated(at: Date | null, tick: number): string {
 }
 
 function healthPctClass(pct: number): string {
-  if (pct >= 70) return "text-[#10b981]";
-  if (pct >= 50) return "text-[#f59e0b]";
-  return "text-[#ef4444]";
+  if (pct >= 70) return "text-status-success";
+  if (pct >= 50) return "text-status-warning";
+  return "text-status-danger";
 }
 
 function changeVsWeekUi(delta: number): { arrow: string; cls: string; tail: string } {
   if (delta > 0) {
-    return { arrow: "↑", cls: "text-[#10b981]", tail: `${delta} vs last week` };
+    return { arrow: "↑", cls: "text-status-success", tail: `${delta} vs last week` };
   }
   if (delta < 0) {
     return {
       arrow: "↓",
-      cls: "text-[#ef4444]",
+      cls: "text-status-danger",
       tail: `${Math.abs(delta)} vs last week`,
     };
   }
-  return { arrow: "—", cls: "text-[#94a3b8]", tail: "0 vs last week" };
+  return { arrow: "—", cls: "text-text-secondary", tail: "0 vs last week" };
 }
 
 type ParsedAiForecast = {
@@ -364,7 +364,7 @@ const KPI_CARD_DEFS = [
     trendKey: "total_patients_trend" as const,
     icon: Users,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-brand-blue/15 text-brand-blue shadow-glow-blue",
     kind: "int" as const,
   },
   {
@@ -373,7 +373,7 @@ const KPI_CARD_DEFS = [
     trendKey: "active_admissions_trend" as const,
     icon: Bed,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-brand-indigo/15 text-brand-indigo shadow-glow-blue",
     kind: "int" as const,
   },
   {
@@ -382,7 +382,7 @@ const KPI_CARD_DEFS = [
     trendKey: "available_beds_trend" as const,
     icon: LayoutGrid,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-brand-purple/15 text-brand-purple shadow-glow-blue",
     kind: "int" as const,
   },
   {
@@ -391,7 +391,7 @@ const KPI_CARD_DEFS = [
     trendKey: "critical_patients_trend" as const,
     icon: AlertTriangle,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-status-danger/15 text-status-danger shadow-glow-red",
     kind: "int" as const,
   },
   {
@@ -400,7 +400,7 @@ const KPI_CARD_DEFS = [
     trendKey: "staff_on_duty_trend" as const,
     icon: UserCheck,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-status-success/15 text-status-success shadow-glow-green",
     kind: "int" as const,
   },
   {
@@ -409,7 +409,7 @@ const KPI_CARD_DEFS = [
     trendKey: "revenue_today_trend" as const,
     icon: DollarSign,
     accent: "text-text-primary",
-    iconWrap: "bg-brand-primary/10 text-brand-primary",
+    iconWrap: "bg-status-warning/15 text-status-warning shadow-glow-amber",
     kind: "currency" as const,
   },
 ] as const;
@@ -548,7 +548,7 @@ export default function AdminDashboard() {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${k.iconWrap}`}
                   >
-                    <Icon className="w-5 h-5 text-brand-primary" aria-hidden />
+                    <Icon className="w-5 h-5 text-brand-blue" aria-hidden />
                   </div>
                 </div>
                 <h3 className="text-text-muted text-xs uppercase tracking-wider font-medium">
@@ -644,20 +644,20 @@ export default function AdminDashboard() {
           </div>
 
           {!intelData && !intelLoading ? (
-            <p className="mt-2 text-xs text-[#94a3b8]">
+            <p className="mt-2 text-xs text-text-muted">
               Unable to load. Check admin access and API.
             </p>
           ) : null}
           {intelLoading && !intelData ? (
-            <div className="mt-2 h-36 animate-pulse rounded-md bg-[#1e3a5f]/50" />
+            <div className="mt-2 h-36 animate-pulse rounded-md bg-base-glow/50" />
           ) : null}
 
           {intelData ? (
             <div className="mt-2 flex min-h-0 flex-1 gap-3 overflow-hidden">
-              <div className="min-w-0 flex-[1.05] shrink-0 border-r border-[#1e3a5f] pr-3">
+              <div className="min-w-0 flex-[1.05] shrink-0 border-r border-base-glow pr-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex min-h-[4.5rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                  <div className="flex min-h-[4.5rem] flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2.5 py-2">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Total Patients
                     </p>
                     <p className="text-lg font-bold leading-none text-white">
@@ -672,8 +672,8 @@ export default function AdminDashboard() {
                       );
                     })()}
                   </div>
-                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-base-glow/90 bg-base-card/95 px-2.5 py-2">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Vitals Health
                     </p>
                     <p
@@ -684,19 +684,19 @@ export default function AdminDashboard() {
                       {intelData.vitals_health_percentage}%
                     </p>
                   </div>
-                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-base-glow/90 bg-base-card/95 px-2.5 py-2">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Critical Vitals
                     </p>
-                    <p className="mt-auto text-base font-bold leading-none text-[#ef4444]">
+                    <p className="mt-auto text-base font-bold leading-none text-status-danger">
                       {intelData.critical_vitals_percentage}%
                     </p>
                   </div>
-                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2.5 py-2">
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                  <div className="flex min-h-[4.5rem] flex-col rounded-md border border-base-glow/90 bg-base-card/95 px-2.5 py-2">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       ⚠️ At Risk
                     </p>
-                    <p className="mt-auto text-base font-bold leading-none text-[#f97316]">
+                    <p className="mt-auto text-base font-bold leading-none text-status-warning">
                       {intelData.at_risk_count}
                     </p>
                   </div>
@@ -704,10 +704,10 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col pl-2">
-                <p className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#00b4d8]">
+                <p className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-status-info">
                   🤖 AI Risk Forecast
                 </p>
-                <div className="mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden border-l-2 border-[#00b4d8] pl-3">
+                <div className="mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden border-l-2 border-status-info pl-3">
                   {(() => {
                     const p = parseAiForecast(intelData.ai_prediction);
                     if (p.rawFallback) {
@@ -730,12 +730,12 @@ export default function AdminDashboard() {
                         ) : null}
                         {hasNames && hasSugg ? (
                           <div className="flex min-h-0 flex-1 flex-row gap-3 overflow-hidden">
-                            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-[#1e3a5f]/80 pr-2">
-                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-base-glow/80 pr-2">
+                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-secondary">
                                 Patients
                               </p>
                               <div className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-                                <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
+                                <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-text-primary marker:text-text-muted">
                                   {p.names.map((n, i) => (
                                     <li key={`${n}-${i}`} className="pl-0.5">
                                       {n}
@@ -745,11 +745,11 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                              <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
                                 Suggestion
                               </p>
                               <div className="mt-1 min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin]">
-                                <p className="text-[10px] font-medium leading-snug text-[#fde68a]">
+                                <p className="text-[10px] font-medium leading-snug text-status-warning">
                                   {p.suggestion}
                                 </p>
                               </div>
@@ -757,11 +757,11 @@ export default function AdminDashboard() {
                           </div>
                         ) : hasNames ? (
                           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-secondary">
                               Patients
                             </p>
                             <div className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-                              <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-[#e2e8f0] marker:text-[#64748b]">
+                              <ol className="list-decimal space-y-0.5 pl-3.5 text-[10px] leading-snug text-text-primary marker:text-text-muted">
                                 {p.names.map((n, i) => (
                                   <li key={`${n}-${i}`} className="pl-0.5">
                                     {n}
@@ -772,11 +772,11 @@ export default function AdminDashboard() {
                           </div>
                         ) : hasSugg ? (
                           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-[#64748b]">
+                            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-text-muted">
                               Suggestion
                             </p>
                             <div className="mt-1 min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin]">
-                              <p className="text-[10px] font-medium leading-snug text-[#fde68a]">
+                              <p className="text-[10px] font-medium leading-snug text-status-warning">
                                 {p.suggestion}
                               </p>
                             </div>
@@ -825,10 +825,10 @@ export default function AdminDashboard() {
 
           {pharmacyData ? (
             <div className="mt-2 flex min-h-0 flex-1 gap-3 overflow-visible">
-              <div className="min-w-0 flex-[1.05] shrink-0 overflow-visible border-r border-[#1e3a5f] pr-3">
+              <div className="min-w-0 flex-[1.05] shrink-0 overflow-visible border-r border-base-glow pr-3">
                 <div className="grid grid-cols-2 gap-1.5">
-                  <div className="flex min-h-[3.25rem] flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5">
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                  <div className="flex min-h-[3.25rem] flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2 py-1.5">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Total medicines
                     </p>
                     <p className="text-base font-bold leading-none text-white">
@@ -836,14 +836,14 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <div
-                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2 py-1.5"
                     onMouseEnter={() => setPharmacyStatHover("oos")}
                     onMouseLeave={() => setPharmacyStatHover(null)}
                   >
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Out of stock
                     </p>
-                    <p className="text-base font-bold leading-none text-[#ef4444]">
+                    <p className="text-base font-bold leading-none text-status-danger">
                       {pharmacyData.out_of_stock_count}{" "}
                       <span className="text-xs" aria-hidden>
                         🔴
@@ -856,14 +856,14 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div
-                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2 py-1.5"
                     onMouseEnter={() => setPharmacyStatHover("low")}
                     onMouseLeave={() => setPharmacyStatHover(null)}
                   >
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Low stock
                     </p>
-                    <p className="text-base font-bold leading-none text-[#f97316]">
+                    <p className="text-base font-bold leading-none text-status-warning">
                       {pharmacyData.low_stock_count}{" "}
                       <span className="text-xs" aria-hidden>
                         🟠
@@ -876,14 +876,14 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div
-                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    className="relative flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2 py-1.5"
                     onMouseEnter={() => setPharmacyStatHover("soon")}
                     onMouseLeave={() => setPharmacyStatHover(null)}
                   >
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Expiring soon
                     </p>
-                    <p className="text-base font-bold leading-none text-[#f59e0b]">
+                    <p className="text-base font-bold leading-none text-status-warning">
                       {pharmacyData.expiring_soon_count}{" "}
                       <span className="text-xs" aria-hidden>
                         🟡
@@ -896,14 +896,14 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div
-                    className="relative col-span-2 flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-[#1e3a5f]/90 bg-[#0a1524]/95 px-2 py-1.5"
+                    className="relative col-span-2 flex min-h-[3.25rem] cursor-default flex-col justify-between rounded-md border border-base-glow/90 bg-base-card/95 px-2 py-1.5"
                     onMouseEnter={() => setPharmacyStatHover("expired")}
                     onMouseLeave={() => setPharmacyStatHover(null)}
                   >
-                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-[#94a3b8]">
+                    <p className="text-[9px] font-medium uppercase leading-tight tracking-wide text-text-secondary">
                       Expired
                     </p>
-                    <p className="text-base font-bold leading-none text-[#ef4444]">
+                    <p className="text-base font-bold leading-none text-status-danger">
                       {pharmacyData.expired_count}{" "}
                       <span className="text-xs" aria-hidden>
                         🔴
@@ -920,7 +920,7 @@ export default function AdminDashboard() {
 
               <div className="flex min-h-0 min-w-0 flex-[0.95] flex-col space-y-1 overflow-y-auto pl-2 pr-0.5 [scrollbar-width:thin]">
                 <div className="shrink-0">
-                  <p className="text-[9px] font-semibold uppercase leading-none text-[#f97316]">
+                  <p className="text-[9px] font-semibold uppercase leading-none text-status-warning">
                     ⚠️ Stockout prediction
                   </p>
                   <p className="mt-0.5 text-[10px] italic leading-tight text-white">
@@ -928,7 +928,7 @@ export default function AdminDashboard() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-semibold uppercase text-[#00b4d8]">
+                  <p className="text-[9px] font-semibold uppercase text-status-info">
                     🛒 Reorder now
                   </p>
                   {pharmacyData.medicines_to_reorder.length > 0 ? (
@@ -936,18 +936,18 @@ export default function AdminDashboard() {
                       {pharmacyData.medicines_to_reorder.map((m, i) => (
                         <span
                           key={`${m}-${i}`}
-                          className="mb-1 mr-1 inline-block rounded-full bg-[#1e3a5f] px-2 py-0.5 text-[9px] text-white"
+                          className="mb-1 mr-1 inline-block rounded-full bg-base-glow px-2 py-0.5 text-[9px] text-white"
                         >
                           {m}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-[#10b981]">✅ All stocked</p>
+                    <p className="text-[10px] text-status-success">✅ All stocked</p>
                   )}
                 </div>
                 <div>
-                  <p className="text-[9px] font-semibold uppercase text-[#f59e0b]">
+                  <p className="text-[9px] font-semibold uppercase text-status-warning">
                     📅 Expiry warning
                   </p>
                   <p className="text-[10px] italic leading-snug text-white">
@@ -955,10 +955,10 @@ export default function AdminDashboard() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-semibold uppercase text-[#10b981]">
+                  <p className="text-[9px] font-semibold uppercase text-status-success">
                     💡 Suggestion
                   </p>
-                  <p className="text-[10px] font-medium italic leading-snug text-[#10b981]">
+                  <p className="text-[10px] font-medium italic leading-snug text-status-success">
                     {pharmacyData.suggestion}
                   </p>
                 </div>

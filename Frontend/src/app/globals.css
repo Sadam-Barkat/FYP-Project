@@ -12,37 +12,37 @@
 }
 
 :root {
-  --background: #f4f7fa;
-  --foreground: #333333;
+  --background: #0b0f1a;
+  --foreground: #e2e8f5;
 
   /* Brand colors (used for custom CSS, Tailwind utilities come from tailwind.config.js) */
-  --color-primary: #0066cc;
-  --color-primary-light: #e6f2ff;
-  --color-success: #22c55e;
+  --color-primary: #3b82f6;
+  --color-primary-light: rgba(59, 130, 246, 0.15);
+  --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --color-purple: #8b5cf6;
   --color-teal: #14b8a6;
   --color-yellow: #facc15;
 
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f4f7fa;
-  --color-neutral-200: #e5e7eb;
-  --color-neutral-500: #6b7280;
-  --color-neutral-800: #1f2937;
-  --color-neutral-900: #111827;
+  --color-neutral-50: #070b14;
+  --color-neutral-100: #0b0f1a;
+  --color-neutral-200: #0d1424;
+  --color-neutral-500: #7a90b0;
+  --color-neutral-800: #e2e8f5;
+  --color-neutral-900: #ffffff;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
+  --background: #0b0f1a;
+  --foreground: #e2e8f5;
   
-  --color-neutral-50: #0f172a;
-  --color-neutral-100: #1e293b;
-  --color-neutral-200: #334155;
-  --color-neutral-500: #94a3b8;
-  --color-neutral-800: #f1f5f9;
-  --color-neutral-900: #f8fafc;
+  --color-neutral-50: #070b14;
+  --color-neutral-100: #0b0f1a;
+  --color-neutral-200: #0d1424;
+  --color-neutral-500: #7a90b0;
+  --color-neutral-800: #e2e8f5;
+  --color-neutral-900: #ffffff;
 }
 
 body {
@@ -64,8 +64,8 @@ body.pdf-export-mode [data-hide-in-pdf] {
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a0c10; }
-::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 999px; }
+::-webkit-scrollbar-track { background: #070b14; }
+::-webkit-scrollbar-thumb { background: #1a2744; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
-* { scrollbar-width: thin; scrollbar-color: #1e2d40 #0a0c10; }
+* { scrollbar-width: thin; scrollbar-color: #1a2744 #070b14; }
 

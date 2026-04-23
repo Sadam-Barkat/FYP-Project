@@ -247,13 +247,13 @@ export default function LaboratoryEntryPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
           />
         </div>
       </div>
 
       {/* Step 1: Select patient */}
-      <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] p-6 hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200">
+      <div className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md p-6 hover:bg-base-hover hover:-translate-y-1 transition-all duration-200">
         <h3 className="text-text-primary font-semibold text-base mb-5 flex items-center gap-2">
           <User className="text-text-secondary" size={20} />
           Step 1 — Select patient
@@ -303,7 +303,7 @@ export default function LaboratoryEntryPage() {
               }}
               disabled={loadingPatients}
               placeholder={loadingPatients ? "Loading patients…" : "Search patient by name or ID..."}
-              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 w-full pr-20 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70"
+              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 w-full pr-20 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70"
               aria-expanded={patientDropdownOpen}
               aria-autocomplete="list"
               role="combobox"
@@ -347,7 +347,7 @@ export default function LaboratoryEntryPage() {
                       onMouseEnter={() => setHighlightedPatientIndex(idx)}
                       onClick={() => selectPatient(p)}
                       className={`w-full py-3 px-4 text-left text-sm hover:bg-base-hover transition-colors duration-150 ${
-                        idx === highlightedPatientIndex ? "bg-brand-primary/10" : ""
+                        idx === highlightedPatientIndex ? "bg-brand-blue/10" : ""
                       } ${selectedPatientId === String(p.id) ? "text-text-primary font-medium" : "text-text-secondary"}`}
                       role="option"
                       aria-selected={selectedPatientId === String(p.id)}
@@ -411,7 +411,7 @@ export default function LaboratoryEntryPage() {
               }
             />
             <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-brand-primary"
+              borderLeftClass="border-l-4 border-l-brand-blue"
               left={
                 <div>
                   <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
@@ -456,7 +456,7 @@ export default function LaboratoryEntryPage() {
                       value={categories.length === 0 ? "" : testCategoryId}
                       onChange={(e) => setTestCategoryId(Number(e.target.value))}
                       disabled={loadingCategories || categories.length === 0}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70 appearance-none"
                     >
                       <option value="">{loadingCategories ? "Loading…" : "No categories"}</option>
                       {categories.map((c) => (
@@ -474,7 +474,7 @@ export default function LaboratoryEntryPage() {
                       type="text"
                       value={testName}
                       onChange={(e) => setTestName(e.target.value)}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                       placeholder="e.g. CBC, LFT, RFT"
                     />
                   </div>
@@ -490,7 +490,7 @@ export default function LaboratoryEntryPage() {
                       onChange={(e) =>
                         setStatus(e.target.value as LabStatus)
                       }
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 appearance-none"
                     >
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
@@ -504,7 +504,7 @@ export default function LaboratoryEntryPage() {
                       type="text"
                       value={resultSummary}
                       onChange={(e) => setResultSummary(e.target.value)}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                       placeholder="e.g. Normal, Mildly elevated, Critical"
                     />
                   </div>
@@ -513,7 +513,7 @@ export default function LaboratoryEntryPage() {
                 <button
                   type="submit"
                   disabled={submitting || categories.length === 0}
-                  className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                  className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center"
                 >
                   {submitting ? "Saving..." : "Add daily test"}
                 </button>

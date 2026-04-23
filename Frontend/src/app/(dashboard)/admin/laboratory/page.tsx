@@ -91,7 +91,7 @@ export default function LaboratoryPage() {
     <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
       <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-6 gap-4">
         <div className="text-center md:text-left">
-          <h2 className="text-3xl font-semibold text-[#0066cc]">
+          <h2 className="text-3xl font-semibold text-brand-blue">
             Laboratory Overview
           </h2>
           {isLoading && (
@@ -117,7 +117,7 @@ export default function LaboratoryPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
           />
         </div>
       </div>
@@ -125,10 +125,10 @@ export default function LaboratoryPage() {
       {/* Top Row Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#f97316]"
-          icon={<Clock className="absolute top-4 left-4 text-[#f97316]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-warning"
+          icon={<Clock className="absolute top-4 left-4 text-status-warning" size={24} />}
           label="Pending Tests"
-          value={<h3 className="text-4xl font-bold text-[#f97316] mt-3">{pendingTests}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-warning mt-3">{pendingTests}</h3>}
           footnote={
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 animate-pulse">
               Processing in lab...
@@ -146,10 +146,10 @@ export default function LaboratoryPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#22c55e]"
-          icon={<CheckCircle className="absolute top-4 left-4 text-[#22c55e]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-success"
+          icon={<CheckCircle className="absolute top-4 left-4 text-status-success" size={24} />}
           label="Completed Today"
-          value={<h3 className="text-4xl font-bold text-[#22c55e] mt-3">{completedToday}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-success mt-3">{completedToday}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Results delivered</p>}
           tooltipTitle="Completed definition"
           tooltipContent={
@@ -163,10 +163,10 @@ export default function LaboratoryPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#3b82f6]"
-          icon={<TestTube2 className="absolute top-4 left-4 text-[#3b82f6]" size={24} />}
+          borderLeftClass="border-l-4 border-l-brand-blue"
+          icon={<TestTube2 className="absolute top-4 left-4 text-brand-blue" size={24} />}
           label="Active Technicians"
-          value={<h3 className="text-4xl font-bold text-[#3b82f6] mt-3">{activeTechnicians}</h3>}
+          value={<h3 className="text-4xl font-bold text-brand-blue mt-3">{activeTechnicians}</h3>}
           footnote={<p className="text-xs text-gray-500 dark:text-gray-400 mt-4">On duty currently</p>}
           tooltipTitle="Staffing"
           tooltipContent={
@@ -180,10 +180,10 @@ export default function LaboratoryPage() {
         />
 
         <MetricKpiCard
-          borderLeftClass="border-l-4 border-l-[#ef4444]"
-          icon={<AlertTriangle className="absolute top-4 left-4 text-[#ef4444]" size={24} />}
+          borderLeftClass="border-l-4 border-l-status-danger"
+          icon={<AlertTriangle className="absolute top-4 left-4 text-status-danger" size={24} />}
           label="Critical Results"
-          value={<h3 className="text-4xl font-bold text-[#ef4444] mt-3">{criticalResults}</h3>}
+          value={<h3 className="text-4xl font-bold text-status-danger mt-3">{criticalResults}</h3>}
           footnote={
             <p className="text-xs text-gray-500 mt-4 text-red-500 font-medium">
               Require immediate doctor review

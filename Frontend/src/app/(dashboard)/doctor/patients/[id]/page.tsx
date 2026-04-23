@@ -35,11 +35,11 @@ type PatientStatus = "Normal" | "Critical" | "Emergency";
 function getStatusClasses(status: PatientStatus) {
   switch (status) {
     case "Normal":
-      return "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20";
+      return "bg-status-success/10 text-status-success border-status-success/20";
     case "Critical":
-      return "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20";
+      return "bg-status-warning/10 text-status-warning border-status-warning/20";
     case "Emergency":
-      return "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20 animate-pulse";
+      return "bg-status-danger/10 text-status-danger border-status-danger/20 animate-pulse";
     default:
       return "bg-gray-100 text-gray-700 border-gray-200";
   }
@@ -167,7 +167,7 @@ function MessageModal({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+            className="px-4 py-2 bg-btn-primary text-white text-sm font-medium rounded-lg shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
           >
             OK
           </button>
@@ -336,7 +336,7 @@ export default function PatientDetailPage() {
           <p className="text-gray-600 dark:text-gray-300">{error || "Patient not found."}</p>
           <button
             onClick={() => router.push("/doctor")}
-            className="mt-4 px-4 py-2 bg-[#0066cc] text-white rounded-lg hover:bg-[#0052a3]"
+            className="mt-4 px-4 py-2 bg-btn-primary text-white rounded-lg shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
           >
             Back to My Patients
           </button>
@@ -392,7 +392,7 @@ export default function PatientDetailPage() {
             type="button"
             onClick={handleConsultationComplete}
             disabled={consultRecording}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#0066cc] bg-white px-4 py-2.5 text-sm font-medium text-[#0066cc] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:border-blue-400 dark:bg-gray-800 dark:text-blue-300 dark:hover:bg-gray-700 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-brand-blue bg-white px-4 py-2.5 text-sm font-medium text-brand-blue transition-colors hover:bg-brand-blue/10 disabled:opacity-60 dark:border-brand-blue dark:bg-gray-800 dark:text-brand-blue dark:hover:bg-gray-700 sm:w-auto"
             title="Care event only — no charges. Finance adds the consultation fee."
           >
             {consultRecording ? <Loader2 size={16} className="animate-spin" /> : null}

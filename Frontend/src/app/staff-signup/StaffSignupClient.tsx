@@ -130,9 +130,9 @@ export default function StaffSignupClient() {
   };
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[#f4f7fa] px-4 py-8">
+    <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-base-surface px-4 py-8">
       <div className="w-full max-w-xl rounded-2xl border border-gray-100 bg-white p-6 shadow-md sm:p-8">
-        <h1 className="text-2xl font-semibold text-[#0066cc] mb-2 text-center">
+        <h1 className="text-2xl font-semibold text-brand-blue mb-2 text-center">
           Staff Signup
         </h1>
         <p className="text-sm text-gray-600 mb-6 text-center">
@@ -183,7 +183,7 @@ export default function StaffSignupClient() {
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -194,7 +194,7 @@ export default function StaffSignupClient() {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
             </div>
@@ -208,7 +208,7 @@ export default function StaffSignupClient() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -221,7 +221,7 @@ export default function StaffSignupClient() {
                   max={120}
                   value={age}
                   onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function StaffSignupClient() {
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
@@ -249,7 +249,7 @@ export default function StaffSignupClient() {
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 >
                   <option value="">Select</option>
                   {DEPARTMENTS.map((d) => (
@@ -270,7 +270,7 @@ export default function StaffSignupClient() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
               <div>
@@ -281,7 +281,7 @@ export default function StaffSignupClient() {
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6]"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"
                 />
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function StaffSignupClient() {
             <button
               type="submit"
               disabled={submitting || loading}
-              className="w-full mt-2 bg-[#0066cc] text-white py-2 rounded-lg hover:bg-[#0052a3] disabled:opacity-60"
+              className="w-full mt-2 bg-btn-primary text-white py-2 rounded-lg shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-60"
             >
               {submitting ? "Submitting..." : "Complete Signup"}
             </button>
@@ -302,7 +302,7 @@ export default function StaffSignupClient() {
             <button
               type="button"
               onClick={goToLogin}
-              className="px-4 py-2 bg-[#0066cc] text-white rounded-lg hover:bg-[#0052a3]"
+              className="px-4 py-2 bg-btn-primary text-white rounded-lg shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
             >
               Go to Login
             </button>

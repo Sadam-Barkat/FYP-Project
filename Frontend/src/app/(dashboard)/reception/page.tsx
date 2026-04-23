@@ -52,7 +52,7 @@ function MessageModal({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+            className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
             OK
           </button>
@@ -220,7 +220,7 @@ export default function ReceptionPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                   placeholder="e.g. Ali Ahmed"
                 />
               </div>
@@ -233,7 +233,7 @@ export default function ReceptionPage() {
                   value={age}
                   onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
                   required
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                   placeholder="e.g. 35"
                 />
               </div>
@@ -243,7 +243,7 @@ export default function ReceptionPage() {
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
                   required
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 appearance-none"
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
@@ -257,7 +257,7 @@ export default function ReceptionPage() {
                   type="tel"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
                   placeholder="e.g. +92 300 1234567"
                 />
               </div>
@@ -274,7 +274,7 @@ export default function ReceptionPage() {
                   type="button"
                   onClick={() => setAdmitNow((v) => !v)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    admitNow ? "bg-brand-primary" : "bg-base-muted"
+                    admitNow ? "bg-brand-blue" : "bg-base-muted"
                   }`}
                 >
                   <span
@@ -290,7 +290,7 @@ export default function ReceptionPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   rows={2}
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 resize-none min-h-[100px]"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 resize-none min-h-[100px]"
                   placeholder="e.g. Lahore, Punjab"
                 />
               </div>
@@ -299,7 +299,7 @@ export default function ReceptionPage() {
                 <select
                   value={bloodGroup}
                   onChange={(e) => setBloodGroup(e.target.value)}
-                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 appearance-none"
                 >
                   <option value="">Select (optional)</option>
                   {BLOOD_GROUPS.map((bg) => (
@@ -323,7 +323,7 @@ export default function ReceptionPage() {
                 onChange={(e) => setDoctorId(e.target.value)}
                 required
                 disabled={loadingDoctors}
-                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70 appearance-none"
               >
                 <option value="">{loadingDoctors ? "Loading…" : "Select a doctor"}</option>
                 {doctors.map((d) => (
@@ -346,7 +346,7 @@ export default function ReceptionPage() {
                 onChange={(e) => setNurseId(e.target.value)}
                 required
                 disabled={loadingNurses}
-                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70 appearance-none"
               >
                 <option value="">{loadingNurses ? "Loading…" : "Select a nurse"}</option>
                 {nurses.map((n) => (
@@ -360,7 +360,7 @@ export default function ReceptionPage() {
             <button
               type="submit"
               disabled={submitting || loadingDoctors || loadingNurses}
-              className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
               <UserPlus size={18} />
               {submitting ? "Adding…" : "Add patient"}
