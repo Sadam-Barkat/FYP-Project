@@ -31,13 +31,13 @@ function getSeverityScore(status: PatientStatus) {
 function getStatusClasses(status: PatientStatus) {
   switch (status) {
     case "Normal":
-      return "bg-[#10b981]/10 text-[#10b981]";
+      return "bg-status-success/10 text-status-success text-xs font-medium px-2.5 py-1 rounded-full";
     case "Critical":
-      return "bg-[#f59e0b]/10 text-[#f59e0b]";
+      return "bg-status-danger/10 text-status-danger text-xs font-medium px-2.5 py-1 rounded-full";
     case "Emergency":
-      return "bg-[#ef4444]/10 text-[#ef4444] animate-pulse";
+      return "bg-status-danger text-white text-xs font-semibold px-2.5 py-1 rounded-full animate-pulse";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-base-muted text-text-primary text-xs font-medium px-2.5 py-1 rounded-full";
   }
 }
 
@@ -129,26 +129,26 @@ export default function DoctorDashboardPage() {
   );
 
   return (
-    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div id="dashboard-content" className="bg-base-surface min-h-screen px-8 py-8 space-y-8">
+      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
+          <h2 className="text-text-primary font-semibold text-xl tracking-tight">
             My Patients Overview
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-text-primary text-sm leading-relaxed mt-1">
             Prioritized view of your assigned patients. Updates in real time when nurses record vitals.
           </p>
           {userDisplayName && (
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+            <p className="text-text-secondary text-sm mt-2">
               Logged in as{" "}
-              <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
+              <span className="text-text-primary font-medium">{userDisplayName}</span>
             </p>
           )}
         </div>
         <div className="flex w-full flex-col gap-2 xs:flex-row xs:flex-wrap sm:w-auto sm:items-center sm:gap-3">
           <Link
             href="/doctor/analytics"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#e6f2ff] px-4 py-2.5 text-sm font-medium text-[#0066cc] transition-colors hover:bg-[#d0e6ff] dark:bg-[#1e3a5f] dark:text-[#60a5fa]"
+            className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 inline-flex items-center justify-center gap-2"
           >
             <Activity size={16} />
             View My Analytics
@@ -157,7 +157,7 @@ export default function DoctorDashboardPage() {
             type="button"
             onClick={handleManualRefresh}
             disabled={isRefreshing || loading}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCcw size={16} className={isRefreshing ? "animate-spin" : ""} />
             {isRefreshing ? "Refreshing" : "Refresh"}
@@ -166,28 +166,28 @@ export default function DoctorDashboardPage() {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-12 gap-2 text-gray-500">
+        <div className="flex items-center justify-center py-12 gap-2 text-text-muted">
           <Loader2 size={20} className="animate-spin" />
           Loading assigned patients...
         </div>
       )}
 
       {!loading && patients.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center text-gray-500 dark:text-gray-400">
+        <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] p-12 text-center text-text-muted">
           No patients assigned to you. The list updates when reception assigns new patients.
         </div>
       )}
 
       {hasEmergency && !loading && (
-        <div className="bg-[#fef2f2] dark:bg-red-900/20 border border-[#fecaca] dark:border-red-800 rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <div className="p-2 rounded-full bg-[#fee2e2] dark:bg-red-900/40 text-[#ef4444]">
+        <div className="bg-status-danger/10 border border-status-danger/30 text-status-danger rounded-xl px-5 py-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-status-danger/20 flex items-center justify-center">
             <AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-[#b91c1c] dark:text-red-300">
+            <p className="text-sm font-medium">
               Emergency patients detected
             </p>
-            <p className="text-xs text-[#7f1d1d] dark:text-red-200/80">
+            <p className="text-sm font-medium opacity-80">
               Patients marked as Emergency are at the top for immediate attention.
             </p>
           </div>
@@ -202,36 +202,36 @@ export default function DoctorDashboardPage() {
               <Link
                 key={patient.id}
                 href={`/doctor/patients/${patient.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-[#1e40af]/30 dark:hover:border-[#60a5fa]/30 transition-all flex flex-col justify-between min-h-[160px]"
+                className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 flex flex-col justify-between min-h-[160px] group"
               >
                 <div className="p-5 flex-1 flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                      <p className="text-text-muted text-xs mt-0.5 font-mono">
                         #{patient.id}
                       </p>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mt-1">
+                      <h3 className="text-text-primary font-semibold text-sm mt-1">
                         {patient.name}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-text-muted text-xs mt-0.5">
                         {patient.age} yrs
                       </p>
                     </div>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusClasses(status)}`}
+                      className={getStatusClasses(status)}
                     >
                       {status}
                     </span>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg px-3 py-2 mt-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <div className="bg-base-muted rounded-xl p-4 mt-1">
+                    <p className="text-text-primary text-sm leading-relaxed">
                       Vitals updated by nurse. View details for full history and discharge.
                     </p>
                   </div>
                 </div>
-                <div className="px-5 py-3 border-t border-gray-50 dark:border-gray-700 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-gray-900/30 rounded-b-xl">
+                <div className="px-5 py-3 border-t border-base-border flex items-center justify-between text-text-muted text-xs bg-base-muted/30 rounded-b-2xl">
                   <span>Assigned patient</span>
-                  <span className="group-hover:text-[#1e40af] dark:group-hover:text-[#60a5fa] font-medium transition-colors">
+                  <span className="group-hover:text-brand-primary font-medium transition-colors duration-150">
                     View details →
                   </span>
                 </div>

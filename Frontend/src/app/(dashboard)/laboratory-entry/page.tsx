@@ -227,19 +227,19 @@ export default function LaboratoryEntryPage() {
   return (
     <div
       id="dashboard-content"
-      className="dashboard-page-shell max-w-6xl py-4 sm:py-6"
+      className="bg-base-surface min-h-screen px-8 py-8 space-y-8"
     >
-      <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 mb-4">
+      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4 flex flex-col md:flex-row items-center md:items-end justify-between gap-4">
         <div className="text-center md:text-left">
-          <h2 className="text-3xl font-semibold text-[#0066cc]">
+          <h2 className="text-text-primary font-semibold text-xl tracking-tight">
             Laboratory Data Entry
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-text-primary text-sm leading-relaxed mt-1">
             Select a patient first, then add daily lab tests for that patient.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label htmlFor="lab-entry-date" className="text-sm text-gray-600">
+          <label htmlFor="lab-entry-date" className="text-text-secondary text-sm font-medium">
             Working date
           </label>
           <input
@@ -247,19 +247,19 @@ export default function LaboratoryEntryPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
           />
         </div>
       </div>
 
       {/* Step 1: Select patient */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <User className="text-[#0066cc]" size={20} />
+      <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] p-6 hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200">
+        <h3 className="text-text-primary font-semibold text-base mb-5 flex items-center gap-2">
+          <User className="text-text-secondary" size={20} />
           Step 1 — Select patient
         </h3>
         <div ref={patientDropdownRef} className="relative w-full max-w-md">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="text-text-secondary text-sm font-medium mb-1.5 block">
             Patient
           </label>
           <div className="relative">
@@ -303,7 +303,7 @@ export default function LaboratoryEntryPage() {
               }}
               disabled={loadingPatients}
               placeholder={loadingPatients ? "Loading patients…" : "Search patient by name or ID..."}
-              className="w-full border border-gray-300 rounded-md pl-3 pr-20 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
+              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 w-full pr-20 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70"
               aria-expanded={patientDropdownOpen}
               aria-autocomplete="list"
               role="combobox"
@@ -312,7 +312,7 @@ export default function LaboratoryEntryPage() {
               <button
                 type="button"
                 onClick={() => selectPatient(null)}
-                className="absolute right-10 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                className="absolute right-10 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-text-muted hover:text-text-primary hover:bg-base-hover transition-colors duration-150"
                 title="Clear selection"
                 aria-label="Clear selection"
               >
@@ -322,7 +322,7 @@ export default function LaboratoryEntryPage() {
             <button
               type="button"
               onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 hover:bg-gray-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-text-secondary hover:bg-base-hover transition-colors duration-150"
               aria-label={patientDropdownOpen ? "Close list" : "Open list"}
               disabled={loadingPatients}
             >
@@ -332,11 +332,11 @@ export default function LaboratoryEntryPage() {
 
           {patientDropdownOpen && !loadingPatients && (
             <ul
-              className="absolute left-0 right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto"
+              className="absolute left-0 right-0 top-full mt-2 z-20 bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] max-h-64 overflow-y-auto"
               role="listbox"
             >
               {filteredPatients.length === 0 ? (
-                <li className="px-3 py-2 text-sm text-gray-500">
+                <li className="py-3 px-4 text-text-muted text-sm">
                   No patients match your search.
                 </li>
               ) : (
@@ -346,9 +346,9 @@ export default function LaboratoryEntryPage() {
                       type="button"
                       onMouseEnter={() => setHighlightedPatientIndex(idx)}
                       onClick={() => selectPatient(p)}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
-                        idx === highlightedPatientIndex ? "bg-blue-50" : ""
-                      } ${selectedPatientId === String(p.id) ? "text-[#0066cc] font-medium" : "text-gray-800"}`}
+                      className={`w-full py-3 px-4 text-left text-sm hover:bg-base-hover transition-colors duration-150 ${
+                        idx === highlightedPatientIndex ? "bg-brand-primary/10" : ""
+                      } ${selectedPatientId === String(p.id) ? "text-text-primary font-medium" : "text-text-secondary"}`}
                       role="option"
                       aria-selected={selectedPatientId === String(p.id)}
                     >
@@ -362,7 +362,7 @@ export default function LaboratoryEntryPage() {
             </ul>
           )}
           {loadingPatients && (
-            <p className="text-sm text-gray-500 mt-1">Loading patients…</p>
+            <p className="text-text-muted text-sm mt-2">Loading patients…</p>
           )}
         </div>
       </div>
@@ -373,16 +373,16 @@ export default function LaboratoryEntryPage() {
           {/* Summary cards for selected patient's daily tests */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-[#f97316]"
+              borderLeftClass="border-l-4 border-l-status-warning"
               left={
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
                     Pending Tests
                   </p>
-                  <p className="text-3xl font-bold text-[#f97316] mt-1">{pendingCount}</p>
+                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">{pendingCount}</p>
                 </div>
               }
-              rightIcon={<Clock className="text-[#f97316]" size={26} />}
+              rightIcon={<Clock className="text-text-secondary" size={26} />}
               tooltipTitle="Pending tests"
               tooltipContent={
                 <>
@@ -392,16 +392,16 @@ export default function LaboratoryEntryPage() {
               }
             />
             <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-[#22c55e]"
+              borderLeftClass="border-l-4 border-l-status-success"
               left={
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
                     Completed Tests
                   </p>
-                  <p className="text-3xl font-bold text-[#22c55e] mt-1">{completedCount}</p>
+                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">{completedCount}</p>
                 </div>
               }
-              rightIcon={<CheckCircle className="text-[#22c55e]" size={26} />}
+              rightIcon={<CheckCircle className="text-text-secondary" size={26} />}
               tooltipTitle="Completed tests"
               tooltipContent={
                 <>
@@ -411,18 +411,18 @@ export default function LaboratoryEntryPage() {
               }
             />
             <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-[#3b82f6]"
+              borderLeftClass="border-l-4 border-l-brand-primary"
               left={
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
                     Total (this patient, day)
                   </p>
-                  <p className="text-3xl font-bold text-[#3b82f6] mt-1">
+                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">
                     {entriesForSelectedDate.length}
                   </p>
                 </div>
               }
-              rightIcon={<TestTube2 className="text-[#3b82f6]" size={26} />}
+              rightIcon={<TestTube2 className="text-text-secondary" size={26} />}
               tooltipTitle="Daily total"
               tooltipContent={
                 <>
@@ -434,14 +434,14 @@ export default function LaboratoryEntryPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
-              <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                <ClipboardList className="text-[#0066cc]" size={20} />
+            <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] space-y-5">
+              <h3 className="text-text-primary font-semibold text-base mb-1 flex items-center gap-2">
+                <ClipboardList className="text-text-secondary" size={20} />
                 Step 2 — Add daily test for {selectedPatient.name}
               </h3>
 
               {error && (
-                <p className="text-sm text-red-500 bg-red-50 border border-red-100 px-3 py-2 rounded-md">
+                <p className="bg-status-danger/10 border border-status-danger/30 text-status-danger rounded-xl px-5 py-4 text-sm font-medium">
                   {error}
                 </p>
               )}
@@ -449,14 +449,14 @@ export default function LaboratoryEntryPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
                       Test Category
                     </label>
                     <select
                       value={categories.length === 0 ? "" : testCategoryId}
                       onChange={(e) => setTestCategoryId(Number(e.target.value))}
                       disabled={loadingCategories || categories.length === 0}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6] disabled:opacity-70"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
                     >
                       <option value="">{loadingCategories ? "Loading…" : "No categories"}</option>
                       {categories.map((c) => (
@@ -467,14 +467,14 @@ export default function LaboratoryEntryPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
                       Test Name
                     </label>
                     <input
                       type="text"
                       value={testName}
                       onChange={(e) => setTestName(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                       placeholder="e.g. CBC, LFT, RFT"
                     />
                   </div>
@@ -482,7 +482,7 @@ export default function LaboratoryEntryPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
                       Status
                     </label>
                     <select
@@ -490,21 +490,21 @@ export default function LaboratoryEntryPage() {
                       onChange={(e) =>
                         setStatus(e.target.value as LabStatus)
                       }
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
                     >
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
                       Result Summary
                     </label>
                     <input
                       type="text"
                       value={resultSummary}
                       onChange={(e) => setResultSummary(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-[#3b82f6]"
+                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                       placeholder="e.g. Normal, Mildly elevated, Critical"
                     />
                   </div>
@@ -513,34 +513,35 @@ export default function LaboratoryEntryPage() {
                 <button
                   type="submit"
                   disabled={submitting || categories.length === 0}
-                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-md bg-[#0066cc] text-white text-sm font-medium hover:bg-[#0052a3] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center"
                 >
                   {submitting ? "Saving..." : "Add daily test"}
                 </button>
               </form>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-              <h3 className="font-semibold text-gray-800 mb-4">
+            <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden">
+              <h3 className="text-text-primary font-semibold text-base mb-5">
                 Daily tests — {selectedPatient.name} ({selectedDate})
               </h3>
               {loadingResults ? (
-                <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+                <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
                   Loading…
                 </div>
               ) : entriesForSelectedDate.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+                <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
                   No tests recorded for this patient on this date yet.
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-gray-500">
-                        <th className="py-2 pr-2 font-medium">Test</th>
-                        <th className="py-2 pr-2 font-medium">Status</th>
-                        <th className="py-2 pr-2 font-medium">Summary</th>
-                        <th className="py-2 font-medium text-right">Time</th>
+                  <div className="bg-base-card border border-base-border rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-base-muted">
+                      <tr>
+                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Test</th>
+                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Status</th>
+                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Summary</th>
+                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4 text-right">Time</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -553,33 +554,31 @@ export default function LaboratoryEntryPage() {
                         });
                         const statusColor =
                           entry.status === "completed"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-orange-100 text-orange-700";
+                            ? "bg-status-success/10 text-status-success text-xs font-medium px-2.5 py-1 rounded-full"
+                            : "bg-status-warning/10 text-status-warning text-xs font-medium px-2.5 py-1 rounded-full";
 
                         return (
                           <tr
                             key={entry.id}
-                            className="border-b border-gray-100 last:border-0"
+                            className="border-b border-base-border last:border-0 hover:bg-base-hover transition-colors duration-150"
                           >
-                            <td className="py-2 pr-2 text-gray-800">
-                              <span className="text-xs text-gray-400 block">
+                            <td className="text-text-primary text-sm py-3 px-4">
+                              <span className="text-text-muted text-xs block">
                                 {entry.test_category}
                               </span>
                               {entry.test_name}
                             </td>
-                            <td className="py-2 pr-2">
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}`}
-                              >
+                            <td className="text-text-primary text-sm py-3 px-4">
+                              <span className={statusColor}>
                                 {entry.status === "completed"
                                   ? "Completed"
                                   : "Pending"}
                               </span>
                             </td>
-                            <td className="py-2 pr-2 text-gray-700">
+                            <td className="text-text-primary text-sm py-3 px-4">
                               {entry.result_summary}
                             </td>
-                            <td className="py-2 text-right text-gray-500">
+                            <td className="text-text-primary text-sm py-3 px-4 text-right tabular-nums">
                               {timeLabel}
                             </td>
                           </tr>
@@ -587,6 +586,7 @@ export default function LaboratoryEntryPage() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -595,7 +595,7 @@ export default function LaboratoryEntryPage() {
       )}
 
       {!selectedPatient && (
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-text-muted text-sm text-center py-4">
           Select a patient above to add daily lab tests.
         </p>
       )}

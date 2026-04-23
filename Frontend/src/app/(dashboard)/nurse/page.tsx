@@ -41,27 +41,27 @@ function MessageModal({
       aria-labelledby="nurse-message-modal-title"
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md"
+        className="bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 p-4 border-b border-base-border">
           {isError ? (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-danger/15">
+              <AlertTriangle className="h-5 w-5 text-status-danger" />
             </div>
           ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-success/15">
+              <CheckCircle className="h-5 w-5 text-status-success" />
             </div>
           )}
-          <h3 id="nurse-message-modal-title" className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          <h3 id="nurse-message-modal-title" className="text-text-primary font-semibold text-base">
             {title}
           </h3>
         </div>
         <div className="p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+          <p className="text-text-primary text-sm leading-relaxed">{message}</p>
         </div>
-        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end p-4 border-t border-base-border">
           <button
             type="button"
             onClick={(e) => {
@@ -69,7 +69,7 @@ function MessageModal({
               e.preventDefault();
               onClose();
             }}
-            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
             OK
           </button>
@@ -356,24 +356,27 @@ export default function NurseDashboardPage() {
   };
 
   return (
-    <div id="dashboard-content" className="dashboard-page-shell max-w-4xl pb-8 transition-colors sm:pb-12">
-      <div>
-        <h2 className="text-2xl font-semibold text-[#1e40af] dark:text-[#60a5fa] sm:text-3xl">
+    <div id="dashboard-content" className="bg-base-surface min-h-screen px-8 py-8 space-y-8">
+      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4 flex items-start justify-between">
+        <div>
+        <h2 className="text-text-primary font-semibold text-xl tracking-tight">
           Record Patient Vitals
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-text-primary text-sm leading-relaxed mt-1">
           Select an assigned patient and enter latest vital signs. Updates appear on the doctor dashboard.
         </p>
         {userDisplayName && (
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
-            Logged in as <span className="text-[#0066cc] dark:text-[#60a5fa]">{userDisplayName}</span>
+          <p className="text-text-secondary text-sm mt-2">
+            Logged in as{" "}
+            <span className="text-text-primary font-medium">{userDisplayName}</span>
           </p>
         )}
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors">
-        <div className="border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50 sm:p-6">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+      <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] overflow-hidden">
+        <div className="border-b border-base-border bg-base-muted/30 p-4 sm:p-6">
+          <label className="text-text-secondary text-sm font-medium mb-1.5 block">
             Select Patient (assigned to you)
           </label>
           <select
@@ -383,7 +386,7 @@ export default function NurseDashboardPage() {
               setResult(null);
             }}
             disabled={loadingPatients}
-            className="w-full md:max-w-md pl-4 pr-14 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 transition-colors"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full md:max-w-md focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
           >
             <option value="">-- Choose a patient --</option>
             {loadingPatients ? (
@@ -399,17 +402,17 @@ export default function NurseDashboardPage() {
         </div>
 
         {selectedPatient && (
-          <div className="border-b border-gray-100 bg-white p-4 pt-3 dark:border-gray-800 dark:bg-gray-900 sm:p-6 sm:pt-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+          <div className="border-b border-base-border bg-base-card p-4 pt-3 sm:p-6 sm:pt-4">
+            <p className="text-text-secondary text-xs font-medium uppercase tracking-widest mb-3">
               Selected patient
             </p>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <div className="w-12 h-12 rounded-full bg-[#e6f2ff] dark:bg-[#1e3a8a] flex items-center justify-center text-[#0066cc] dark:text-[#60a5fa] shrink-0">
+            <div className="flex items-center gap-3 p-4 bg-base-muted rounded-xl border border-base-border">
+              <div className="w-12 h-12 rounded-full bg-brand-primary/15 flex items-center justify-center text-brand-primary shrink-0">
                 <User size={24} />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{selectedPatient.name}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedPatient.age} yrs</p>
+                <p className="text-text-primary font-semibold text-sm">{selectedPatient.name}</p>
+                <p className="text-text-muted text-xs mt-0.5">{selectedPatient.age} yrs</p>
               </div>
             </div>
           </div>
@@ -419,25 +422,27 @@ export default function NurseDashboardPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  <HeartPulse size={16} className="text-red-400" /> Heart Rate (bpm)
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">
+                  Heart Rate (bpm)
                 </label>
                 <input
                   type="number"
                   value={formData.heartRate}
                   onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.heartRate ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                    errors.heartRate ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                  }`}
                   placeholder="e.g. 75"
                 />
                 {errors.heartRate && (
-                  <p className="text-xs text-red-500 mt-1">{errors.heartRate}</p>
+                  <p className="text-status-danger text-xs mt-1">{errors.heartRate}</p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Activity size={16} className="text-blue-400" /> Blood Pressure (mmHg)
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">
+                  Blood Pressure (mmHg)
                 </label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
@@ -446,45 +451,51 @@ export default function NurseDashboardPage() {
                       value={formData.bpSys}
                       onChange={(e) => setFormData({ ...formData, bpSys: e.target.value })}
                       disabled={!selectedPatientId || isSubmitting}
-                      className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.bpSys ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                        errors.bpSys ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                      }`}
                       placeholder="Sys"
                     />
                   </div>
-                  <span className="text-gray-400 font-bold">/</span>
+                  <span className="text-text-muted font-bold">/</span>
                   <div className="flex-1">
                     <input
                       type="number"
                       value={formData.bpDia}
                       onChange={(e) => setFormData({ ...formData, bpDia: e.target.value })}
                       disabled={!selectedPatientId || isSubmitting}
-                      className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.bpDia ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                      className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                        errors.bpDia ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                      }`}
                       placeholder="Dia"
                     />
                   </div>
                 </div>
                 {(errors.bpSys || errors.bpDia) && (
-                  <p className="text-xs text-red-500 mt-1">{errors.bpSys || errors.bpDia}</p>
+                  <p className="text-status-danger text-xs mt-1">{errors.bpSys || errors.bpDia}</p>
                 )}
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  <Wind size={16} className="text-sky-400" /> SpO2 (%)
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">
+                  SpO2 (%)
                 </label>
                 <input
                   type="number"
                   value={formData.spo2}
                   onChange={(e) => setFormData({ ...formData, spo2: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.spo2 ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                    errors.spo2 ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                  }`}
                   placeholder="e.g. 98"
                 />
-                {errors.spo2 && <p className="text-xs text-red-500 mt-1">{errors.spo2}</p>}
+                {errors.spo2 && <p className="text-status-danger text-xs mt-1">{errors.spo2}</p>}
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  <Thermometer size={16} className="text-orange-400" /> Temperature (°C)
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">
+                  Temperature (°C)
                 </label>
                 <input
                   type="number"
@@ -492,45 +503,49 @@ export default function NurseDashboardPage() {
                   value={formData.temperature}
                   onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.temperature ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                    errors.temperature ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                  }`}
                   placeholder="e.g. 37.2"
                 />
                 {errors.temperature && (
-                  <p className="text-xs text-red-500 mt-1">{errors.temperature}</p>
+                  <p className="text-status-danger text-xs mt-1">{errors.temperature}</p>
                 )}
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  <Activity size={16} className="text-purple-400" /> Resp. Rate (bpm)
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">
+                  Resp. Rate (bpm)
                 </label>
                 <input
                   type="number"
                   value={formData.respRate}
                   onChange={(e) => setFormData({ ...formData, respRate: e.target.value })}
                   disabled={!selectedPatientId || isSubmitting}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-[#0066cc] transition-colors ${errors.respRate ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-white"}`}
+                  className={`bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 ${
+                    errors.respRate ? "border-status-danger/60 focus:border-status-danger focus:ring-status-danger/20" : ""
+                  }`}
                   placeholder="e.g. 16"
                 />
                 {errors.respRate && (
-                  <p className="text-xs text-red-500 mt-1">{errors.respRate}</p>
+                  <p className="text-status-danger text-xs mt-1">{errors.respRate}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 transition-colors dark:border-gray-800 xs:flex-row xs:items-center xs:justify-end">
+            <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-base-border">
               <button
                 type="button"
                 onClick={handleReset}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+                className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 disabled:opacity-50"
               >
                 Clear Form
               </button>
               <button
                 type="submit"
                 disabled={!selectedPatientId || isSubmitting}
-                className="px-6 py-2.5 bg-[#0066cc] hover:bg-[#0052a3] text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -545,17 +560,17 @@ export default function NurseDashboardPage() {
       </div>
 
       {selectedPatientId && (vitalsHistory.length > 0 || loadingVitals) && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+        <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.4)] p-6">
+          <h3 className="text-text-primary font-semibold text-base mb-5">
             Recent vitals (updates after you record)
           </h3>
           {loadingVitals ? (
-            <p className="text-sm text-gray-500">Loading…</p>
+            <p className="text-text-muted text-sm">Loading…</p>
           ) : (
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-text-primary text-sm leading-relaxed">
               {vitalsHistory.slice(0, 5).map((v) => (
                 <li key={v.id} className="flex flex-wrap gap-x-4 gap-y-1">
-                  <span className="text-gray-500 dark:text-gray-500">
+                  <span className="text-text-muted text-xs">
                     {new Date(v.recorded_at).toLocaleString()}
                   </span>
                   {v.heart_rate != null && <span>HR: {v.heart_rate}</span>}
@@ -568,7 +583,9 @@ export default function NurseDashboardPage() {
                   {v.temperature != null && <span>Temp: {v.temperature}°C</span>}
                   {v.respiratory_rate != null && <span>RR: {v.respiratory_rate}</span>}
                   {v.condition_level && (
-                    <span className="font-medium">{v.condition_level}</span>
+                    <span className="bg-brand-primary/10 text-brand-primary text-xs font-medium px-2.5 py-1 rounded-full">
+                      {v.condition_level}
+                    </span>
                   )}
                 </li>
               ))}
@@ -579,42 +596,42 @@ export default function NurseDashboardPage() {
 
       {result && (
         <div
-          className={`rounded-xl p-6 shadow-sm border transition-colors ${
+          className={`rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] border transition-colors ${
             result === "Normal"
-              ? "bg-[#f0fdf4] dark:bg-green-900/10 border-[#10b981] dark:border-green-800"
+              ? "bg-status-success/10 border-status-success/30"
               : result === "Critical"
-                ? "bg-[#fffbeb] dark:bg-orange-900/10 border-[#f59e0b] dark:border-orange-800"
-                : "bg-[#fef2f2] dark:bg-red-900/10 border-[#ef4444] dark:border-red-800 animate-pulse"
+                ? "bg-status-warning/10 border-status-warning/30"
+                : "bg-status-danger/10 border-status-danger/30 animate-pulse"
           }`}
         >
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div
               className={`w-20 h-20 rounded-full flex items-center justify-center shrink-0 ${
                 result === "Normal"
-                  ? "bg-[#10b981]/20 text-[#10b981]"
+                  ? "bg-status-success/15 text-status-success"
                   : result === "Critical"
-                    ? "bg-[#f59e0b]/20 text-[#f59e0b]"
-                    : "bg-[#ef4444]/20 text-[#ef4444]"
+                    ? "bg-status-warning/15 text-status-warning"
+                    : "bg-status-danger/15 text-status-danger"
               }`}
             >
               {result === "Normal" ? <CheckCircle size={40} /> : <AlertTriangle size={40} />}
             </div>
             <div className="text-center sm:text-left flex-1">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <h3 className="text-text-primary text-2xl font-bold mb-1">
                 Condition:{" "}
                 <span
                   className={
                     result === "Normal"
-                      ? "text-[#10b981]"
+                      ? "text-status-success"
                       : result === "Critical"
-                        ? "text-[#f59e0b]"
-                        : "text-[#ef4444]"
+                        ? "text-status-warning"
+                        : "text-status-danger"
                   }
                 >
                   {result}
                 </span>
               </h3>
-              <p className="text-gray-700 dark:text-gray-300">
+              <p className="text-text-primary text-sm leading-relaxed">
                 {result === "Normal" && "Patient vitals are stable. Routine monitoring continues."}
                 {result === "Critical" &&
                   "Vitals indicate deterioration. Doctor has been notified for review."}
@@ -624,7 +641,7 @@ export default function NurseDashboardPage() {
             </div>
             <button
               onClick={handleReset}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 whitespace-nowrap transition-colors"
+              className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 flex items-center gap-2 whitespace-nowrap"
             >
               <RefreshCw size={16} /> Next Patient
             </button>

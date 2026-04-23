@@ -28,31 +28,31 @@ function MessageModal({
       aria-labelledby="reception-message-modal-title"
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full max-w-md"
+        className="bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 p-4 border-b border-base-border">
           {isError ? (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-danger/15">
+              <AlertTriangle className="h-5 w-5 text-status-danger" />
             </div>
           ) : (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-success/15">
+              <CheckCircle className="h-5 w-5 text-status-success" />
             </div>
           )}
-          <h3 id="reception-message-modal-title" className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          <h3 id="reception-message-modal-title" className="text-text-primary font-semibold text-base">
             {title}
           </h3>
         </div>
         <div className="p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+          <p className="text-text-primary text-sm leading-relaxed">{message}</p>
         </div>
-        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end p-4 border-t border-base-border">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-            className="px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3]"
+            className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
           >
             OK
           </button>
@@ -196,36 +196,36 @@ export default function ReceptionPage() {
   };
 
   return (
-    <div id="dashboard-content" className="dashboard-page-shell max-w-3xl pb-8 transition-colors sm:pb-12">
-      <div>
-        <h2 className="text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl">Add New Patient</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+    <div id="dashboard-content" className="bg-base-surface min-h-screen px-8 py-8 space-y-8">
+      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4">
+        <h2 className="text-text-primary font-semibold text-xl tracking-tight">Add New Patient</h2>
+        <p className="text-text-primary text-sm leading-relaxed mt-1">
           Register a new patient and assign a doctor and nurse. All fields with * are required.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-        <form onSubmit={handleSubmit} className="space-y-6 p-4 sm:p-6">
+      <div className="bg-base-card border border-base-border rounded-2xl p-8 shadow-[0_2px_16px_rgba(0,0,0,0.4)]">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Patient details */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-lg font-medium text-gray-800 dark:text-gray-200">
-              <User size={20} className="text-[#0066cc] dark:text-[#60a5fa]" />
+            <div className="text-text-secondary text-xs font-medium uppercase tracking-widest mb-4 pt-4 border-t border-base-border flex items-center gap-2">
+              <User size={20} className="text-text-secondary" />
               Patient details
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full name *</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Full name *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                   placeholder="e.g. Ali Ahmed"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Age *</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Age *</label>
                 <input
                   type="number"
                   min={1}
@@ -233,17 +233,17 @@ export default function ReceptionPage() {
                   value={age}
                   onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                   placeholder="e.g. 35"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Gender *</label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
                 >
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
@@ -252,21 +252,21 @@ export default function ReceptionPage() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Contact</label>
                 <input
                   type="tel"
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                   placeholder="e.g. +92 300 1234567"
                 />
               </div>
               <div className="mt-2 flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-text-primary text-sm leading-relaxed">
                     Admit now & assign bed
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-text-muted text-xs">
                     When enabled, a bed is assigned immediately and Patients & Beds occupancy updates.
                   </p>
                 </div>
@@ -274,32 +274,32 @@ export default function ReceptionPage() {
                   type="button"
                   onClick={() => setAdmitNow((v) => !v)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    admitNow ? "bg-[#0066cc]" : "bg-gray-300 dark:bg-gray-600"
+                    admitNow ? "bg-brand-primary" : "bg-base-muted"
                   }`}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    className={`inline-block h-5 w-5 transform rounded-full bg-base-card shadow transition-transform ${
                       admitNow ? "translate-x-5" : "translate-x-1"
                     }`}
                   />
                 </button>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Address</label>
                 <textarea
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none resize-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 resize-none min-h-[100px]"
                   placeholder="e.g. Lahore, Punjab"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood group</label>
+                <label className="text-text-secondary text-sm font-medium mb-1.5 block">Blood group</label>
                 <select
                   value={bloodGroup}
                   onChange={(e) => setBloodGroup(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none"
+                  className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 appearance-none"
                 >
                   <option value="">Select (optional)</option>
                   {BLOOD_GROUPS.map((bg) => (
@@ -311,19 +311,19 @@ export default function ReceptionPage() {
           </div>
 
           {/* Assign Doctor */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div className="flex items-center gap-2 text-lg font-medium text-gray-800 dark:text-gray-200">
-              <Stethoscope size={20} className="text-[#0066cc] dark:text-[#60a5fa]" />
+          <div className="space-y-4 pt-4 border-t border-base-border">
+            <div className="text-text-secondary text-xs font-medium uppercase tracking-widest mb-4 pt-4 border-t border-base-border flex items-center gap-2">
+              <Stethoscope size={20} className="text-text-secondary" />
               Assign doctor *
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor</label>
+              <label className="text-text-secondary text-sm font-medium mb-1.5 block">Doctor</label>
               <select
                 value={doctorId}
                 onChange={(e) => setDoctorId(e.target.value)}
                 required
                 disabled={loadingDoctors}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none disabled:opacity-70"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
               >
                 <option value="">{loadingDoctors ? "Loading…" : "Select a doctor"}</option>
                 {doctors.map((d) => (
@@ -334,19 +334,19 @@ export default function ReceptionPage() {
           </div>
 
           {/* Assign Nurse */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-            <div className="flex items-center gap-2 text-lg font-medium text-gray-800 dark:text-gray-200">
-              <Heart size={20} className="text-[#0066cc] dark:text-[#60a5fa]" />
+          <div className="space-y-4 pt-4 border-t border-base-border">
+            <div className="text-text-secondary text-xs font-medium uppercase tracking-widest mb-4 pt-4 border-t border-base-border flex items-center gap-2">
+              <Heart size={20} className="text-text-secondary" />
               Assign nurse *
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nurse</label>
+              <label className="text-text-secondary text-sm font-medium mb-1.5 block">Nurse</label>
               <select
                 value={nurseId}
                 onChange={(e) => setNurseId(e.target.value)}
                 required
                 disabled={loadingNurses}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none disabled:opacity-70"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 disabled:opacity-70 appearance-none"
               >
                 <option value="">{loadingNurses ? "Loading…" : "Select a nurse"}</option>
                 {nurses.map((n) => (
@@ -356,11 +356,11 @@ export default function ReceptionPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-base-border">
             <button
               type="submit"
               disabled={submitting || loadingDoctors || loadingNurses}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0066cc] text-white font-medium rounded-lg hover:bg-[#0052a3] dark:bg-[#60a5fa] dark:hover:bg-[#3b82f6] focus:ring-2 focus:ring-[#0066cc] focus:ring-offset-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
               <UserPlus size={18} />
               {submitting ? "Adding…" : "Add patient"}
