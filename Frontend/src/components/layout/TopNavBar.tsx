@@ -38,45 +38,52 @@ export default function TopNavBar({
   }, [pathname, role]);
 
   return (
-    <header className="z-20 w-full border-b border-base-border/80 bg-base-card/70 shadow-nav backdrop-blur-md">
-      <div className="mx-auto flex h-[72px] max-w-[1600px] items-center gap-4 px-4 lg:px-6">
-        <Link href="/admin" className="flex shrink-0 items-center gap-3 group">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-btn-primary text-white shadow-glow-blue transition-transform duration-300 group-hover:scale-105">
-            <Activity size={20} strokeWidth={2.5} />
-            <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <header className="sticky top-0 z-50 w-full border-b border-dash-border bg-dash-surface">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-6">
+        <Link href="/admin" className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-kpi-blue to-kpi-purple flex items-center justify-center flex-shrink-0">
+            <Activity className="text-white w-5 h-5" />
           </div>
-          <div className="hidden sm:block">
-            <p className="bg-gradient-to-r from-brand-blue via-brand-indigo to-brand-purple bg-clip-text text-[15px] font-bold tracking-tight text-transparent">
+          <div className="flex flex-col">
+            <p className="text-kpi-blue font-bold text-lg leading-tight tracking-tight">
               Intelligent Dashboard
             </p>
-            <p className="text-[11px] font-medium text-text-secondary">Real-time Operations</p>
+            <div className="flex items-center gap-2">
+              <p className="text-tx-secondary text-xs">Real-time Operations</p>
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-kpi-green" />
+                </span>
+                <span className="text-kpi-green text-xs font-semibold">Live</span>
+              </div>
+            </div>
           </div>
         </Link>
 
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1.5 lg:flex ml-4" aria-label="Top navigation">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Top navigation">
           {items.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={[
-                  "relative rounded-xl px-3.5 py-2 text-[13px] font-semibold transition-all duration-300",
+                className={
                   active
-                    ? "bg-brand-blue/10 text-text-bright shadow-card"
-                    : "text-text-secondary hover:bg-base-hover hover:text-text-bright",
-                ].join(" ")}
+                    ? "relative px-5 py-2 text-tx-bright text-sm font-semibold"
+                    : "px-5 py-2 text-tx-secondary text-sm font-medium hover:text-tx-primary transition-colors duration-200"
+                }
               >
                 {item.label}
                 {active && (
-                  <span className="absolute bottom-0 left-1/2 h-[3px] w-4 -translate-x-1/2 rounded-t-full bg-brand-blue shadow-glow-blue" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-kpi-blue rounded-full" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-3">{rightSlot}</div>
+        <div className="flex shrink-0 items-center gap-3">{rightSlot}</div>
       </div>
     </header>
   );

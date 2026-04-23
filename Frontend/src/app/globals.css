@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -61,6 +63,14 @@ body {
 /* Hide UI-only elements when capturing for PDF export (no nav/sidebar) */
 body.pdf-export-mode [data-hide-in-pdf] {
   display: none !important;
+}
+
+/* Admin overview (scoped theme) */
+.admin-overview-theme {
+  background-color: #05070f;
+  color: #e8eeff;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
