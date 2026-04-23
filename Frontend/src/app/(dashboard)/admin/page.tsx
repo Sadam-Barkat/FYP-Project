@@ -297,6 +297,39 @@ function PatientStatModal({
   );
 }
 
+function PharmacyStatModal({
+  open,
+  onClose,
+  title,
+  unit,
+  accentHex,
+  pack,
+  helperText,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  unit: string;
+  accentHex: string;
+  pack: PredictionPack;
+  helperText: string;
+}) {
+  if (!open) return null;
+  return (
+    <PatientStatModal
+      open={open}
+      onClose={onClose}
+      title={title}
+      unit={unit}
+      accentHex={accentHex}
+      pack={{
+        ...pack,
+        explanation: helperText || pack.explanation,
+      }}
+    />
+  );
+}
+
 export type TotalPatientsBreakdown = {
   in_hospital?: number | null;
   /** Same census definition as in_hospital, for previous calendar day (trend baseline). */
@@ -740,6 +773,9 @@ export default function AdminDashboard() {
   const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
   const [pharmacyStatHover, setPharmacyStatHover] =
     useState<PharmacyStatHover>(null);
+  const [expandedPharmacyCard, setExpandedPharmacyCard] = useState<
+    "total" | "oos" | "low" | "soon" | "expired" | null
+  >(null);
 
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
@@ -1352,18 +1388,66 @@ export default function AdminDashboard() {
           {pharmacyData ? (
             <div className="h-full grid grid-cols-[1fr_280px] gap-0 divide-x divide-dash-border">
               <div className="grid grid-cols-2 gap-0 divide-x divide-y divide-dash-border">
-                <div className="flex flex-col p-4">
+                <div
+                  className="flex flex-col p-4 cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPharmacyCard("total")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("total");
+                  }}
+                >
                   <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
                     Total medicines
                   </p>
                   <p className="text-tx-bright font-black text-2xl tabular-nums leading-none">
                     {pharmacyData.total_medicines}
                   </p>
+                  {(() => {
+                    const pack = derivePrediction(pharmacyData.total_medicines, undefined, undefined);
+                    return (
+                      <>
+                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={pack.trend.map((v, i) => ({ x: i, v }))}
+                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="pharm-total-grad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.18} />
+                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#06b6d4"
+                                strokeWidth={1.6}
+                                fill="url(#pharm-total-grad)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="mt-1 text-[10px] text-tx-secondary">
+                          {miniInsightText("patients", pack)}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 ring-1 ring-kpi-red/20 cursor-default"
+                  className="relative flex flex-col p-4 ring-1 ring-kpi-red/20 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("oos")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPharmacyCard("oos")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("oos");
+                  }}
                 >
                   <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
                     Out of stock
@@ -1382,11 +1466,51 @@ export default function AdminDashboard() {
                     title="Out of stock"
                     names={pharmacyData.out_of_stock_medicines ?? []}
                   />
+                  {(() => {
+                    const pack = derivePrediction(pharmacyData.out_of_stock_count, undefined, undefined);
+                    return (
+                      <>
+                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={pack.trend.map((v, i) => ({ x: i, v }))}
+                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="pharm-oos-grad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.18} />
+                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#ef4444"
+                                strokeWidth={1.6}
+                                fill="url(#pharm-oos-grad)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="mt-1 text-[10px] text-tx-secondary">
+                          Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} out-of-stock in 3 days.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 cursor-default"
+                  className="relative flex flex-col p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("low")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPharmacyCard("low")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("low");
+                  }}
                 >
                   <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
                     Low stock
@@ -1402,11 +1526,51 @@ export default function AdminDashboard() {
                     title="Low stock"
                     names={pharmacyData.low_stock_medicines ?? []}
                   />
+                  {(() => {
+                    const pack = derivePrediction(pharmacyData.low_stock_count, undefined, undefined);
+                    return (
+                      <>
+                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={pack.trend.map((v, i) => ({ x: i, v }))}
+                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="pharm-low-grad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.18} />
+                                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#f97316"
+                                strokeWidth={1.6}
+                                fill="url(#pharm-low-grad)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="mt-1 text-[10px] text-tx-secondary">
+                          Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} low-stock in 3 days.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 cursor-default"
+                  className="relative flex flex-col p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("soon")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPharmacyCard("soon")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("soon");
+                  }}
                 >
                   <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
                     Expiring soon
@@ -1422,11 +1586,51 @@ export default function AdminDashboard() {
                     title="Expiring soon (30d)"
                     names={pharmacyData.expiring_soon_medicines ?? []}
                   />
+                  {(() => {
+                    const pack = derivePrediction(pharmacyData.expiring_soon_count, undefined, undefined);
+                    return (
+                      <>
+                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={pack.trend.map((v, i) => ({ x: i, v }))}
+                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="pharm-soon-grad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.18} />
+                                  <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#eab308"
+                                strokeWidth={1.6}
+                                fill="url(#pharm-soon-grad)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="mt-1 text-[10px] text-tx-secondary">
+                          Review expiry list; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div
-                  className="relative col-span-2 flex flex-col p-4 cursor-default"
+                  className="relative col-span-2 flex flex-col p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("expired")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpandedPharmacyCard("expired")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("expired");
+                  }}
                 >
                   <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
                     Expired
@@ -1442,6 +1646,40 @@ export default function AdminDashboard() {
                     title="Expired"
                     names={pharmacyData.expired_medicines ?? []}
                   />
+                  {(() => {
+                    const pack = derivePrediction(pharmacyData.expired_count, undefined, undefined);
+                    return (
+                      <>
+                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={pack.trend.map((v, i) => ({ x: i, v }))}
+                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="pharm-expired-grad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.18} />
+                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#ef4444"
+                                strokeWidth={1.6}
+                                fill="url(#pharm-expired-grad)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="mt-1 text-[10px] text-tx-secondary">
+                          Immediate action: quarantine/dispose; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1487,6 +1725,56 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          ) : null}
+
+          {pharmacyData ? (
+            <>
+              <PharmacyStatModal
+                open={expandedPharmacyCard === "total"}
+                onClose={() => setExpandedPharmacyCard(null)}
+                title="Total medicines"
+                unit=""
+                accentHex="#06b6d4"
+                pack={derivePrediction(pharmacyData.total_medicines, undefined, undefined)}
+                helperText="Tracks catalog size changes; increases usually reflect new supply entries, decreases may indicate retirements or formulary changes."
+              />
+              <PharmacyStatModal
+                open={expandedPharmacyCard === "oos"}
+                onClose={() => setExpandedPharmacyCard(null)}
+                title="Out of stock"
+                unit=""
+                accentHex="#ef4444"
+                pack={derivePrediction(pharmacyData.out_of_stock_count, undefined, undefined)}
+                helperText="Escalate immediate procurement for the highest-impact items. Prioritize by clinical criticality and expected consumption."
+              />
+              <PharmacyStatModal
+                open={expandedPharmacyCard === "low"}
+                onClose={() => setExpandedPharmacyCard(null)}
+                title="Low stock"
+                unit=""
+                accentHex="#f97316"
+                pack={derivePrediction(pharmacyData.low_stock_count, undefined, undefined)}
+                helperText="Convert low-stock items into reorder batches. Bundle vendors and align with delivery lead-times to prevent near-term stockouts."
+              />
+              <PharmacyStatModal
+                open={expandedPharmacyCard === "soon"}
+                onClose={() => setExpandedPharmacyCard(null)}
+                title="Expiring soon (30d)"
+                unit=""
+                accentHex="#eab308"
+                pack={derivePrediction(pharmacyData.expiring_soon_count, undefined, undefined)}
+                helperText="Use FEFO allocation and redistribute inventory to high-usage wards. Consider substitutions if demand is lower than expiring supply."
+              />
+              <PharmacyStatModal
+                open={expandedPharmacyCard === "expired"}
+                onClose={() => setExpandedPharmacyCard(null)}
+                title="Expired"
+                unit=""
+                accentHex="#ef4444"
+                pack={derivePrediction(pharmacyData.expired_count, undefined, undefined)}
+                helperText="Quarantine and document expired items; investigate recurring expiry categories and adjust min/max levels to reduce waste."
+              />
+            </>
           ) : null}
         </div>
       </div>
