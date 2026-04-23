@@ -469,21 +469,31 @@ export default function StaffAndPatientsPage() {
   const [activeTab, setActiveTab] = useState<"staff" | "patients">("staff");
 
   return (
-    <div id="dashboard-content" className="dashboard-page-shell max-w-7xl">
-      <div className="mb-4 text-center">
-        <h2 className="text-2xl font-semibold text-[#0066cc] dark:text-[#60a5fa] sm:text-3xl">User Management</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Invite staff (doctors, nurses, laboratorian, receptionist) and view or remove patients.</p>
+    <div
+      id="dashboard-content"
+      className="min-h-screen bg-base-surface px-8 py-8"
+    >
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-text-primary font-semibold text-xl tracking-tight">
+            User Management
+          </h2>
+          <p className="text-text-secondary text-sm mt-1">
+            Invite staff (doctors, nurses, laboratorian, receptionist) and view
+            or remove patients.
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="-mx-1 flex overflow-x-auto border-b border-gray-200 px-1 dark:border-gray-700 sm:mx-0 sm:px-0">
+      <div className="-mx-1 flex overflow-x-auto border-b border-base-border px-1 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => setActiveTab("staff")}
           className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "staff"
-              ? "border-[#0066cc] text-[#0066cc] dark:border-[#60a5fa] dark:text-[#60a5fa]"
-              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              ? "border-brand-primary text-text-primary"
+              : "border-transparent text-text-secondary hover:text-text-primary"
           }`}
         >
           Staff
@@ -493,8 +503,8 @@ export default function StaffAndPatientsPage() {
           onClick={() => setActiveTab("patients")}
           className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
             activeTab === "patients"
-              ? "border-[#0066cc] text-[#0066cc] dark:border-[#60a5fa] dark:text-[#60a5fa]"
-              : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              ? "border-brand-primary text-text-primary"
+              : "border-transparent text-text-secondary hover:text-text-primary"
           }`}
         >
           Patients
@@ -785,8 +795,8 @@ function StaffTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
           <input
             type="search"
             name="staff-search"
@@ -794,13 +804,13 @@ function StaffTab() {
             placeholder="Search by email, occupation, name, phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 w-72"
           />
         </div>
         <button
           type="button"
           onClick={() => setShowAddForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0066cc] text-white text-sm font-medium rounded-lg hover:bg-[#0052a3] shrink-0"
+          className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-2.5 shadow-[0_0_16px_rgba(59,130,246,0.3)] hover:shadow-[0_0_24px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center gap-2 shrink-0"
         >
           <UserPlus size={18} />
           Add staff
@@ -808,10 +818,10 @@ function StaffTab() {
       </div>
 
       {isLoading && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Loading staff...</p>
+        <p className="text-text-muted text-sm">Loading staff...</p>
       )}
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">Error: {error}</p>
+        <p className="text-status-danger text-sm">Error: {error}</p>
       )}
 
       {/* Add staff modal */}
@@ -939,18 +949,18 @@ function StaffTab() {
         }}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {paginatedStaff.map((s) => (
             <div
               key={s.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+              className="bg-base-card border border-base-border rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.35)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 group flex flex-col overflow-hidden"
             >
               {/* Profile header: role + name */}
               <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-2 flex-wrap">
                 <span className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium ${typeColor(s.type)}`}>
                   {s.type}
                 </span>
-                <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 truncate min-w-0">
+                <h3 className="text-text-primary font-semibold text-sm truncate min-w-0">
                   {s.name ?? "Pending signup"}
                 </h3>
               </div>
@@ -958,51 +968,53 @@ function StaffTab() {
               {/* Details: label left, value right */}
               <div className="px-5 pb-4 flex-1 min-w-0">
                 <div className="grid grid-cols-[minmax(0,6rem)_1fr] gap-y-1.5 gap-x-3 text-sm">
-                  <span className="text-gray-500 dark:text-gray-400 shrink-0">Email</span>
-                  <span className="text-gray-800 dark:text-gray-200 truncate" title={s.email}>{s.email}</span>
+                  <span className="text-text-secondary shrink-0">Email</span>
+                  <span className="text-text-primary truncate" title={s.email}>{s.email}</span>
 
                   {s.age != null && (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 shrink-0">Age</span>
-                      <span className="text-gray-800 dark:text-gray-200">{s.age}{s.gender ? ` · ${s.gender}` : ""}</span>
+                      <span className="text-text-secondary shrink-0">Age</span>
+                      <span className="text-text-primary">{s.age}{s.gender ? ` · ${s.gender}` : ""}</span>
                     </>
                   )}
                   {s.phone && (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 shrink-0">Phone</span>
-                      <span className="text-gray-800 dark:text-gray-200 truncate" title={s.phone}>{s.phone}</span>
+                      <span className="text-text-secondary shrink-0">Phone</span>
+                      <span className="text-text-primary truncate" title={s.phone}>{s.phone}</span>
                     </>
                   )}
                   {s.department && (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 shrink-0">Dept</span>
-                      <span className="text-gray-800 dark:text-gray-200">{s.department}</span>
+                      <span className="text-text-secondary shrink-0">Dept</span>
+                      <span className="text-text-primary">{s.department}</span>
                     </>
                   )}
                   {(s.type === "Doctor" || s.type === "Nurse") && (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 shrink-0">Patients</span>
-                      <span className="text-gray-800 dark:text-gray-200">{s.activePatients ?? 0} active</span>
+                      <span className="text-text-secondary shrink-0">Patients</span>
+                      <span className="text-text-primary">{s.activePatients ?? 0} active</span>
                     </>
                   )}
                   {s.address && (
                     <>
-                      <span className="text-gray-500 dark:text-gray-400 shrink-0 pt-0.5">Address</span>
-                      <span className="text-gray-800 dark:text-gray-200 line-clamp-2" title={s.address}>{s.address}</span>
+                      <span className="text-text-secondary shrink-0 pt-0.5">Address</span>
+                      <span className="text-text-primary line-clamp-2" title={s.address}>{s.address}</span>
                     </>
                   )}
                 </div>
                 {!s.name && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">Invitation sent; signup pending</p>
+                  <p className="bg-status-warning/10 text-status-warning text-xs font-medium px-2.5 py-1 rounded-full inline-flex mt-3">
+                    Invitation sent; signup pending
+                  </p>
                 )}
               </div>
 
               {/* Actions inside card */}
-              <div className="px-5 py-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+              <div className="px-5 py-3 bg-base-muted/30 border-t border-base-border flex gap-2">
                 <button
                   type="button"
                   onClick={() => startEdit(s)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-[#0066cc] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700"
+                  className="flex-1 bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-primary/50 hover:text-text-primary transition-all duration-200 inline-flex items-center justify-center gap-2"
                 >
                   <Pencil size={14} />
                   Edit
@@ -1010,7 +1022,7 @@ function StaffTab() {
                 <button
                   type="button"
                   onClick={() => handleDeleteClick(s.id, s.type, s.name ?? s.email)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="flex-1 text-status-danger hover:bg-status-danger/10 rounded-xl px-5 py-2.5 transition-colors duration-150 inline-flex items-center justify-center gap-2 border border-base-border"
                 >
                   <Trash2 size={14} />
                   Delete
@@ -1020,7 +1032,9 @@ function StaffTab() {
         ))}
       </div>
       {filtered.length === 0 && (
-        <p className="text-center py-12 text-gray-500 dark:text-gray-400">No staff match your search.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
+          <p className="text-sm">No staff match your search.</p>
+        </div>
       )}
 
       {filtered.length > 0 && totalPages > 1 && (
@@ -1177,44 +1191,44 @@ function PatientsTab() {
         confirmLabel="Delete"
       />
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted w-4 h-4" />
         <input
           type="text"
           placeholder="Search patients by name, ID, contact, address, gender..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+          className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 w-72"
         />
       </div>
 
       {isLoading && patients.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Loading patients...</p>
+        <p className="text-text-muted text-sm">Loading patients...</p>
       )}
       {error && (
-        <p className="text-sm text-red-500">{error}</p>
+        <p className="text-status-danger text-sm">{error}</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {paginatedPatients.map((p) => (
           <div
             key={p.id}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow"
+            className="bg-base-card border border-base-border rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.35)] hover:bg-base-hover hover:border-brand-primary/20 transition-all duration-200 group"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{p.id}</p>
-                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{p.name}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{p.gender} · {p.age} yrs</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate" title={p.contact}>{p.contact}</p>
+                <p className="text-text-muted text-xs font-mono">{p.id}</p>
+                <h4 className="text-text-primary font-semibold text-sm mt-0.5">{p.name}</h4>
+                <p className="text-text-secondary text-sm mt-1">{p.gender} · {p.age} yrs</p>
+                <p className="text-text-secondary text-sm mt-0.5 truncate" title={p.contact}>{p.contact}</p>
                 {p.address && (
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-0.5 truncate" title={p.address}>{p.address}</p>
+                  <p className="text-text-muted text-xs mt-0.5 truncate" title={p.address}>{p.address}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => handleDeleteClick(p.id, p.name)}
-                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg shrink-0"
+                className="ml-auto text-text-muted hover:text-status-danger hover:bg-status-danger/10 rounded-lg p-1.5 transition-colors duration-150 opacity-0 group-hover:opacity-100 shrink-0"
                 title="Delete patient"
               >
                 <Trash2 size={18} />
@@ -1224,7 +1238,9 @@ function PatientsTab() {
         ))}
       </div>
       {filtered.length === 0 && (
-        <p className="text-center py-12 text-gray-500 dark:text-gray-400">No patients match your search.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
+          <p className="text-sm">No patients match your search.</p>
+        </div>
       )}
 
       {filtered.length > 0 && totalPages > 1 && (

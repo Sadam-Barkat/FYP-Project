@@ -91,22 +91,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[#f4f7fa] px-4 py-8">
-      <div className="w-full max-w-md rounded-xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+    <div className="relative min-h-screen bg-base-bg flex items-center justify-center px-4 py-10 overflow-hidden">
+      <div className="absolute w-[500px] h-[500px] bg-brand-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] p-10 w-full max-w-md relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-primary to-transparent" />
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#0066cc] mb-2">Real Time Intelligent Dashboard</h1>
-          <p className="text-gray-500">Sign in to your account</p>
+          <h1 className="text-text-primary font-bold text-2xl tracking-tight mb-2">
+            Real Time Intelligent Dashboard
+          </h1>
+          <p className="text-text-muted text-sm mt-1">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5">
           {error && (
-            <div className="px-4 py-2 rounded-md bg-red-50 text-red-700 text-sm border border-red-200">
+            <div className="px-4 py-3 rounded-xl bg-status-danger/10 text-status-danger text-sm border border-status-danger/20">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="text-text-secondary text-sm font-medium mb-1.5 block">
               Email Address
             </label>
             <input
@@ -116,7 +120,7 @@ export default function LoginPage() {
                 setEmail(e.target.value);
                 setError(null);
               }}
-              className="w-full px-4 py-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none transition-colors"
+              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
               placeholder="user@hospital.com"
               required
               disabled={isLoading}
@@ -124,7 +128,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="text-text-secondary text-sm font-medium mb-1.5 block">
               Password
             </label>
             <div className="relative">
@@ -135,7 +139,7 @@ export default function LoginPage() {
                   setPassword(e.target.value);
                   setError(null);
                 }}
-                className="w-full px-4 py-2 pr-11 border border-gray-200 rounded-md focus:ring-2 focus:ring-[#0066cc] focus:border-[#0066cc] outline-none transition-colors"
+                className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 pr-11 w-full focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200"
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
@@ -144,7 +148,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 disabled={isLoading}
-                className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-gray-500 hover:text-gray-700 disabled:opacity-60"
+                className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-text-muted hover:text-text-primary disabled:opacity-60 transition-colors duration-150"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 title={showPassword ? "Hide password" : "Show password"}
               >
@@ -156,14 +160,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#0066cc] text-white py-2.5 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-semibold rounded-xl px-5 py-3 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_32px_rgba(59,130,246,0.5)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
           <p className="text-center mt-4">
             <Link
               href="/forgot-password"
-              className="text-sm text-[#0066cc] hover:underline"
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
             >
               Forgot password?
             </Link>

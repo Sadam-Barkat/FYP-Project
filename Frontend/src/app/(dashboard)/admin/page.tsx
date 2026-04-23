@@ -14,7 +14,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 
 const cardBase =
-  "rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 transition-all hover:border-[#00b4d8] sm:p-5";
+  "bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] hover:border-brand-primary/20 hover:bg-base-hover transition-all duration-200";
 
 export type TotalPatientsBreakdown = {
   in_hospital?: number | null;
@@ -363,8 +363,8 @@ const KPI_CARD_DEFS = [
     valueKey: "total_patients" as const,
     trendKey: "total_patients_trend" as const,
     icon: Users,
-    accent: "text-[#00b4d8]",
-    iconWrap: "bg-[#00b4d8]/15 text-[#00b4d8]",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "int" as const,
   },
   {
@@ -372,8 +372,8 @@ const KPI_CARD_DEFS = [
     valueKey: "active_admissions" as const,
     trendKey: "active_admissions_trend" as const,
     icon: Bed,
-    accent: "text-sky-400",
-    iconWrap: "bg-sky-500/15 text-sky-400",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "int" as const,
   },
   {
@@ -381,8 +381,8 @@ const KPI_CARD_DEFS = [
     valueKey: "available_beds" as const,
     trendKey: "available_beds_trend" as const,
     icon: LayoutGrid,
-    accent: "text-[#10b981]",
-    iconWrap: "bg-[#10b981]/15 text-[#10b981]",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "int" as const,
   },
   {
@@ -390,8 +390,8 @@ const KPI_CARD_DEFS = [
     valueKey: "critical_patients" as const,
     trendKey: "critical_patients_trend" as const,
     icon: AlertTriangle,
-    accent: "text-[#ef4444]",
-    iconWrap: "bg-[#ef4444]/15 text-[#ef4444]",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "int" as const,
   },
   {
@@ -399,8 +399,8 @@ const KPI_CARD_DEFS = [
     valueKey: "staff_on_duty" as const,
     trendKey: "staff_on_duty_trend" as const,
     icon: UserCheck,
-    accent: "text-violet-400",
-    iconWrap: "bg-violet-500/15 text-violet-400",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "int" as const,
   },
   {
@@ -408,8 +408,8 @@ const KPI_CARD_DEFS = [
     valueKey: "revenue_today" as const,
     trendKey: "revenue_today_trend" as const,
     icon: DollarSign,
-    accent: "text-[#f59e0b]",
-    iconWrap: "bg-[#f59e0b]/15 text-[#f59e0b]",
+    accent: "text-text-primary",
+    iconWrap: "bg-brand-primary/10 text-brand-primary",
     kind: "currency" as const,
   },
 ] as const;
@@ -514,10 +514,10 @@ export default function AdminDashboard() {
   return (
     <div
       id="dashboard-content"
-      className="min-h-full w-full max-w-[1600px] space-y-5 bg-[#0a0f1e] p-4 text-[#ffffff] sm:space-y-6 sm:p-6"
+      className="min-h-screen w-full bg-base-surface px-8 py-8 space-y-8"
     >
       {/* KPI row — data from GET /api/hospital-overview */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {KPI_CARD_DEFS.map((k) => {
           const Icon = k.icon;
           const displayValue = formatKpiDisplay(kpiData, k.valueKey, k.kind);
@@ -546,34 +546,36 @@ export default function AdminDashboard() {
               <div className={cardBase}>
                 <div className="flex items-start justify-between">
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${k.iconWrap}`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${k.iconWrap}`}
                   >
-                    <Icon className="h-5 w-5" aria-hidden />
+                    <Icon className="w-5 h-5 text-brand-primary" aria-hidden />
                   </div>
                 </div>
-                <h3 className="mt-3 text-xs font-semibold leading-snug text-[#00b4d8]">
+                <h3 className="text-text-muted text-xs uppercase tracking-wider font-medium">
                   {k.label}
                 </h3>
-                <div className="mt-3 flex min-h-[2.5rem] items-center justify-center">
+                <div className="mt-1 flex min-h-[2.75rem] items-center justify-center">
                   {kpiLoading ? (
                     <div
-                      className="h-10 w-28 max-w-full animate-pulse rounded-md bg-[#1e3a5f]"
+                      className="h-10 w-28 max-w-full animate-pulse rounded-xl bg-base-muted"
                       aria-hidden
                     />
                   ) : (
                     <p
-                      className={`text-center text-3xl font-bold tracking-tight ${k.accent}`}
+                      className={`text-text-primary font-bold text-3xl tabular-nums text-center ${k.accent}`}
                     >
                       {displayValue}
                     </p>
                   )}
                 </div>
                 <p
-                  className={`mt-3 text-center text-xs font-medium ${trendTextClass(
-                    kpiLoading ? "N/A" : trendStr
-                  )}`}
+                  className={`mt-4 inline-flex w-full items-center justify-center text-xs font-medium ${
+                    kpiLoading ? "text-text-muted" : trendTextClass(trendStr)
+                  }`}
                 >
-                  {kpiLoading ? "N/A vs yesterday" : trendLine}
+                  <span className="bg-base-muted/40 border border-base-border rounded-full px-2.5 py-1">
+                    {kpiLoading ? "N/A vs yesterday" : trendLine}
+                  </span>
                 </p>
               </div>
 
@@ -584,11 +586,11 @@ export default function AdminDashboard() {
                 aria-hidden={!showTip}
               >
                 <div
-                  className="h-0 w-0 border-x-[6px] border-b-[8px] border-x-transparent border-b-[#00b4d8]"
+                  className="h-0 w-0 border-x-[6px] border-b-[8px] border-x-transparent border-b-base-border"
                   aria-hidden
                 />
-                <div className="-mt-px w-full rounded-xl border border-[#00b4d8] bg-[#0d1b2a] px-3 py-2.5 shadow-lg">
-                  <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-[#00b4d8]">
+                <div className="-mt-px w-full rounded-2xl border border-base-border bg-base-card px-3 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                  <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
                     {tipTitle}
                   </p>
                   <div className="space-y-1.5">
@@ -597,8 +599,8 @@ export default function AdminDashboard() {
                         key={row.label}
                         className="flex justify-between gap-2 text-xs leading-snug"
                       >
-                        <span className="text-[#94a3b8]">{row.label}</span>
-                        <span className="shrink-0 pl-1 text-right font-semibold text-[#ffffff]">
+                        <span className="text-text-secondary">{row.label}</span>
+                        <span className="shrink-0 pl-1 text-right font-semibold text-text-primary">
                           {row.value}
                         </span>
                       </div>
@@ -612,15 +614,15 @@ export default function AdminDashboard() {
       </section>
 
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="flex max-h-[240px] flex-col overflow-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1e3a5f] pb-2.5">
-            <h2 className="text-xs font-semibold text-[#00b4d8]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)]">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-base-border pb-3">
+            <h2 className="text-text-primary font-semibold text-base">
               🧠 Patient Intelligence
             </h2>
             <div className="flex items-center gap-2.5">
               {intelData ? (
-                <span className="whitespace-nowrap text-[10px] text-[#94a3b8]">
+                <span className="whitespace-nowrap text-text-muted text-xs">
                   {intelFooterUpdated(intelLastFetch, intelClock)}
                 </span>
               ) : null}
@@ -630,11 +632,11 @@ export default function AdminDashboard() {
                   title="Patients at elevated risk (NEWS2)"
                   aria-hidden
                 >
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ef4444] opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-danger opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-status-danger" />
                 </span>
               ) : intelData ? (
-                <span className="text-sm leading-none text-[#ef4444]" aria-hidden>
+                <span className="text-sm leading-none text-status-danger" aria-hidden>
                   🔴
                 </span>
               ) : null}
@@ -789,14 +791,14 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="flex max-h-[240px] flex-col overflow-x-visible overflow-y-hidden rounded-xl border border-[#1e3a5f] bg-[#0d1b2a] p-4 text-xs shadow-lg transition-colors hover:border-[#00b4d8]">
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#1e3a5f] pb-2.5">
-            <h2 className="text-xs font-semibold text-[#00b4d8]">
+        <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] overflow-hidden">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-base-border pb-3">
+            <h2 className="text-text-primary font-semibold text-base">
               💊 Pharmacy Intelligence
             </h2>
             <div className="flex items-center gap-2.5">
               {pharmacyData ? (
-                <span className="whitespace-nowrap text-[10px] text-[#94a3b8]">
+                <span className="whitespace-nowrap text-text-muted text-xs">
                   {intelFooterUpdated(pharmacyLastFetch, intelClock)}
                 </span>
               ) : null}
@@ -804,7 +806,7 @@ export default function AdminDashboard() {
               (pharmacyData.out_of_stock_count > 0 ||
                 pharmacyData.expiring_soon_count > 0) ? (
                 <span
-                  className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500"
+                  className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-status-danger"
                   title="Stock or expiry attention needed"
                   aria-hidden
                 />
@@ -813,12 +815,12 @@ export default function AdminDashboard() {
           </div>
 
           {!pharmacyData && !pharmacyLoading ? (
-            <p className="mt-2 text-[10px] text-[#94a3b8]">
+            <p className="mt-3 text-text-muted text-sm">
               Unable to load. Check admin access and API.
             </p>
           ) : null}
           {pharmacyLoading && !pharmacyData ? (
-            <div className="mt-2 h-32 animate-pulse rounded-md bg-[#1e3a5f]/50" />
+            <div className="mt-3 h-32 animate-pulse rounded-xl bg-base-muted/40" />
           ) : null}
 
           {pharmacyData ? (

@@ -63,3 +63,9 @@ body.pdf-export-mode [data-hide-in-pdf] {
   display: none !important;
 }
 
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0a0c10; }
+::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+* { scrollbar-width: thin; scrollbar-color: #1e2d40 #0a0c10; }
+
