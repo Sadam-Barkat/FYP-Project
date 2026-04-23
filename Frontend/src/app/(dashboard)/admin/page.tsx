@@ -1387,9 +1387,9 @@ export default function AdminDashboard() {
 
           {pharmacyData ? (
             <div className="h-full grid grid-cols-[1fr_280px] gap-0 divide-x divide-dash-border">
-              <div className="grid grid-cols-2 gap-0 divide-x divide-y divide-dash-border">
+              <div className="h-full grid grid-cols-2 grid-rows-3 gap-0 divide-x divide-y divide-dash-border">
                 <div
-                  className="flex flex-col p-4 cursor-pointer group"
+                  className="flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
                   role="button"
                   tabIndex={0}
                   onClick={() => setExpandedPharmacyCard("total")}
@@ -1414,7 +1414,7 @@ export default function AdminDashboard() {
                     const pct = (n: number) => Math.max(2, Math.min(100, Math.round((n / total) * 100)));
                     return (
                       <>
-                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1470,7 +1470,7 @@ export default function AdminDashboard() {
                   })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 ring-1 ring-kpi-red/20 cursor-pointer group"
+                  className="relative flex flex-col min-h-0 overflow-hidden p-4 ring-1 ring-kpi-red/20 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("oos")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
                   role="button"
@@ -1502,7 +1502,7 @@ export default function AdminDashboard() {
                     const top = (pharmacyData.out_of_stock_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1527,7 +1527,7 @@ export default function AdminDashboard() {
                           </ResponsiveContainer>
                         </div>
                         {top.length ? (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
                             {top.map((n, i) => (
                               <span
                                 key={`${n}-${i}`}
@@ -1557,7 +1557,7 @@ export default function AdminDashboard() {
                   })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 cursor-pointer group"
+                  className="relative flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("low")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
                   role="button"
@@ -1586,7 +1586,7 @@ export default function AdminDashboard() {
                     const top = (pharmacyData.low_stock_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1611,7 +1611,7 @@ export default function AdminDashboard() {
                           </ResponsiveContainer>
                         </div>
                         {top.length ? (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
                             {top.map((n, i) => (
                               <span
                                 key={`${n}-${i}`}
@@ -1641,7 +1641,7 @@ export default function AdminDashboard() {
                   })()}
                 </div>
                 <div
-                  className="relative flex flex-col p-4 cursor-pointer group"
+                  className="relative flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("soon")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
                   role="button"
@@ -1670,7 +1670,7 @@ export default function AdminDashboard() {
                     const top = (pharmacyData.expiring_soon_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1695,7 +1695,7 @@ export default function AdminDashboard() {
                           </ResponsiveContainer>
                         </div>
                         {top.length ? (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
                             {top.map((n, i) => (
                               <span
                                 key={`${n}-${i}`}
@@ -1725,7 +1725,7 @@ export default function AdminDashboard() {
                   })()}
                 </div>
                 <div
-                  className="relative col-span-2 flex flex-col p-4 cursor-pointer group"
+                  className="relative col-span-2 flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
                   onMouseEnter={() => setPharmacyStatHover("expired")}
                   onMouseLeave={() => setPharmacyStatHover(null)}
                   role="button"
@@ -1751,10 +1751,10 @@ export default function AdminDashboard() {
                   />
                   {(() => {
                     const pack = derivePrediction(pharmacyData.expired_count, undefined, undefined);
-                    const top = (pharmacyData.expired_medicines ?? []).slice(0, 3);
+                    const top = (pharmacyData.expired_medicines ?? []).slice(0, 2);
                     return (
                       <>
-                        <div className="mt-2 h-10 min-h-[40px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1779,7 +1779,7 @@ export default function AdminDashboard() {
                           </ResponsiveContainer>
                         </div>
                         {top.length ? (
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
                             {top.map((n, i) => (
                               <span
                                 key={`${n}-${i}`}
@@ -1789,9 +1789,9 @@ export default function AdminDashboard() {
                                 {n}
                               </span>
                             ))}
-                            {(pharmacyData.expired_medicines ?? []).length > 3 ? (
+                            {(pharmacyData.expired_medicines ?? []).length > 2 ? (
                               <span className="text-[10px] text-tx-secondary">
-                                +{(pharmacyData.expired_medicines ?? []).length - 3} more
+                                +{(pharmacyData.expired_medicines ?? []).length - 2} more
                               </span>
                             ) : null}
                           </div>
