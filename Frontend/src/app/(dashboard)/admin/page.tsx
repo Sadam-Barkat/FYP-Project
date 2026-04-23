@@ -546,7 +546,7 @@ export default function AdminDashboard() {
   return (
     <div
       id="dashboard-content"
-      className="admin-overview-theme h-[calc(100dvh-72px)] max-h-[calc(100dvh-72px)] w-full bg-dash-bg px-6 py-3 overflow-hidden flex flex-col gap-3"
+      className="admin-overview-theme min-h-[calc(100dvh-72px)] w-full bg-dash-bg px-6 py-3 space-y-3 overflow-y-auto"
     >
       <div className="flex items-center justify-end gap-2 text-tx-secondary text-xs">
         <span className="relative flex h-1.5 w-1.5">
