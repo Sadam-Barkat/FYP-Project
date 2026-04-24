@@ -80,7 +80,7 @@ export default function NavbarProfileButton() {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-gray-700 shadow-sm ring-1 ring-gray-200 transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 dark:bg-base-muted dark:text-text-secondary dark:shadow-card dark:ring-base-border/60 dark:hover:bg-base-hover dark:hover:text-text-bright dark:hover:shadow-glow-blue dark:hover:ring-brand-blue/30"
+        className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-slate-500 transition-all duration-300 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 dark:bg-base-muted dark:text-text-secondary dark:shadow-card dark:ring-base-border/60 dark:hover:bg-base-hover dark:hover:text-text-bright dark:hover:shadow-glow-blue dark:hover:ring-brand-blue/30"
         aria-label="Open profile"
         aria-haspopup="menu"
         aria-expanded={open}

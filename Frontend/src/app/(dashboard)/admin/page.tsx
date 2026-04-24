@@ -26,7 +26,7 @@ import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 
 const cardBase =
-  "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default hover:-translate-y-1 p-4 pb-[48%]";
+  "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default p-4 pb-[48%] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 dark:bg-transparent dark:border-0 dark:shadow-none dark:hover:-translate-y-1";
 
 function makeSparkData(value: number) {
   const v = Number.isFinite(value) ? value : 0;
@@ -489,10 +489,21 @@ function formatKpiDisplay(
 
 function trendTextClass(trend: string | null | undefined): string {
   const s = (trend ?? "").trim();
-  if (!s || s === "N/A") return "text-text-secondary";
-  if (s.startsWith("+")) return "text-status-success";
-  if (s.startsWith("-")) return "text-status-danger";
-  return "text-text-secondary";
+  if (!s || s === "N/A") return "text-slate-600 dark:text-text-secondary";
+  if (s.startsWith("+")) return "text-green-700 dark:text-status-success";
+  if (s.startsWith("-")) return "text-red-700 dark:text-status-danger";
+  return "text-slate-600 dark:text-text-secondary";
+}
+
+function trendPillClass(trend: string | null | undefined): string {
+  const s = (trend ?? "").trim();
+  if (!s || s === "N/A")
+    return "bg-slate-100 border border-slate-200 dark:bg-white/8 dark:border-white/10";
+  if (s.startsWith("+"))
+    return "bg-green-50 border border-green-200 dark:bg-white/8 dark:border-white/10";
+  if (s.startsWith("-"))
+    return "bg-red-50 border border-red-200 dark:bg-white/8 dark:border-white/10";
+  return "bg-slate-100 border border-slate-200 dark:bg-white/8 dark:border-white/10";
 }
 
 function asNum(v: unknown): number {
@@ -676,9 +687,10 @@ const KPI_CARD_DEFS = [
     valueKey: "total_patients" as const,
     trendKey: "total_patients_trend" as const,
     icon: Users,
-    accent: "bg-kpi-blue shadow-kpi-blue hover:shadow-kpi-blue-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-blue-500 before:pointer-events-none dark:bg-kpi-blue dark:shadow-kpi-blue dark:hover:shadow-kpi-blue-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-blue/20 border border-kpi-blue/30 flex items-center justify-center text-kpi-blue",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-blue-600 dark:bg-kpi-blue/20 dark:border-kpi-blue/30 dark:text-kpi-blue",
     kind: "int" as const,
     chart: "area" as const,
     stroke: "#3b82f6",
@@ -689,9 +701,10 @@ const KPI_CARD_DEFS = [
     valueKey: "active_admissions" as const,
     trendKey: "active_admissions_trend" as const,
     icon: Bed,
-    accent: "bg-kpi-purple shadow-kpi-purple hover:shadow-kpi-purple-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-purple-500 before:pointer-events-none dark:bg-kpi-purple dark:shadow-kpi-purple dark:hover:shadow-kpi-purple-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-purple/20 border border-kpi-purple/30 flex items-center justify-center text-kpi-purple",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-purple-600 dark:bg-kpi-purple/20 dark:border-kpi-purple/30 dark:text-kpi-purple",
     kind: "int" as const,
     chart: "area" as const,
     stroke: "#a855f7",
@@ -702,9 +715,10 @@ const KPI_CARD_DEFS = [
     valueKey: "available_beds" as const,
     trendKey: "available_beds_trend" as const,
     icon: LayoutGrid,
-    accent: "bg-kpi-cyan shadow-kpi-cyan hover:shadow-kpi-cyan-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-cyan-500 before:pointer-events-none dark:bg-kpi-cyan dark:shadow-kpi-cyan dark:hover:shadow-kpi-cyan-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-cyan/20 border border-kpi-cyan/30 flex items-center justify-center text-kpi-cyan",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-cyan-600 dark:bg-kpi-cyan/20 dark:border-kpi-cyan/30 dark:text-kpi-cyan",
     kind: "int" as const,
     chart: "area" as const,
     stroke: "#06b6d4",
@@ -715,9 +729,10 @@ const KPI_CARD_DEFS = [
     valueKey: "critical_patients" as const,
     trendKey: "critical_patients_trend" as const,
     icon: AlertTriangle,
-    accent: "bg-kpi-red shadow-kpi-red hover:shadow-kpi-red-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-red-500 before:pointer-events-none dark:bg-kpi-red dark:shadow-kpi-red dark:hover:shadow-kpi-red-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-red/20 border border-kpi-red/30 flex items-center justify-center text-kpi-red",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-red-600 dark:bg-kpi-red/20 dark:border-kpi-red/30 dark:text-kpi-red",
     kind: "int" as const,
     chart: "bar" as const,
     stroke: "#ef4444",
@@ -728,9 +743,10 @@ const KPI_CARD_DEFS = [
     valueKey: "staff_on_duty" as const,
     trendKey: "staff_on_duty_trend" as const,
     icon: UserCheck,
-    accent: "bg-kpi-green shadow-kpi-green hover:shadow-kpi-green-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-green-500 before:pointer-events-none dark:bg-kpi-green dark:shadow-kpi-green dark:hover:shadow-kpi-green-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-green/20 border border-kpi-green/30 flex items-center justify-center text-kpi-green",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-green-600 dark:bg-kpi-green/20 dark:border-kpi-green/30 dark:text-kpi-green",
     kind: "int" as const,
     chart: "area" as const,
     stroke: "#22c55e",
@@ -741,9 +757,10 @@ const KPI_CARD_DEFS = [
     valueKey: "revenue_today" as const,
     trendKey: "revenue_today_trend" as const,
     icon: DollarSign,
-    accent: "bg-kpi-orange shadow-kpi-orange hover:shadow-kpi-orange-hover",
+    accent:
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-orange-500 before:pointer-events-none dark:bg-kpi-orange dark:shadow-kpi-orange dark:hover:shadow-kpi-orange-hover",
     iconWrap:
-      "w-8 h-8 rounded-lg bg-kpi-orange/20 border border-kpi-orange/30 flex items-center justify-center text-kpi-orange",
+      "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-orange-600 dark:bg-kpi-orange/20 dark:border-kpi-orange/30 dark:text-kpi-orange",
     kind: "currency" as const,
     chart: "area" as const,
     stroke: "#f97316",
@@ -859,7 +876,7 @@ export default function AdminDashboard() {
       id="dashboard-content"
       className="admin-overview-theme min-h-[calc(100dvh-72px)] w-full bg-gray-50 px-6 py-3 space-y-3 overflow-y-auto text-gray-900 dark:bg-dash-bg dark:text-tx-primary"
     >
-      <div className="flex items-center justify-end gap-2 text-tx-secondary text-xs">
+      <div className="flex items-center justify-end gap-2 text-slate-400 text-xs dark:text-tx-secondary">
         <span className="relative flex h-1.5 w-1.5">
           <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-60" />
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-kpi-green" />
@@ -867,7 +884,7 @@ export default function AdminDashboard() {
         <span>Last updated: just now</span>
       </div>
       {/* KPI row — data from GET /api/hospital-overview */}
-      <section className="shrink-0 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <section className="shrink-0 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-transparent">
         {KPI_CARD_DEFS.map((k) => {
           const Icon = k.icon;
           const displayValue = formatKpiDisplay(kpiData, k.valueKey, k.kind);
@@ -902,7 +919,7 @@ export default function AdminDashboard() {
                     <div className={k.iconWrap}>
                       <Icon className="w-4 h-4" aria-hidden />
                     </div>
-                    <h3 className="text-tx-secondary text-[10px] font-semibold uppercase tracking-widest">
+                    <h3 className="text-slate-500 text-[10px] font-semibold uppercase tracking-widest dark:text-tx-secondary">
                       {k.label}
                     </h3>
                   </div>
@@ -911,21 +928,21 @@ export default function AdminDashboard() {
                   >
                   {kpiLoading ? (
                     <div
-                      className="h-8 w-24 max-w-full animate-pulse rounded-xl bg-white/8"
+                      className="h-8 w-24 max-w-full animate-pulse rounded-xl bg-slate-100 dark:bg-white/8"
                       aria-hidden
                     />
                   ) : (
                     <p
-                      className="text-tx-bright font-black text-3xl tabular-nums leading-none"
+                      className="text-slate-900 font-black text-3xl tabular-nums leading-none dark:text-tx-bright"
                     >
                       {displayValue}
                     </p>
                   )}
                 </div>
                 <p
-                  className="inline-flex items-center gap-1 bg-white/8 border border-white/10 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit"
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${trendPillClass(trendStr)}`}
                 >
-                  <span className={kpiLoading ? "text-tx-secondary" : trendTextClass(trendStr)}>
+                  <span className={kpiLoading ? "text-slate-600 dark:text-tx-secondary" : trendTextClass(trendStr)}>
                     {kpiLoading ? "N/A vs yesterday" : trendLine}
                   </span>
                 </p>
@@ -1011,7 +1028,7 @@ export default function AdminDashboard() {
 
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-panel border border-white/[0.06] rounded-2xl shadow-panel overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
           <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>
@@ -1352,7 +1369,7 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="bg-panel border border-white/[0.06] rounded-2xl shadow-panel overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
           <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>

@@ -14,58 +14,100 @@
 }
 
 :root {
-  /* Light theme (default) */
-  --background: #f6f8fb;
-  --foreground: #111827;
+  /* Light mode tokens */
+  --bg-page:        #F1F5F9;
+  --bg-surface:     #FFFFFF;
+  --bg-card:        #FFFFFF;
+  --bg-elevated:    #F8FAFC;
+  --bg-muted:       #F1F5F9;
+  --border-default: #E2E8F0;
+  --border-accent:  #CBD5E1;
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-panel:   0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-hover:   0 4px 20px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #94A3B8;
+  --text-bright:    #020617;
 
-  --base-bg: #f6f8fb;
-  --base-surface: #ffffff;
-  --base-card: #ffffff;
-  --base-elevated: #ffffff;
-  --base-hover: #f3f4f6;
-  --base-border: #e5e7eb;
-  --base-glow: rgba(59, 130, 246, 0.08);
-  --base-muted: #f3f4f6;
+  /* Accent (same hue, light-mode safe) */
+  --accent-blue:    #2563EB;
+  --accent-purple:  #7C3AED;
+  --accent-cyan:    #0891B2;
+  --accent-red:     #DC2626;
+  --accent-green:   #16A34A;
+  --accent-orange:  #EA580C;
+  --accent-yellow:  #D97706;
 
-  --dash-bg: #f6f8fb;
-  --dash-surface: rgba(255, 255, 255, 0.85);
-  --dash-card: #ffffff;
-  --dash-elevated: #ffffff;
-  --dash-border: #e5e7eb;
-  --dash-muted: #f3f4f6;
+  /* Mappings for existing Tailwind tokens */
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
 
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --text-bright: #0b1220;
+  --base-bg: var(--bg-page);
+  --base-surface: var(--bg-surface);
+  --base-card: var(--bg-card);
+  --base-elevated: var(--bg-elevated);
+  --base-hover: var(--bg-elevated);
+  --base-border: var(--border-default);
+  --base-glow: rgba(37,99,235,0.10);
+  --base-muted: var(--bg-muted);
 
-  --tx-primary: #111827;
-  --tx-secondary: #6b7280;
-  --tx-muted: #9ca3af;
-  --tx-bright: #0b1220;
+  --dash-bg: var(--bg-page);
+  --dash-surface: var(--bg-surface);
+  --dash-card: var(--bg-card);
+  --dash-elevated: var(--bg-elevated);
+  --dash-border: var(--border-default);
+  --dash-muted: var(--bg-muted);
 
-  /* Brand colors (used for custom CSS, Tailwind utilities come from tailwind.config.js) */
-  --color-primary: #3b82f6;
-  --color-primary-light: rgba(59, 130, 246, 0.15);
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-purple: #8b5cf6;
-  --color-teal: #14b8a6;
-  --color-yellow: #facc15;
+  --tx-primary: var(--text-primary);
+  --tx-secondary: var(--text-secondary);
+  --tx-muted: var(--text-muted);
+  --tx-bright: var(--text-bright);
 
-  --color-neutral-50: #f6f8fb;
-  --color-neutral-100: #ffffff;
-  --color-neutral-200: #f3f4f6;
-  --color-neutral-500: #6b7280;
-  --color-neutral-800: #111827;
-  --color-neutral-900: #0b1220;
+  --color-primary: var(--accent-blue);
+  --color-primary-light: rgba(37, 99, 235, 0.12);
+  --color-success: var(--accent-green);
+  --color-warning: var(--accent-yellow);
+  --color-danger: var(--accent-red);
+  --color-purple: var(--accent-purple);
+  --color-teal: var(--accent-cyan);
+  --color-yellow: var(--accent-yellow);
+
+  --color-neutral-50: var(--bg-page);
+  --color-neutral-100: var(--bg-surface);
+  --color-neutral-200: var(--bg-elevated);
+  --color-neutral-500: var(--text-secondary);
+  --color-neutral-800: var(--text-primary);
+  --color-neutral-900: var(--text-bright);
 }
 
 .dark {
-  /* Dark theme */
-  --background: #0b0f1a;
-  --foreground: #e2e8f5;
+  /* Dark mode tokens — DO NOT CHANGE THESE */
+  --bg-page:        #060b16;
+  --bg-surface:     #090e1a;
+  --bg-card:        #0d1326;
+  --bg-elevated:    #101828;
+  --bg-muted:       #141f32;
+  --border-default: #192340;
+  --border-accent:  #1e3a5f;
+  --shadow-card:    0 0 0 1px rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.5);
+  --shadow-panel:   0 4px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  --shadow-hover:   0 8px 40px rgba(0,0,0,0.7);
+  --text-primary:   #e8eeff;
+  --text-secondary: #7a90b0;
+  --text-muted:     #3d5270;
+  --text-bright:    #ffffff;
+  --accent-blue:    #3b82f6;
+  --accent-purple:  #a855f7;
+  --accent-cyan:    #06b6d4;
+  --accent-red:     #ef4444;
+  --accent-green:   #22c55e;
+  --accent-orange:  #f97316;
+  --accent-yellow:  #eab308;
+
+  /* Mappings for existing Tailwind tokens */
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
 
   --base-bg: #070b14;
   --base-surface: #0b0f1a;
@@ -83,16 +125,20 @@
   --dash-border: #141d35;
   --dash-muted: #111828;
 
-  --text-primary: #e2e8f5;
-  --text-secondary: #7a90b0;
-  --text-muted: #3d5470;
-  --text-bright: #ffffff;
-
   --tx-primary: #e8eeff;
   --tx-secondary: #6b82a8;
   --tx-muted: #384d6a;
   --tx-bright: #ffffff;
-  
+
+  --color-primary: var(--accent-blue);
+  --color-primary-light: rgba(59, 130, 246, 0.15);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-purple: #8b5cf6;
+  --color-teal: #14b8a6;
+  --color-yellow: #facc15;
+
   --color-neutral-50: #070b14;
   --color-neutral-100: #0b0f1a;
   --color-neutral-200: #0d1424;
@@ -102,8 +148,8 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 

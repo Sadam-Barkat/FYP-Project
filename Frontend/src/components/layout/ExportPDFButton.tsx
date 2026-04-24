@@ -106,7 +106,7 @@ export default function ExportPDFButton() {
     <button
       onClick={handleExport}
       disabled={loading}
-      className="group relative flex items-center justify-center overflow-hidden rounded-xl bg-btn-primary px-4 py-2 text-[13px] font-bold text-text-bright shadow-btn transition-all duration-300 hover:scale-[1.02] hover:shadow-glow-blue disabled:opacity-70 disabled:hover:scale-100"
+      className="group relative flex items-center justify-center overflow-hidden rounded-xl bg-blue-600 px-4 py-2 text-[13px] font-bold text-white shadow-[0_2px_8px_rgba(37,99,235,0.25)] transition-all duration-300 hover:bg-blue-700 hover:shadow-[0_4px_12px_rgba(37,99,235,0.35)] disabled:opacity-70 disabled:hover:shadow-[0_2px_8px_rgba(37,99,235,0.25)] dark:bg-btn-primary dark:text-text-bright dark:shadow-btn dark:hover:scale-[1.02] dark:hover:shadow-glow-blue disabled:hover:scale-100"
       title="Export current page to PDF (screenshot)"
     >
       <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
