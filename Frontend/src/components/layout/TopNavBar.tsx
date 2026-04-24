@@ -38,7 +38,7 @@ export default function TopNavBar({
   }, [pathname, role]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-dash-border bg-dash-surface">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-dash-border dark:bg-dash-surface">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-6">
         <Link href="/admin" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-kpi-blue to-kpi-purple flex items-center justify-center flex-shrink-0">
@@ -49,7 +49,7 @@ export default function TopNavBar({
               Intelligent Dashboard
             </p>
             <div className="flex items-center gap-2">
-              <p className="text-tx-secondary text-xs">Real-time Operations</p>
+              <p className="text-gray-600 text-xs dark:text-tx-secondary">Real-time Operations</p>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-60" />
@@ -70,8 +70,8 @@ export default function TopNavBar({
                 href={item.href}
                 className={
                   active
-                    ? "relative px-5 py-2 text-tx-bright text-sm font-semibold"
-                    : "px-5 py-2 text-tx-secondary text-sm font-medium hover:text-tx-primary transition-colors duration-200"
+                    ? "relative px-5 py-2 text-gray-900 text-sm font-semibold dark:text-tx-bright"
+                    : "px-5 py-2 text-gray-600 text-sm font-medium hover:text-gray-900 transition-colors duration-200 dark:text-tx-secondary dark:hover:text-tx-primary"
                 }
               >
                 {item.label}

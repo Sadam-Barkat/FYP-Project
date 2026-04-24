@@ -80,7 +80,7 @@ export default function NavbarProfileButton() {
         ref={btnRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-base-muted text-text-secondary shadow-card ring-1 ring-base-border/60 transition-all duration-300 hover:bg-base-hover hover:text-text-bright hover:shadow-glow-blue hover:ring-brand-blue/30"
+        className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-gray-700 shadow-sm ring-1 ring-gray-200 transition-all duration-300 hover:bg-gray-50 hover:text-gray-900 dark:bg-base-muted dark:text-text-secondary dark:shadow-card dark:ring-base-border/60 dark:hover:bg-base-hover dark:hover:text-text-bright dark:hover:shadow-glow-blue dark:hover:ring-brand-blue/30"
         aria-label="Open profile"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -93,22 +93,22 @@ export default function NavbarProfileButton() {
         <div
           role="menu"
           aria-label="Profile menu"
-          className="fixed z-50 w-[min(22rem,86vw)] rounded-2xl border border-base-border bg-base-card/80 p-4 shadow-nav backdrop-blur-md"
+          className="fixed z-50 w-[min(22rem,86vw)] rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur-md dark:border-base-border dark:bg-base-card/80 dark:shadow-nav"
           style={
             menuPos
               ? { top: menuPos.top, left: menuPos.left }
               : { top: 80, left: 8 }
           }
         >
-          <div className="flex items-center justify-between gap-3 border-b border-base-border pb-3">
+          <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-base-border">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-text-bright">Profile</p>
-              <p className="text-xs text-text-secondary">Signed-in account details</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-text-bright">Profile</p>
+              <p className="text-xs text-gray-600 dark:text-text-secondary">Signed-in account details</p>
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-text-secondary hover:bg-base-hover hover:text-text-bright transition-colors duration-150"
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150 dark:text-text-secondary dark:hover:bg-base-hover dark:hover:text-text-bright"
             >
               Close
             </button>
@@ -116,16 +116,16 @@ export default function NavbarProfileButton() {
 
           <div className="mt-3 space-y-3 text-sm">
             <div>
-              <p className="text-text-secondary font-medium">Role</p>
-              <p className="text-text-bright mt-0.5">{roleLabel}</p>
+              <p className="text-gray-600 font-medium dark:text-text-secondary">Role</p>
+              <p className="text-gray-900 mt-0.5 dark:text-text-bright">{roleLabel}</p>
             </div>
             <div>
-              <p className="text-text-secondary font-medium">Name</p>
-              <p className="text-text-bright mt-0.5">{profile.name || "—"}</p>
+              <p className="text-gray-600 font-medium dark:text-text-secondary">Name</p>
+              <p className="text-gray-900 mt-0.5 dark:text-text-bright">{profile.name || "—"}</p>
             </div>
             <div>
-              <p className="text-text-secondary font-medium">Email</p>
-              <p className="text-text-bright mt-0.5 break-all">{profile.email || "—"}</p>
+              <p className="text-gray-600 font-medium dark:text-text-secondary">Email</p>
+              <p className="text-gray-900 mt-0.5 break-all dark:text-text-bright">{profile.email || "—"}</p>
             </div>
           </div>
         </div>

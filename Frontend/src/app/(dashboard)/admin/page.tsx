@@ -157,24 +157,23 @@ function PatientStatModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-      style={{ background: "rgba(5,7,15,0.82)", backdropFilter: "blur(10px)" }}
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/35 backdrop-blur-[10px] dark:bg-[rgba(5,7,15,0.82)]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-dash-card">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-white/10 dark:bg-dash-card dark:shadow-panel">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
             <span
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: accentHex, boxShadow: `0 0 10px ${accentHex}80` }}
             />
-            <p className="text-tx-bright font-bold text-base">{title} — Forecast</p>
+            <p className="text-gray-900 font-bold text-base dark:text-tx-bright">{title} — Forecast</p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl border border-white/10 bg-dash-elevated text-tx-secondary hover:text-tx-primary hover:border-white/25 transition-all"
+            className="w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:text-gray-900 hover:border-gray-300 transition-all dark:border-white/10 dark:bg-dash-elevated dark:text-tx-secondary dark:hover:text-tx-primary dark:hover:border-white/25"
           >
             ✕
           </button>
@@ -182,8 +181,8 @@ function PatientStatModal({
 
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-white/[0.06] bg-dash-elevated p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-tx-muted">
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/[0.06] dark:bg-dash-elevated dark:shadow-none">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-tx-muted">
                 Current
               </p>
               <p className="mt-1 text-3xl font-black tabular-nums" style={{ color: accentHex }}>
@@ -191,23 +190,23 @@ function PatientStatModal({
                 {unit}
               </p>
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-dash-elevated p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-tx-muted">
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/[0.06] dark:bg-dash-elevated dark:shadow-none">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-tx-muted">
                 Change (today vs yesterday)
               </p>
-              <p className="mt-2 text-lg font-bold tabular-nums text-tx-bright">
+              <p className="mt-2 text-lg font-bold tabular-nums text-gray-900 dark:text-tx-bright">
                 {deltaSign}
                 {pack.delta}
                 {unit}
               </p>
-              <p className="mt-1 text-xs text-tx-secondary">{pack.direction.toUpperCase()}</p>
+              <p className="mt-1 text-xs text-gray-600 dark:text-tx-secondary">{pack.direction.toUpperCase()}</p>
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-dash-elevated p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-tx-muted">
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/[0.06] dark:bg-dash-elevated dark:shadow-none">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-tx-muted">
                 Confidence
               </p>
               <p className="mt-2 text-lg font-black tabular-nums text-kpi-green">{confPct}%</p>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-dash-border">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dash-border">
                 <div
                   className="h-full rounded-full bg-kpi-green"
                   style={{ width: `${confPct}%` }}
@@ -216,12 +215,12 @@ function PatientStatModal({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-dash-elevated p-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/[0.06] dark:bg-dash-elevated dark:shadow-none">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-tx-secondary">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-tx-secondary">
                 Historical + 7-day projection
               </p>
-              <p className="text-[10px] text-tx-muted">Click outside to close</p>
+              <p className="text-[10px] text-gray-500 dark:text-tx-muted">Click outside to close</p>
             </div>
             <div className="mt-3 h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -858,7 +857,7 @@ export default function AdminDashboard() {
   return (
     <div
       id="dashboard-content"
-      className="admin-overview-theme min-h-[calc(100dvh-72px)] w-full bg-dash-bg px-6 py-3 space-y-3 overflow-y-auto"
+      className="admin-overview-theme min-h-[calc(100dvh-72px)] w-full bg-gray-50 px-6 py-3 space-y-3 overflow-y-auto text-gray-900 dark:bg-dash-bg dark:text-tx-primary"
     >
       <div className="flex items-center justify-end gap-2 text-tx-secondary text-xs">
         <span className="relative flex h-1.5 w-1.5">

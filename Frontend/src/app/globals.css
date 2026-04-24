@@ -14,8 +14,35 @@
 }
 
 :root {
-  --background: #0b0f1a;
-  --foreground: #e2e8f5;
+  /* Light theme (default) */
+  --background: #f6f8fb;
+  --foreground: #111827;
+
+  --base-bg: #f6f8fb;
+  --base-surface: #ffffff;
+  --base-card: #ffffff;
+  --base-elevated: #ffffff;
+  --base-hover: #f3f4f6;
+  --base-border: #e5e7eb;
+  --base-glow: rgba(59, 130, 246, 0.08);
+  --base-muted: #f3f4f6;
+
+  --dash-bg: #f6f8fb;
+  --dash-surface: rgba(255, 255, 255, 0.85);
+  --dash-card: #ffffff;
+  --dash-elevated: #ffffff;
+  --dash-border: #e5e7eb;
+  --dash-muted: #f3f4f6;
+
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-bright: #0b1220;
+
+  --tx-primary: #111827;
+  --tx-secondary: #6b7280;
+  --tx-muted: #9ca3af;
+  --tx-bright: #0b1220;
 
   /* Brand colors (used for custom CSS, Tailwind utilities come from tailwind.config.js) */
   --color-primary: #3b82f6;
@@ -27,17 +54,44 @@
   --color-teal: #14b8a6;
   --color-yellow: #facc15;
 
-  --color-neutral-50: #070b14;
-  --color-neutral-100: #0b0f1a;
-  --color-neutral-200: #0d1424;
-  --color-neutral-500: #7a90b0;
-  --color-neutral-800: #e2e8f5;
-  --color-neutral-900: #ffffff;
+  --color-neutral-50: #f6f8fb;
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #f3f4f6;
+  --color-neutral-500: #6b7280;
+  --color-neutral-800: #111827;
+  --color-neutral-900: #0b1220;
 }
 
 .dark {
+  /* Dark theme */
   --background: #0b0f1a;
   --foreground: #e2e8f5;
+
+  --base-bg: #070b14;
+  --base-surface: #0b0f1a;
+  --base-card: #0d1424;
+  --base-elevated: #111827;
+  --base-hover: #151f35;
+  --base-border: #1a2744;
+  --base-glow: #1e3a5f;
+  --base-muted: #1c2a3e;
+
+  --dash-bg: #05070f;
+  --dash-surface: #080c18;
+  --dash-card: #0a0f1e;
+  --dash-elevated: #0d1326;
+  --dash-border: #141d35;
+  --dash-muted: #111828;
+
+  --text-primary: #e2e8f5;
+  --text-secondary: #7a90b0;
+  --text-muted: #3d5470;
+  --text-bright: #ffffff;
+
+  --tx-primary: #e8eeff;
+  --tx-secondary: #6b82a8;
+  --tx-muted: #384d6a;
+  --tx-bright: #ffffff;
   
   --color-neutral-50: #070b14;
   --color-neutral-100: #0b0f1a;
@@ -53,6 +107,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@layer base {
+  *, ::before, ::after {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+}
+
 /* Consistent dashboard content width + spacing (pair with max-w-* per page). */
 @layer components {
   .dashboard-page-shell {
@@ -65,17 +125,20 @@ body.pdf-export-mode [data-hide-in-pdf] {
   display: none !important;
 }
 
-/* Admin overview (scoped theme) */
+/* Admin overview (scoped typography only; theme comes from Tailwind) */
 .admin-overview-theme {
-  background-color: #05070f;
-  color: #e8eeff;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #070b14; }
-::-webkit-scrollbar-thumb { background: #1a2744; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
-* { scrollbar-width: thin; scrollbar-color: #1a2744 #070b14; }
+::-webkit-scrollbar-track { background: #f3f4f6; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f3f4f6; }
+
+.dark ::-webkit-scrollbar-track { background: #070b14; }
+.dark ::-webkit-scrollbar-thumb { background: #1a2744; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+.dark * { scrollbar-color: #1a2744 #070b14; }
 
