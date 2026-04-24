@@ -489,21 +489,30 @@ function formatKpiDisplay(
 
 function trendTextClass(trend: string | null | undefined): string {
   const s = (trend ?? "").trim();
-  if (!s || s === "N/A") return "text-slate-600 dark:text-text-secondary";
-  if (s.startsWith("+")) return "text-green-700 dark:text-status-success";
-  if (s.startsWith("-")) return "text-red-700 dark:text-status-danger";
-  return "text-slate-600 dark:text-text-secondary";
+  if (!s || s === "N/A") return "text-slate-600 dark:text-tx-secondary";
+  if (s.startsWith("+")) return "text-green-700 dark:text-emerald-50";
+  if (s.startsWith("-")) return "text-red-700 dark:text-red-100";
+  return "text-slate-600 dark:text-tx-secondary";
 }
 
 function trendPillClass(trend: string | null | undefined): string {
   const s = (trend ?? "").trim();
+  // Light: soft SaaS pills. Dark: translucent glass on KPI gradients (not solid slate).
+  const darkNeutral =
+    "dark:border dark:border-white/10 dark:bg-white/[0.08] dark:backdrop-blur-sm";
+  const darkPositive =
+    "dark:border dark:border-emerald-400/30 dark:bg-emerald-500/20 dark:backdrop-blur-sm";
+  const darkNegative =
+    "dark:border dark:border-red-400/30 dark:bg-red-500/20 dark:backdrop-blur-sm";
+
   if (!s || s === "N/A")
-    return "bg-slate-100 border border-slate-200 dark:bg-white/8 dark:border-white/10";
+    return `bg-slate-100 border border-slate-200 ${darkNeutral}`;
   if (s.startsWith("+"))
-    return "bg-green-50 border border-green-200 dark:bg-white/8 dark:border-white/10";
+    return `bg-green-50 border border-green-200 ${darkPositive}`;
   if (s.startsWith("-"))
-    return "bg-red-50 border border-red-200 dark:bg-white/8 dark:border-white/10";
-  return "bg-slate-100 border border-slate-200 dark:bg-white/8 dark:border-white/10";
+    return `bg-red-50 border border-red-200 ${darkNegative}`;
+  // e.g. "0%" — same as neutral
+  return `bg-slate-100 border border-slate-200 ${darkNeutral}`;
 }
 
 function asNum(v: unknown): number {
