@@ -405,7 +405,14 @@ export type PatientIntelResponse = {
   critical_vitals_percentage: number;
   at_risk_count: number;
   top_risk_patients: string;
-  ai_prediction: string;
+  ai_prediction:
+    | string
+    | {
+        summary?: string;
+        risk_level?: string;
+        recommendation?: string;
+        generated_by?: string;
+      };
 };
 
 export type PharmacyIntelResponse = {
@@ -657,6 +664,14 @@ type ParsedAiForecast = {
   suggestion: string;
   rawFallback: string;
 };
+
+function coerceAiPredictionToText(ai: PatientIntelResponse["ai_prediction"]): string {
+  if (typeof ai === "string") return ai;
+  if (ai && typeof ai === "object") {
+    return String(ai.summary ?? ai.recommendation ?? "");
+  }
+  return "";
+}
 
 /** Parses LLM output when it follows SUMMARY: / NAMES: / SUGGESTION: sections. */
 function parseAiForecast(text: string): ParsedAiForecast {
@@ -1196,7 +1211,8 @@ export default function AdminDashboard() {
                     const pack = derivePrediction(
                       intelData.critical_vitals_percentage,
                       undefined,
-                      parseAiForecast(intelData.ai_prediction).summary || undefined
+                      parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction))
+                        .summary || undefined
                     );
                     return (
                       <div
@@ -1288,7 +1304,7 @@ export default function AdminDashboard() {
                 </p>
                 <div className="text-tx-secondary text-xs leading-relaxed italic overflow-hidden">
                   {(() => {
-                    const p = parseAiForecast(intelData.ai_prediction);
+                    const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
                     if (p.rawFallback) {
                       return (
                         <p className="text-tx-secondary text-xs leading-relaxed italic">
@@ -1331,7 +1347,7 @@ export default function AdminDashboard() {
                 <div className="bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-4">
                   <p className="text-kpi-orange font-semibold text-sm leading-relaxed">
                     {(() => {
-                      const p = parseAiForecast(intelData.ai_prediction);
+                      const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
                       return p.suggestion || "Monitor high-risk patients closely and ensure timely intervention if needed.";
                     })()}
                   </p>
@@ -1371,7 +1387,8 @@ export default function AdminDashboard() {
                 pack={derivePrediction(
                   intelData.critical_vitals_percentage,
                   undefined,
-                  parseAiForecast(intelData.ai_prediction).summary || undefined
+                  parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction))
+                    .summary || undefined
                 )}
               />
             </>
