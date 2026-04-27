@@ -3,10 +3,7 @@ Admin pharmacy intelligence: stock metrics + OpenAI JSON insights.
 """
 from __future__ import annotations
 
-import asyncio
-import json
 import math
-import re
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
 
@@ -15,7 +12,6 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
-from app.core.ops_openai_settings import resolve_openai_api_key
 from app.database import get_db
 from app.models.pharmacy import PharmacyStock
 from app.models.user import User, UserRole
@@ -281,117 +277,62 @@ async def _ensure_seed_pharmacy_stock(db: AsyncSession) -> None:
     await db.commit()
 
 
-def _parse_expiry_suggestion_json(raw: str) -> Dict[str, str]:
-    text = (raw or "").strip()
-    if not text:
-        return dict(FALLBACK_EXPIRY)
-    fence = re.match(r"^```(?:json)?\s*([\s\S]*?)\s*```$", text, re.IGNORECASE)
-    if fence:
-        text = fence.group(1).strip()
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        return dict(FALLBACK_EXPIRY)
-    if not isinstance(data, dict):
-        return dict(FALLBACK_EXPIRY)
-    out = dict(FALLBACK_EXPIRY)
-    for k in FALLBACK_EXPIRY:
-        if k in data and data[k] is not None:
-            out[k] = str(data[k]).strip()
-    return out
+def _generate_local_pharmacy_summary(
+    expiring_soon: list,
+    low_stock_items: list,
+    stockout_items: list,
+) -> dict:
+    """
+    Generates pharmacy expiry warning and suggestion using rule-based logic.
+    No external API calls.
 
+    Args:
+        expiring_soon: list of dicts with keys: name, days_until_expiry, quantity
+        low_stock_items: list of dicts with keys: name, quantity, low_stock_threshold
+        stockout_items: list of dicts with keys: name
+    """
+    # Build expiry warning text
+    if expiring_soon:
+        top = expiring_soon[:3]
+        parts = [
+            f"{item['name']} (expires in {item['days_until_expiry']} days, "
+            f"qty: {item['quantity']})"
+            for item in top
+        ]
+        expiry_warning = (
+            f"{len(expiring_soon)} item(s) expiring within 30 days. "
+            f"Urgent: {'; '.join(parts)}."
+        )
+    else:
+        expiry_warning = "No items expiring within the next 30 days."
 
-def _openai_expiry_suggestion_sync(
-    total_medicines: int,
-    out_of_stock_count: int,
-    low_stock_count: int,
-    expiring_soon_count: int,
-    expired_count: int,
-    out_of_stock_names: List[str],
-    low_stock_details: List[Dict[str, Any]],
-    expiring_details: List[Dict[str, Any]],
-    expired_sample_names: List[str],
-) -> Dict[str, str]:
-    from openai import OpenAI
+    # Build suggestion text
+    suggestions = []
 
-    api_key = (resolve_openai_api_key() or "").strip()
-    if not api_key:
-        return dict(FALLBACK_EXPIRY)
+    if stockout_items:
+        names = ", ".join([i["name"] for i in stockout_items[:3]])
+        suggestions.append(f"Immediately reorder: {names} (currently out of stock).")
 
-    user_prompt = f"""
-Current pharmacy stock at Gilkari Hospital:
+    if low_stock_items:
+        names = ", ".join([i["name"] for i in low_stock_items[:3]])
+        suggestions.append(f"Schedule reorder for low stock: {names}.")
 
-Out of stock: {out_of_stock_names if out_of_stock_names else "None"}
-Low stock: {[m['name'] for m in low_stock_details] if low_stock_details else "None"}
-Expiring soon: {[m['name'] + ' in ' + str(m['days_until_expiry']) + ' days' for m in expiring_details] if expiring_details else "None"}
-Expired count: {expired_count}
+    if expiring_soon:
+        names = ", ".join([i["name"] for i in expiring_soon[:2]])
+        suggestions.append(
+            f"Review expiring stock for possible early use or return: {names}."
+        )
 
-Analyze this and return JSON:
-{{
-  "stockout_prediction": "Based on stock levels, 
-    which medicines will run out soon and when. 
-    Keep under 20 words. Clean medicine names.",
-    
-  "medicines_to_reorder": ["clean medicine names 
-    without brackets, only most urgent ones"],
-    
-  "expiry_warning": "Which medicines expiring soon 
-    and in how many days. Under 20 words. 
-    If none say: All medicines have healthy expiry dates.",
-    
-  "suggestion": "One specific action for pharmacy 
-    staff right now. Under 15 words."
-}}
+    if not suggestions:
+        suggestion = "Pharmacy inventory is currently stable. Continue routine monitoring."
+    else:
+        suggestion = " ".join(suggestions)
 
-IMPORTANT:
-- Remove (General formulary) or any brackets from names
-- If expiring_details is empty or None write 
-  expiry_warning as: "All medicines have healthy 
-  expiry dates."
-- If out_of_stock and low_stock are both empty write
-  stockout_prediction as: "All medicine stocks 
-  are currently sufficient."
-- Keep every sentence SHORT and CLEAN
-- Return ONLY JSON nothing else
-"""
-
-    client = OpenAI(api_key=api_key)
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        max_tokens=200,
-        temperature=0.2,
-        messages=[
-            {"role": "system", "content": OPENAI_SYSTEM},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    msg = resp.choices[0].message.content
-    return _parse_expiry_suggestion_json(msg or "")
-
-
-async def _fetch_ai_expiry_suggestion(
-    total_medicines: int,
-    out_of_stock_count: int,
-    low_stock_count: int,
-    expiring_soon_count: int,
-    expired_count: int,
-    out_of_stock_names: List[str],
-    low_stock_details: List[Dict[str, Any]],
-    expiring_details: List[Dict[str, Any]],
-    expired_sample_names: List[str],
-) -> Dict[str, str]:
-    return await asyncio.to_thread(
-        _openai_expiry_suggestion_sync,
-        total_medicines,
-        out_of_stock_count,
-        low_stock_count,
-        expiring_soon_count,
-        expired_count,
-        out_of_stock_names,
-        low_stock_details,
-        expiring_details,
-        expired_sample_names,
-    )
+    return {
+        "expiry_warning": expiry_warning,
+        "suggestion": suggestion,
+        "generated_by": "local_rule_engine",
+    }
 
 
 @router.get("/pharmacy-intelligence")
@@ -648,20 +589,21 @@ async def get_pharmacy_intelligence(
 
     expired_sample_names = expired_medicines[:18]
 
-    try:
-        ai_exp = await _fetch_ai_expiry_suggestion(
-            total_medicines,
-            out_of_stock_count,
-            low_stock_count,
-            expiring_soon_count,
-            expired_count,
-            out_of_stock_names,
-            low_stock_details,
-            expiring_details,
-            expired_sample_names,
-        )
-    except Exception:
-        ai_exp = dict(FALLBACK_EXPIRY)
+    pharmacy_summary = _generate_local_pharmacy_summary(
+        expiring_soon=expiring_details,
+        low_stock_items=[
+            {
+                "name": str(name),
+                "quantity": int(qty or 0),
+                "low_stock_threshold": int(mq or 0),
+            }
+            for name, qty, mq in low_proj_rows
+            if name
+        ],
+        stockout_items=[{"name": n} for n in out_of_stock_medicines],
+    )
+    expiry_warning = pharmacy_summary["expiry_warning"]
+    suggestion = pharmacy_summary["suggestion"]
 
     return {
         "total_medicines": total_medicines,
@@ -676,6 +618,7 @@ async def get_pharmacy_intelligence(
         "expired_medicines": expired_medicines,
         "stockout_prediction": stockout_prediction,
         "medicines_to_reorder": medicines_to_reorder,
-        "expiry_warning": ai_exp["expiry_warning"],
-        "suggestion": ai_exp["suggestion"],
+        "expiry_warning": expiry_warning,
+        "suggestion": suggestion,
+        "generated_by": pharmacy_summary["generated_by"],
     }

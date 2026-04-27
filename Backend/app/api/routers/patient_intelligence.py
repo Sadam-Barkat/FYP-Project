@@ -12,7 +12,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
-from app.core.ops_openai_settings import resolve_openai_api_key
 from app.database import get_db
 from app.models.admission import Admission
 from app.models.patient import Patient
@@ -187,101 +186,49 @@ def _vital_snapshot(v: Optional[Vital]) -> str:
     return f"HR={hr} SpO2={sp}% Temp={t}°C BPsys={sys_bp} RR={rr}/min"
 
 
-def _openai_summary_sync(
-    total_patients: int,
-    at_risk_count: int,
-    vitals_health_percentage: int,
-    critical_vitals_percentage: int,
-    change_from_last_week: int,
-    top_risk_patient_names: str,
-    patient_risk_table: str,
-) -> str:
-    from openai import OpenAI
+def _generate_local_summary(metrics: dict, top_patients: list) -> dict:
+    """
+    Generates a patient intelligence summary using rule-based templates.
+    No external API calls. Uses only the data already computed in this file.
+    """
+    risk_score = metrics.get("avg_news2_score", 0)
+    high_risk_count = metrics.get("high_risk_count", 0)
+    total_patients = metrics.get("total_patients", 0)
 
-    api_key = (resolve_openai_api_key() or "").strip()
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY missing")
+    # Risk level label
+    if risk_score >= 7:
+        risk_level = "Critical"
+        recommendation = "Immediate clinical review required for flagged patients."
+    elif risk_score >= 5:
+        risk_level = "High"
+        recommendation = "Priority monitoring recommended. Reassess vitals within 2 hours."
+    elif risk_score >= 3:
+        risk_level = "Moderate"
+        recommendation = "Continue standard monitoring. Review flagged cases at next round."
+    else:
+        risk_level = "Low"
+        recommendation = "Patient population is currently stable. Maintain routine monitoring."
 
-    user_prompt = f"""
-Hospital patient data:
-- Total active patients: {total_patients}
-- Patients with abnormal vitals (NEWS2 >= 5): {at_risk_count}
-- Overall vitals health score: {vitals_health_percentage}%
-- Critical vitals percentage: {critical_vitals_percentage}%
-- Change from last week: {change_from_last_week}
-- Highest NEWS2 names (subset): {top_risk_patient_names}
+    # Top patient names from the already-computed list
+    if top_patients:
+        names = ", ".join([p.get("name", "Unknown") for p in top_patients[:3]])
+        names_line = f"Highest risk patients: {names}."
+    else:
+        names_line = "No high-risk patients currently flagged."
 
-Full active-patient table (highest NEWS2 first; NEWS2 is internal severity score — use with vitals to judge who looks most serious):
-{patient_risk_table}
-
-You are a clinical AI. From ONLY the metrics and patient table above, estimate how many
-patients need heightened attention and when (choose a single lookahead window of
-1, 2, 3, 4, 5, 6, or 7 days — maximum one week; never beyond 7 days; pick the shortest
-window the data supports).
-
-You MUST output ONLY the following three sections, in this exact order, with these exact headers:
-
-SUMMARY:
-Exactly one line (may use two short clauses joined by a comma if needed). It MUST include:
-(1) an explicit integer count, e.g. "5 patients" or "6 patients";
-(2) a short phrase stating WHAT they are, e.g. "are at elevated risk of clinical deterioration",
-"need closer vitals monitoring", or "warrant urgent review" — grounded in the table;
-(3) an explicit day window, e.g. "within 2 days" or "within 7 days" (only 1–7 days).
-Example shape: "6 patients are at elevated risk of deterioration within 7 days."
-No vague wording ("some", "several", "many"). Tie count, risk phrase, and window to the data.
-
-NAMES:
-1. First Patient Full Name
-2. Second Patient Full Name
-(One numbered line per patient you flag. If SUMMARY states N patients, include exactly N
-distinct names from the table — same N, same people. List every name if N is large.)
-
-SUGGESTION:
-One imperative sentence for clinical or operational staff, written specifically for the
-patterns in the table above (name the lever: reviews, monitoring, investigations, bed moves,
-senior review, etc.). It must read like a fresh recommendation for THIS census and vitals
-picture — not a generic safety slogan.
-
-Rules:
-- No text before SUMMARY: or after the SUGGESTION: line.
-- NAMES must use numbered lines starting with "1.", "2.", etc.
-- Use only names that appear in the full table; never invent patients.
-- Do not predict risk later than 7 days from now; if data suggests longer risk, cap wording at "within 7 days".
-"""
-
-    client = OpenAI(api_key=api_key)
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        max_tokens=1800,
-        temperature=0.75,
-        messages=[
-            {"role": "system", "content": OPENAI_SYSTEM},
-            {"role": "user", "content": user_prompt},
-        ],
+    summary = (
+        f"Current ward risk level is {risk_level} "
+        f"(average NEWS2 score: {round(risk_score, 1)}). "
+        f"{high_risk_count} of {total_patients} patients are flagged as high risk. "
+        f"{names_line} {recommendation}"
     )
-    msg = resp.choices[0].message.content
-    return (msg or "").strip()
 
-
-async def _fetch_ai_prediction(
-    total_patients: int,
-    at_risk_count: int,
-    vitals_health_percentage: int,
-    critical_vitals_percentage: int,
-    change_from_last_week: int,
-    top_risk_patient_names: str,
-    patient_risk_table: str,
-) -> str:
-    return await asyncio.to_thread(
-        _openai_summary_sync,
-        total_patients,
-        at_risk_count,
-        vitals_health_percentage,
-        critical_vitals_percentage,
-        change_from_last_week,
-        top_risk_patient_names,
-        patient_risk_table,
-    )
+    return {
+        "summary": summary,
+        "risk_level": risk_level,
+        "recommendation": recommendation,
+        "generated_by": "local_rule_engine",
+    }
 
 
 @router.get("/patient-intelligence")
@@ -375,18 +322,20 @@ async def get_patient_intelligence(
         )
     patient_risk_table = "\n".join(risk_lines) if risk_lines else "(no patients)"
 
-    try:
-        ai_prediction = await _fetch_ai_prediction(
-            total_patients,
-            at_risk_count,
-            vitals_health_percentage,
-            critical_vitals_percentage,
-            change_from_last_week,
-            top_risk_patients_full or top_risk_patients or "(none listed)",
-            patient_risk_table,
-        )
-    except Exception:
-        ai_prediction = "Prediction unavailable at this time."
+    avg_news2_score = round(
+        (sum(sc for sc, _name, _pid in scored) / len(scored)) if scored else 0.0,
+        2,
+    )
+    metrics = {
+        "avg_news2_score": avg_news2_score,
+        "high_risk_count": at_risk_count,
+        "total_patients": total_patients,
+    }
+    top_patients = [
+        {"name": name, "news2_score": sc, "patient_id": pid}
+        for sc, name, pid in scored[:5]
+    ]
+    ai_prediction = _generate_local_summary(metrics, top_patients)
 
     return {
         "total_patients": total_patients,
