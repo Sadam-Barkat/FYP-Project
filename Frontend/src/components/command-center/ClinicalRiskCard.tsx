@@ -6,12 +6,6 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { Activity, ChevronRight, Bell, BarChart3, ClipboardList, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Bar, BarChart, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
 
-const FAKE_BAR_DATA = [
-  { name: "-11h", value: 2 }, { name: "-10h", value: 3 }, { name: "-9h", value: 1 }, { name: "-8h", value: 4 }, 
-  { name: "-7h", value: 2 }, { name: "-6h", value: 5 }, { name: "-5h", value: 3 }, { name: "-4h", value: 6 },
-  { name: "-3h", value: 4 }, { name: "-2h", value: 7 }, { name: "-1h", value: 5 }, { name: "Now", value: 8 }
-];
-
 export default function ClinicalRiskCard({ className = "" }: { className?: string }) {
   const [loading, setLoading] = useState(true);
   const [alertsData, setAlertsData] = useState<any>(null);
@@ -76,7 +70,7 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
   const emergencyPct = emergencyWard.total > 0 ? Math.round((emergencyWard.occupied / emergencyWard.total) * 100) : 0;
 
   // Build Real Histogram from alerts_feed (last 12 hours)
-  let chartData = FAKE_BAR_DATA;
+  let chartData: { name: string; value: number }[] = [];
   if (alertsData?.alerts_feed && alertsData.alerts_feed.length > 0) {
     const now = new Date();
     const bins = Array(12).fill(0);
@@ -175,17 +169,23 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
               {timeDiff > 0 ? <TrendingUp size={13} /> : timeDiff < 0 ? <TrendingDown size={13} /> : <Minus size={13} />}
             </div>
             <div className="h-9 w-36 mt-2 relative group">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <Tooltip 
-                    cursor={{fill: 'transparent'}}
-                    contentStyle={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px' }}
-                    labelStyle={{ display: 'none' }}
-                  />
-                  <Bar dataKey="value" fill="#93c5fd" radius={[2, 2, 0, 0]} />
-                  <ReferenceLine y={Math.max(...chartData.map(d => d.value)) * 0.8} stroke="#94a3b8" strokeDasharray="2 2" strokeWidth={1} opacity={0.5} />
-                </BarChart>
-              </ResponsiveContainer>
+              {chartData.length === 0 ? (
+                <div className="flex items-center justify-center h-24 text-sm text-gray-400">
+                  No alert activity in the last 12 hours
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <Tooltip 
+                      cursor={{fill: 'transparent'}}
+                      contentStyle={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px' }}
+                      labelStyle={{ display: 'none' }}
+                    />
+                    <Bar dataKey="value" fill="#93c5fd" radius={[2, 2, 0, 0]} />
+                    <ReferenceLine y={Math.max(...chartData.map(d => d.value)) * 0.8} stroke="#94a3b8" strokeDasharray="2 2" strokeWidth={1} opacity={0.5} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
               <span className="absolute -bottom-4 right-0 text-[9px] text-gray-400">12h trend</span>
             </div>
           </div>

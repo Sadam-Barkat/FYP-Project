@@ -1,16 +1,12 @@
-"""Hospital Ops Copilot — OpenAI Agents SDK (Runner + tools + structured output)."""
+"""Hospital Ops Copilot — local rules + structured output (no external AI)."""
 
 from __future__ import annotations
 
-import json
-import os
 from typing import Any, Dict, List
 
-from agents import Agent, Runner
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.ops_openai_settings import get_ops_openai_settings, resolve_openai_api_key
 from app.services.ops_copilot_sdk_tools import OPS_COPILOT_TOOLS, OpsCopilotContext
 
 
@@ -35,87 +31,6 @@ class BriefingLLMOutput(BaseModel):
         return [a.strip() for a in v if a and a.strip()][:12]
 
 
-INSTRUCTIONS = """You are an AI hospital operations assistant for an admin dashboard.
-
-You must produce ONE combined operational briefing that reflects the overall hospital situation—not a
-single-domain report. The hospital leadership expects a high-level picture across major operational areas.
-
-## How you must use tools (hospital_metrics)
-
-- Before writing the briefing, call MULTIPLE tools (typically at least three different tools) so you
-  understand capacity, patient flow signals, alerts, acuity, and revenue together. Do not stop after one
-  tool unless the model/runtime truly prevents further calls.
-- Synthesize across tool outputs: identify the top 2–3 most important operational risks or changes
-  across the whole system. If several issues are moderate, summarize them compactly rather than listing
-  many small items.
-- Do NOT anchor the briefing primarily on admissions unless admission/flow signals are clearly the
-  dominant risk compared to everything else you fetched. If admissions are only one part of the story,
-  keep them in proportion.
-
-## What each tool family is for (read all that apply before concluding)
-
-- get_occupancy_by_ward: Bed & capacity — overall occupancy, ICU occupancy, ward-level overcrowding or
-  unusually low utilization (by_ward).
-- get_admission_trend: Admissions trend and week-over-week volume change; combine with occupancy to
-  infer flow pressure (e.g. rising occupancy with falling admissions may suggest discharge friction—
-  infer cautiously from metrics you have).
-- get_alert_backlog: Alerts — unresolved critical count, other unresolved tiers, and intake spikes
-  (last 24h / today created).
-- get_patient_acuity_mix: Vitals / acuity — critical + emergency burden vs normal; rising high_acuity_pct.
-- get_revenue_trend: Billing & finance — paid revenue by day and week-over-week change; unexpected drops
-  or spikes vs recent baseline.
-
-## Cross-dashboard reasoning (use when supported by tool numbers)
-
-Examples of combined interpretations (only state if metrics support them):
-- High occupancy + high alert intake or unresolved critical backlog → workload / safety pressure.
-- Rising critical/emergency share + strained capacity → acuity–capacity risk.
-- Strong admissions signal but occupancy staying very high → possible slow throughput / discharge side
-  (state as hypothesis tied to numbers).
-- Paid revenue down week-over-week while other operational signals look stable → possible billing /
-  collections lag (tie to revenue tool).
-
-## Output format (unchanged contract)
-
-When you finalize, your structured output MUST include:
-- title: one short, clear headline capturing the MAIN overall operational concern (not only admissions).
-- risk_category: short snake_case (capacity|alerts|revenue|flow|general|acuity)
-- what_changed: concrete, metric-backed summary of the most important changes ACROSS areas you queried.
-- why_it_matters: plain-language operational impact for the hospital as a whole.
-- recommended_actions: 3–5 practical steps an admin can take (specific, not generic "monitor only").
-- evidence_links: 3–6 items with label + href. Prefer linking to the dashboard areas that support your
-  narrative. Allowed bases include:
-  /admin
-  /admin/patients-beds
-  /admin/alerts
-  /admin/billing-finance
-  /admin/billing-finance/analytics
-  /admin/ops-copilot
-  /admin/pharmacy
-  /admin/laboratory
-  /admin/hr-staff
-  For analytics deep-links, use anchors (not bare /admin/analytics when a specific chart applies), e.g.:
-  /admin/analytics#analytics-admissions-forecast
-  /admin/analytics#analytics-ward-demand
-  /admin/analytics#analytics-revenue-forecast
-  /admin/analytics#analytics-vitals-condition-mix
-  /admin/analytics#analytics-alerts-trend
-  Do not use /admin/patient-acuity (legacy).
-
-Keep the briefing concise. Base factual claims on tool outputs only; do not invent numbers.
-"""
-
-
-USER_PROMPT = """Generate one current operational briefing for hospital leadership now.
-
-Workflow:
-1) Call several hospital_metrics tools (capacity, admissions trend, alerts, acuity mix, revenue—use
-   what is needed so the picture is whole-hospital, not admissions-only).
-2) From those results, pick the top 2–3 operational risks or changes that matter most together.
-3) Output the structured briefing (title, risk_category, what_changed, why_it_matters,
-   recommended_actions, evidence_links) following the system instructions."""
-
-
 def _briefing_output_to_dict(out: BriefingLLMOutput) -> Dict[str, Any]:
     links = [link.model_dump() for link in out.evidence_links]
     if not links:
@@ -133,62 +48,127 @@ def _briefing_output_to_dict(out: BriefingLLMOutput) -> Dict[str, Any]:
     }
 
 
-def _build_agent(model_name: str) -> Agent:
-    return Agent(
-        name="Hospital Ops Copilot",
-        instructions=INSTRUCTIONS,
-        tools=list(OPS_COPILOT_TOOLS),  # flat list[FunctionTool] from tool_namespace
-        model=model_name,
-        output_type=BriefingLLMOutput,
-    )
-
-
 async def run_ops_copilot_agent(db: AsyncSession) -> Dict[str, Any]:
     """
-    Run the Ops Copilot agent: tools fetch metrics; agent returns a structured briefing dict
-    (same shape as the previous direct-API implementation).
+    Generates an ops briefing using only local rule-based logic.
+    No external API calls. Uses the same signals already collected
+    from the database.
     """
-    settings = get_ops_openai_settings()
-    api_key = resolve_openai_api_key()
-    if not api_key:
-        raise RuntimeError(
-            "OPENAI_API_KEY is not set for this server process. "
-            "On Railway: open the service that runs this API (same URL as NEXT_PUBLIC_API_URL on Vercel) → "
-            "Variables → add OPENAI_API_KEY (exact name) → Redeploy. "
-            "GET /api/ops-copilot/openai-env-status (admin) shows whether the running instance sees the key."
+    from app.services.ops_copilot_tools import collect_all_signals
+
+    # Collect real metrics from DB (this was always local)
+    signals = await collect_all_signals(db)
+
+    # Extract key values with safe fallbacks
+    occupancy = signals.get("occupancy", {})
+    alerts = signals.get("alert_backlog", {})
+    admissions = signals.get("admission_trend", {})
+    revenue = signals.get("revenue_trend", {})
+    acuity = signals.get("patient_acuity_mix", {})
+
+    occupancy_rate = occupancy.get("occupancy_rate_pct", 0) or 0
+    total_alerts = alerts.get("total_open", 0) or 0
+    critical_alerts = alerts.get("critical_open", 0) or 0
+    total_admissions_today = admissions.get("today", 0) or 0
+    high_acuity_count = acuity.get("high", 0) or 0
+
+    # Determine risk category
+    if occupancy_rate >= 90 or critical_alerts >= 5:
+        risk_category = "critical"
+    elif occupancy_rate >= 75 or critical_alerts >= 2 or total_alerts >= 10:
+        risk_category = "high"
+    elif occupancy_rate >= 60 or total_alerts >= 5:
+        risk_category = "moderate"
+    else:
+        risk_category = "low"
+
+    # Build title
+    title = f"Ops Briefing — {risk_category.capitalize()} Risk | Occupancy {occupancy_rate:.0f}%"
+
+    # Build what_changed
+    what_changed = (
+        f"Current occupancy is {occupancy_rate:.1f}%. "
+        f"There are {total_alerts} open alerts ({critical_alerts} critical). "
+        f"Admissions today: {total_admissions_today}. "
+        f"High-acuity patients: {high_acuity_count}."
+    )
+
+    # Build why_it_matters
+    if risk_category == "critical":
+        why_it_matters = (
+            "Occupancy or critical alert levels have reached a threshold "
+            "that requires immediate operational intervention to prevent "
+            "patient safety risks and care delays."
+        )
+    elif risk_category == "high":
+        why_it_matters = (
+            "Current load indicators suggest elevated pressure on ward "
+            "capacity and clinical staff. Proactive action now can prevent "
+            "escalation to critical status."
+        )
+    elif risk_category == "moderate":
+        why_it_matters = (
+            "Operations are within manageable range but trending toward "
+            "higher pressure. Monitoring and early preparation are advised."
+        )
+    else:
+        why_it_matters = (
+            "All key indicators are within normal operational range. "
+            "Continue routine monitoring and standard protocols."
         )
 
-    model = (settings.OPENAI_OPS_COPILOT_MODEL or "gpt-4o-mini").strip()
+    # Build recommended_actions
+    actions: List[str] = []
 
-    # Agents SDK reads OPENAI_API_KEY from the environment; sync from pydantic-settings / .env.
-    os.environ["OPENAI_API_KEY"] = api_key
-
-    agent = _build_agent(model)
-    run_context = OpsCopilotContext(db=db)
-
-    max_turns = int(settings.OPENAI_OPS_COPILOT_MAX_TURNS)
-
-    try:
-        result = await Runner.run(
-            agent,
-            USER_PROMPT,
-            context=run_context,
-            max_turns=max_turns,
+    if occupancy_rate >= 90:
+        actions.append(
+            "Initiate bed management protocol immediately — "
+            "review discharge candidates across all wards."
         )
-    except Exception as e:
-        raise RuntimeError(f"Ops Copilot agent run failed: {e}") from e
+    elif occupancy_rate >= 75:
+        actions.append(
+            "Review pending discharges and prepare overflow plan "
+            "if occupancy continues to rise."
+        )
 
-    final = result.final_output
+    if critical_alerts >= 1:
+        actions.append(
+            f"Assign clinical lead to review {critical_alerts} "
+            f"critical alert(s) within the next 30 minutes."
+        )
 
-    if isinstance(final, BriefingLLMOutput):
-        return _briefing_output_to_dict(final)
+    if total_alerts >= 10:
+        actions.append(
+            "Alert backlog is high — assign additional staff to "
+            "triage and resolve open alerts."
+        )
 
-    if isinstance(final, str):
-        try:
-            parsed = json.loads(final)
-            validated = BriefingLLMOutput.model_validate(parsed)
-            return _briefing_output_to_dict(validated)
-        except (json.JSONDecodeError, ValueError) as e:
-            raise RuntimeError(f"Agent returned unparsable briefing: {e}") from e
+    if high_acuity_count >= 5:
+        actions.append(
+            f"{high_acuity_count} high-acuity patients on floor — "
+            "confirm adequate nurse-to-patient ratio."
+        )
 
-    raise RuntimeError(f"Unexpected agent output type: {type(final)}")
+    if not actions:
+        actions.append(
+            "No immediate action required. "
+            "Maintain standard monitoring frequency."
+        )
+
+    # Build evidence_links (internal references only)
+    evidence_links = [
+        {"label": "Occupancy Dashboard", "href": "/admin/analytics"},
+        {"label": "Alert Center", "href": "/admin/alerts"},
+        {"label": "Patient Intelligence", "href": "/admin/patients"},
+    ]
+
+    # Keep the output shape identical to the previous agent dict output
+    out = BriefingLLMOutput(
+        title=title,
+        risk_category=risk_category,
+        what_changed=what_changed,
+        why_it_matters=why_it_matters,
+        recommended_actions=actions,
+        evidence_links=[EvidenceLink(**l) for l in evidence_links],
+    )
+    return _briefing_output_to_dict(out)

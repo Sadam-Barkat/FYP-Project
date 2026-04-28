@@ -19,7 +19,6 @@ from app.models.alert import Alert
 from app.services.ops_copilot_tools import collect_all_signals, get_occupancy_by_ward
 from app.services.ops_copilot_agent import run_ops_copilot_agent
 from app.core.websocket_manager import broadcast_admin_data_changed
-from app.core.ops_openai_settings import openai_api_key_configured
 
 router = APIRouter(prefix="/api/ops-copilot", tags=["ops_copilot"])
 
@@ -54,12 +53,6 @@ def _row_to_briefing(b: OpsBriefing) -> Dict[str, Any]:
         "status": b.status,
         "created_at": b.created_at.isoformat() if b.created_at else None,
     }
-
-
-@router.get("/openai-env-status")
-async def openai_env_status(_: User = Depends(require_admin)) -> Dict[str, Any]:
-    """Whether this running backend process can see OPENAI_API_KEY (no secret values returned)."""
-    return {"openai_api_key_loaded": openai_api_key_configured()}
 
 
 @router.get("/daily-summary")

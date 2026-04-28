@@ -130,7 +130,12 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
   // 7. Forecast Data for Charts
   const admForecast = data?.forecast?.admission_forecast?.map((d: any, i: number) => ({ value: d.predicted_admissions })) || Array(7).fill({ value: 0 });
   const occForecast = data?.forecast?.bed_occupancy_forecast?.map((d: any, i: number) => ({ value: d.predicted_occupancy_pct })) || Array(7).fill({ value: 0 });
-  const disForecast = data?.forecast?.admission_forecast?.map((d: any, i: number) => ({ value: Math.max(0, d.predicted_admissions - 2 + Math.floor(Math.random() * 5)) })) || Array(7).fill({ value: 0 });
+  const admissionForecast = data?.forecast?.admission_forecast || [];
+  const disForecast = admissionForecast.length > 0
+    ? admissionForecast.map((d: any) => ({
+        value: Math.max(0, Math.round(d.predicted_admissions * 0.85))
+      }))
+    : [];
   const revTrend = data?.fin?.revenue_vs_expenses?.map((d: any) => ({ value: d.revenue })) || Array(7).fill({ value: 0 });
 
   const next7DaysAdm = admForecast.reduce((acc: number, curr: any) => acc + curr.value, 0);
@@ -432,13 +437,21 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
 
                     <div className="rounded-xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Expected Discharges</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">~{next7DaysDis}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {disForecast.length === 0 ? "N/A" : `~${next7DaysDis}`}
+                      </p>
                       <div className="h-10 w-full mt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={disForecast}>
-                            <Bar dataKey="value" fill="#10b981" radius={[2,2,0,0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        {disForecast.length === 0 ? (
+                          <div className="flex items-center justify-center h-16 text-sm text-gray-400">
+                            No discharge forecast available
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={disForecast}>
+                              <Bar dataKey="value" fill="#10b981" radius={[2,2,0,0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        )}
                       </div>
                     </div>
 

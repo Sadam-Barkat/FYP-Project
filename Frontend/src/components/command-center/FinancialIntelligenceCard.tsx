@@ -65,10 +65,6 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
 
   // Bar Chart Data (Last 7 days revenue)
   const barData = trendData.map((d: any) => ({ value: d.revenue }));
-  if (barData.length === 0) {
-    // Fallback if no data
-    for(let i=0; i<7; i++) barData.push({ value: Math.random() * 10000 });
-  }
 
   // Overdue estimate (since backend doesn't provide exact age breakdown)
   const overduePct = outstanding > 0 ? 61 : 0; // Using 61% as a realistic static estimate for the visual, as requested to match UI
@@ -98,12 +94,18 @@ export default function FinancialIntelligenceCard({ className = "" }: { classNam
               <ChevronDown size={14} />
             </div>
             <div className="h-6 w-32 mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
-                  <Bar dataKey="value" fill="#bfdbfe" radius={[1, 1, 0, 0]} />
-                  <ReferenceLine y={avgRevenue} stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} />
-                </BarChart>
-              </ResponsiveContainer>
+              {barData.length === 0 ? (
+                <div className="flex items-center justify-center h-16 text-sm text-gray-400">
+                  No revenue data available
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData}>
+                    <Bar dataKey="value" fill="#bfdbfe" radius={[1, 1, 0, 0]} />
+                    <ReferenceLine y={avgRevenue} stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>

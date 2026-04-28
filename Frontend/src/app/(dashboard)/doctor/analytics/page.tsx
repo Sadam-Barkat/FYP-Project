@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { mockDoctorAnalytics } from "@/lib/mockData";
+import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthHeaders } from "@/lib/auth";
 import { 
   Users, CheckCircle, Clock, TrendingUp, 
   BellRing, ChevronDown, Activity, ArrowLeft
@@ -15,20 +16,55 @@ import {
 
 export default function DoctorAnalyticsPage() {
   const router = useRouter();
-  const [analytics, setAnalytics] = useState(mockDoctorAnalytics);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAnalytics((prev) => ({
-        ...prev,
-        totalTreated: prev.totalTreated + (Math.random() > 0.8 ? 1 : 0),
-        discharges: prev.discharges + (Math.random() > 0.8 ? 1 : 0),
-        alertsResolved: prev.alertsResolved + (Math.random() > 0.7 ? 1 : 0),
-      }));
-    }, 12000);
+    let cancelled = false;
+    const loadData = async () => {
+      try {
+        const API_BASE = getApiBaseUrl();
+        const headers = getAuthHeaders();
+        const res = await fetch(
+          `${API_BASE}/api/doctor/analytics`,
+          { headers }
+        );
+        if (!res.ok) throw new Error("Failed to fetch analytics");
+        const data = await res.json();
+        if (!cancelled) setAnalytics(data);
+      } catch (error) {
+        console.error("Failed to load doctor analytics:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
-    return () => clearInterval(interval);
+    loadData();
+    const interval = setInterval(loadData, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+          <p className="text-sm font-medium">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <p className="text-sm text-gray-400">No analytics data available.</p>
+      </div>
+    );
+  }
 
   const pieData = [
     { name: 'Normal', value: analytics.conditions.normal, color: '#10b981' },
