@@ -50,6 +50,14 @@ async def lifespan(app: FastAPI):
             "yes" if openai_api_key_configured() else "no",
         )
 
+        # Warm up ML model (loads .pkl into memory once)
+        try:
+            from app.services.risk_model import _load_model
+            _load_model()
+            print("ML model loaded successfully.")
+        except Exception as e:
+            print(f"Warning: ML model could not be loaded: {e}")
+
         # Optional production-safe seeding for deployments:
         # If you deploy against a fresh Neon database (no local seed data),
         # login will return "Invalid email or password" because the user row doesn't exist.

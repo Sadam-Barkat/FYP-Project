@@ -17,6 +17,7 @@ from app.models.admission import Admission
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.models.vital import Vital
+from app.services.risk_model import predict_deterioration_risk
 
 router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 
@@ -331,10 +332,50 @@ async def get_patient_intelligence(
         "high_risk_count": at_risk_count,
         "total_patients": total_patients,
     }
-    top_patients = [
-        {"name": name, "news2_score": sc, "patient_id": pid}
-        for sc, name, pid in scored[:5]
-    ]
+    top_patients = []
+    for sc, name, pid in scored[:5]:
+        v = latest_by_pid.get(pid)
+
+        # Get patient age from the patient object
+        # Find the patient row from adm_rows where Patient.id == pid
+        patient_age = None
+        if hasattr(Patient, "age"):
+            for row in adm_rows:
+                if int(row.Patient.id) == pid:
+                    patient_age = getattr(row.Patient, "age", None)
+                    break
+        else:
+            patient_age = None  # age field not available in Patient model
+
+        # Calculate admission_days from admission_date
+        admission_days = 1.0
+        for row in adm_rows:
+            if int(row.Patient.id) == pid:
+                adm_date = getattr(row.Admission, "admission_date", None)
+                if adm_date:
+                    if isinstance(adm_date, datetime):
+                        admission_days = max(1.0, (datetime.utcnow() - adm_date).days)
+                    break
+
+        # Run ML model prediction
+        ml_risk = predict_deterioration_risk(
+            heart_rate        = getattr(v, "heart_rate", None) if v else None,
+            spo2              = getattr(v, "spo2", None) if v else None,
+            respiratory_rate  = getattr(v, "respiratory_rate", None) if v else None,
+            temperature       = getattr(v, "temperature", None) if v else None,
+            blood_pressure_sys= getattr(v, "blood_pressure_sys", None) if v else None,
+            age               = patient_age,
+            admission_days    = admission_days,
+        )
+
+        top_patients.append({
+            "name":        name,
+            "news2_score": sc,
+            "patient_id":  pid,
+            "ml_risk_score": ml_risk["risk_score"],
+            "ml_risk_label": ml_risk["risk_label"],
+            "ml_risk_pct":   ml_risk["risk_pct"],
+        })
     ai_prediction = _generate_local_summary(metrics, top_patients)
 
     return {
@@ -345,5 +386,15 @@ async def get_patient_intelligence(
         "critical_vitals_percentage": critical_vitals_percentage,
         "at_risk_count": at_risk_count,
         "top_risk_patients": top_risk_patients_full or top_risk_patients,
+        "ml_risk_summary": [
+            {
+                "patient_id":    p["patient_id"],
+                "name":          p["name"],
+                "ml_risk_label": p["ml_risk_label"],
+                "ml_risk_pct":   p["ml_risk_pct"],
+                "news2_score":   p["news2_score"],
+            }
+            for p in top_patients
+        ],
         "ai_prediction": ai_prediction,
     }
