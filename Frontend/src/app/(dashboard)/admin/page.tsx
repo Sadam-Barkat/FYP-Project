@@ -405,6 +405,13 @@ export type PatientIntelResponse = {
   critical_vitals_percentage: number;
   at_risk_count: number;
   top_risk_patients: string;
+  ml_risk_summary?: Array<{
+    patient_id: number;
+    name: string;
+    ml_risk_label: string;
+    ml_risk_pct: number;
+    news2_score: number;
+  }>;
   ai_prediction:
     | string
     | {
@@ -1339,6 +1346,63 @@ export default function AdminDashboard() {
                   })()}
                 </div>
               </div>
+
+              {intelData.ml_risk_summary && intelData.ml_risk_summary.length > 0 && (
+                <div className="px-5 py-4 flex flex-col gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400">
+                    🧠 ML Deterioration Risk
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {intelData.ml_risk_summary.map((p) => (
+                      <div
+                        key={p.patient_id}
+                        className="flex items-center justify-between rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                            {p.name}
+                          </span>
+                          <span className="text-[10px] text-gray-400 shrink-0">
+                            NEWS2: {p.news2_score}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <div className="w-16 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                p.ml_risk_pct >= 75
+                                  ? "bg-red-500"
+                                  : p.ml_risk_pct >= 50
+                                  ? "bg-orange-400"
+                                  : p.ml_risk_pct >= 25
+                                  ? "bg-yellow-400"
+                                  : "bg-green-500"
+                              }`}
+                              style={{ width: `${p.ml_risk_pct}%` }}
+                            />
+                          </div>
+                          <span
+                            className={`text-[11px] font-bold w-14 text-right ${
+                              p.ml_risk_label === "Critical"
+                                ? "text-red-500"
+                                : p.ml_risk_label === "High"
+                                ? "text-orange-500"
+                                : p.ml_risk_label === "Moderate"
+                                ? "text-yellow-500"
+                                : "text-green-500"
+                            }`}
+                          >
+                            {p.ml_risk_label} {p.ml_risk_pct}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                    Powered by local Logistic Regression model · No data leaves this system
+                  </p>
+                </div>
+              )}
 
               <div className="px-5 py-4 flex flex-col gap-2 overflow-hidden">
                 <p className="text-tx-secondary text-[10px] font-semibold uppercase tracking-wider mb-1">
