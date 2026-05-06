@@ -1087,26 +1087,30 @@ export default function AdminDashboard() {
 
           {intelData ? (
             <div className="flex-1 min-h-0 grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
-              {/* ── COLUMN 1: 4 KPI stats stacked ── */}
+              {/* LEFT: KPI STACK */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
-                {/* Stat 1: Total Patients */}
-                <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedIntelCard("patients")}
-                >
-                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Patients</p>
+                {/* TOTAL PATIENTS */}
+                <div className="flex flex-col justify-center px-3 py-2">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">TOTAL PATIENTS</p>
                   <div className="flex items-end gap-2 mt-0.5">
                     <p className="text-tx-bright font-black text-xl tabular-nums leading-none">
                       {intelData.total_patients}
                     </p>
                     {(() => {
                       const u = changeVsWeekUi(intelData.change_from_last_week);
-                      return <p className={`text-[10px] font-medium mb-0.5 ${u.cls}`}>{u.arrow} {u.tail}</p>;
+                      return (
+                        <p className={`text-[10px] font-medium mb-0.5 ${u.cls}`}>
+                          {u.arrow} {u.tail}
+                        </p>
+                      );
                     })()}
                   </div>
                   <div className="mt-1 h-8 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={derivePrediction(intelData.total_patients, undefined, undefined).trend.map((v, i) => ({ x: i, v }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                      <AreaChart
+                        data={derivePrediction(intelData.total_patients, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
+                        margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                      >
                         <defs>
                           <linearGradient id="g-patients" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
@@ -1117,30 +1121,26 @@ export default function AdminDashboard() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Breakdown</p>
-                    <p className="text-[10px] text-tx-secondary">↑ vs last week: {intelData.change_from_last_week ?? 0}</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Previous week: {intelData.previous_week_patients ?? 0}</p>
-                    <p className="text-[10px] text-kpi-cyan mt-1">Click for full trend →</p>
-                  </div>
                 </div>
 
-                {/* Stat 2: Vitals Health */}
-                <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedIntelCard("vitals")}
-                >
-                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Vitals Health</p>
+                {/* VITALS HEALTH */}
+                <div className="flex flex-col justify-center px-3 py-2">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">VITALS HEALTH</p>
                   <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                     {intelData.vitals_health_percentage}%
                   </p>
                   <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
-                    <div className="h-full rounded-full bg-kpi-green transition-all" style={{ width: `${Math.min(100, intelData.vitals_health_percentage)}%` }} />
+                    <div
+                      className="h-full rounded-full bg-kpi-green transition-all"
+                      style={{ width: `${Math.min(100, intelData.vitals_health_percentage)}%` }}
+                    />
                   </div>
                   <div className="mt-1 h-7 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={derivePrediction(intelData.vitals_health_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                      <AreaChart
+                        data={derivePrediction(intelData.vitals_health_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
+                        margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                      >
                         <defs>
                           <linearGradient id="g-vitals" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
@@ -1151,31 +1151,26 @@ export default function AdminDashboard() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals Status</p>
-                    <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
-                    <p className="text-[10px] text-kpi-red mt-0.5">✗ Critical: {intelData.critical_vitals_percentage}%</p>
-                    <p className="text-[10px] text-tx-yellow mt-0.5">⚠ At Risk: {intelData.at_risk_count}</p>
-                    <p className="text-[10px] text-kpi-cyan mt-1">Click for full trend →</p>
-                  </div>
                 </div>
 
-                {/* Stat 3: Critical Vitals */}
-                <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedIntelCard("critical")}
-                >
-                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Critical Vitals</p>
+                {/* CRITICAL VITALS */}
+                <div className="flex flex-col justify-center px-3 py-2">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">CRITICAL VITALS</p>
                   <p className="text-kpi-red font-black text-xl tabular-nums leading-none mt-0.5">
                     {intelData.critical_vitals_percentage}%
                   </p>
                   <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
-                    <div className="h-full rounded-full bg-kpi-red transition-all" style={{ width: `${Math.min(100, intelData.critical_vitals_percentage)}%` }} />
+                    <div
+                      className="h-full rounded-full bg-kpi-red transition-all"
+                      style={{ width: `${Math.min(100, intelData.critical_vitals_percentage)}%` }}
+                    />
                   </div>
                   <div className="mt-1 h-7 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={derivePrediction(intelData.critical_vitals_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                      <AreaChart
+                        data={derivePrediction(intelData.critical_vitals_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
+                        margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                      >
                         <defs>
                           <linearGradient id="g-critical" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
@@ -1186,67 +1181,26 @@ export default function AdminDashboard() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* Hover tooltip — top 3 at-risk patients */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top At-Risk</p>
-                    {(() => {
-                      const names = (intelData.top_risk_patients || "")
-                        .split(/,|\n/)
-                        .map((s) => s.trim())
-                        .filter(Boolean)
-                        .slice(0, 3);
-                      return names.length ? (
-                        names.map((n, i) => (
-                          <p key={`${n}-${i}`} className="text-[10px] text-tx-secondary mt-0.5 truncate">
-                            {i + 1}. {n}
-                          </p>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-tx-secondary mt-0.5">No list available</p>
-                      );
-                    })()}
-                    <p className="text-[10px] text-kpi-cyan mt-1">Click for full trend →</p>
-                  </div>
                 </div>
 
-                {/* Stat 4: At Risk */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                {/* AT RISK */}
+                <div className="flex flex-col justify-center px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-tx-yellow text-[10px]">⚠️</span>
-                    <p className="text-tx-yellow text-[9px] font-semibold uppercase tracking-wider">At Risk</p>
+                    <p className="text-tx-yellow text-[9px] font-semibold uppercase tracking-wider">AT RISK</p>
                   </div>
                   <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
                     {intelData.at_risk_count}
                   </p>
-                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
-                    <div className="h-full rounded-full bg-yellow-500 transition-all" style={{ width: `${Math.min(100, (intelData.at_risk_count / Math.max(1, intelData.total_patients)) * 100)}%` }} />
-                  </div>
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At Risk Detail</p>
-                    <p className="text-[10px] text-tx-secondary">
-                      {intelData.at_risk_count} of {intelData.total_patients} patients
-                    </p>
-                    <p className="text-[10px] text-tx-yellow mt-0.5">
-                      {((intelData.at_risk_count / Math.max(1, intelData.total_patients)) * 100).toFixed(1)}% of total
-                    </p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Needs immediate monitoring</p>
-                  </div>
                 </div>
               </div>
 
-              {/* ── COLUMN 2: ML Risk Forecast ── */}
+              {/* MIDDLE: ML FORECAST */}
               <div className="flex flex-col px-4 py-2.5 overflow-hidden">
-                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                  🤖 ML Risk Forecast
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
-                  </span>
+                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0">
+                  🤖 ML RISK FORECAST
                 </p>
-
-                {/* Patient risk rows */}
-                <div className="mt-1.5 flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
+                <div className="mt-2 flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
                   {(() => {
                     const names = (intelData.top_risk_patients || "")
                       .split(/,|\n/)
@@ -1257,7 +1211,7 @@ export default function AdminDashboard() {
                       const pct = Math.min(100, Math.round((score / 15) * 100));
                       const label = score >= 10 ? "Critical" : score >= 7 ? "High" : score >= 4 ? "Moderate" : "Low";
                       const color = score >= 10 ? "#ef4444" : score >= 7 ? "#f97316" : score >= 4 ? "#eab308" : "#22c55e";
-                      const bgClass =
+                      const badgeClass =
                         score >= 10 ? "bg-red-500/15 text-kpi-red border-red-500/20" :
                         score >= 7 ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
                         score >= 4 ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
@@ -1265,11 +1219,11 @@ export default function AdminDashboard() {
                       return (
                         <div key={`${name}-${i}`} className="flex items-center gap-2 py-1 border-b border-dash-border/40 last:border-0">
                           <span className="text-[10px] text-tx-muted w-3 shrink-0">{i + 1}</span>
-                          <span className="text-[11px] text-tx-primary truncate flex-1 min-w-0">{name || "Patient"}</span>
+                          <span className="text-[11px] text-tx-primary truncate flex-1 min-w-0">{name}</span>
                           <div className="w-16 h-1.5 rounded-full bg-dash-border overflow-hidden shrink-0">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
                           </div>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${bgClass}`}>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${badgeClass}`}>
                             {label}
                           </span>
                         </div>
@@ -1277,8 +1231,6 @@ export default function AdminDashboard() {
                     });
                   })()}
                 </div>
-
-                {/* ML Prediction summary line */}
                 <div className="pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
                     const names = (intelData.top_risk_patients || "")
@@ -1288,27 +1240,25 @@ export default function AdminDashboard() {
                     const highRisk = Math.min(names.length, Math.max(0, names.slice(0, 5).length >= 2 ? 2 : names.length));
                     return (
                       <p className={`text-[11px] font-semibold ${highRisk > 0 ? "text-kpi-red" : "text-kpi-green"}`}>
-                        ⚡ {highRisk > 0 ? `${highRisk} patient${highRisk > 1 ? "s" : ""} predicted to deteriorate in 24h` : "All patients currently stable ✓"}
+                        ⚡ {highRisk} patients predicted to deteriorate in 24h
                       </p>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">Powered by ML model · Real-time scoring</p>
                 </div>
               </div>
 
-              {/* ── COLUMN 3: Suggestion Panel ── */}
-              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+              {/* RIGHT: SUGGESTION */}
+              <div className="flex flex-col px-4 py-2.5 overflow-hidden">
                 <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
-                  💡 Suggestion
+                  💡 SUGGESTION
                 </p>
 
-                {/* Risk level badge + suggestion */}
                 {(() => {
                   const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
                   const riskLevel =
                     typeof intelData.ai_prediction === "object" && intelData.ai_prediction !== null
-                      ? ((intelData.ai_prediction as any).risk_level ?? "Low")
-                      : "Low";
+                      ? ((intelData.ai_prediction as any).risk_level ?? "High")
+                      : "High";
                   const badgeClass =
                     riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
                     riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
@@ -1316,19 +1266,17 @@ export default function AdminDashboard() {
                     "bg-green-500/15 text-kpi-green border-green-500/20";
                   return (
                     <>
-                      <span className={`mt-1.5 self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
-                        {riskLevel} Risk
-                      </span>
                       <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden">
                         <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed">
                           {p.suggestion || "Monitor high-risk patients closely and ensure timely intervention if needed."}
                         </p>
                       </div>
+                      <span className={`mt-2 self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
+                        [{riskLevel.toUpperCase()}]
+                      </span>
                     </>
                   );
                 })()}
-
-                {/* Bottom powered by note removed per request */}
               </div>
             </div>
           ) : null}
