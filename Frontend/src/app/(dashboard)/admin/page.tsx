@@ -1061,7 +1061,7 @@ export default function AdminDashboard() {
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div
           className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
-          style={{ height: 344 }}
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
             <div className="flex items-center gap-3">
@@ -1086,7 +1086,7 @@ export default function AdminDashboard() {
           </div>
 
           {intelData ? (
-            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="flex-1 min-h-0 grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
               {/* ── COLUMN 1: 4 KPI stats stacked ── */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
                 {/* Stat 1: Total Patients */}
@@ -1335,12 +1335,12 @@ export default function AdminDashboard() {
 
           {/* Loading state */}
           {intelLoading && !intelData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20 rounded-b-2xl" />
+            <div className="flex-1 min-h-0 animate-pulse bg-dash-border/20 rounded-b-2xl" />
           ) : null}
 
           {/* Error state */}
           {!intelData && !intelLoading ? (
-            <div className="h-[300px] flex items-center justify-center">
+            <div className="flex-1 min-h-0 flex items-center justify-center">
               <p className="text-xs text-tx-muted">Unable to load. Check admin access and API.</p>
             </div>
           ) : null}
