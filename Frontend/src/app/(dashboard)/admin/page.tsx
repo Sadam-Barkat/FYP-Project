@@ -412,6 +412,7 @@ export type PatientIntelResponse = {
     risk_pct: number;
     risk_label: string;
   }>;
+  ml_high_risk_24h_count?: number;
   ml_risk_summary?: Array<{
     patient_id: number;
     name: string;
@@ -1262,13 +1263,12 @@ export default function AdminDashboard() {
                 </div>
                 <div className="pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
-                    const ml = intelData.ml_forecast || [];
-                    const highRisk = ml.length
-                      ? ml.filter((p) => ["high", "critical"].includes((p.risk_label || "").toLowerCase())).length
-                      : Math.min(
-                          (intelData.top_risk_patients || "").split(/,|\n/).map((s) => s.trim()).filter(Boolean).length,
-                          5
-                        );
+                    const highRisk =
+                      typeof intelData.ml_high_risk_24h_count === "number"
+                        ? intelData.ml_high_risk_24h_count
+                        : (intelData.ml_forecast || []).filter((p) =>
+                            ["high", "critical"].includes((p.risk_label || "").toLowerCase())
+                          ).length;
                     return (
                       <p className={`text-[11px] font-semibold ${highRisk > 0 ? "text-kpi-red" : "text-kpi-green"}`}>
                         ⚡ {highRisk} patients predicted to deteriorate in 24h

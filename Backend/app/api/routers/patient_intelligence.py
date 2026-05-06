@@ -17,7 +17,10 @@ from app.models.admission import Admission
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.models.vital import Vital
-from app.services.patient_deterioration_model import predict_deterioration_risk
+from app.services.patient_deterioration_model import (
+    get_model_bundle,
+    predict_deterioration_risk,
+)
 
 router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 
@@ -382,6 +385,10 @@ async def get_patient_intelligence(
     # Top ML forecast patients (by probability)
     ml_rows.sort(key=lambda r: float(r.get("risk_prob") or 0.0), reverse=True)
     ml_forecast = ml_rows[:5]
+    _model, _features, thresholds = get_model_bundle()
+    ml_high_risk_24h_count = sum(
+        1 for r in ml_rows if float(r.get("risk_prob") or 0.0) >= float(thresholds.high)
+    )
 
     return {
         "total_patients": total_patients,
@@ -392,5 +399,6 @@ async def get_patient_intelligence(
         "at_risk_count": at_risk_count,
         "top_risk_patients": top_risk_patients_full or top_risk_patients,
         "ml_forecast": ml_forecast,
+        "ml_high_risk_24h_count": ml_high_risk_24h_count,
         "ai_prediction": ai_prediction,
     }
