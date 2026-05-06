@@ -1071,7 +1071,7 @@ export default function AdminDashboard() {
           className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>
                 🧠
@@ -1094,11 +1094,11 @@ export default function AdminDashboard() {
           </div>
 
           {intelData ? (
-            <div className="flex-1 min-h-0 grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] min-h-0 grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
               {/* LEFT: KPI STACK */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+              <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* TOTAL PATIENTS */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Total patients</p>
                     <p className="text-[10px] text-tx-secondary">Previous week: {intelData.previous_week_patients ?? 0}</p>
@@ -1119,7 +1119,7 @@ export default function AdminDashboard() {
                       );
                     })()}
                   </div>
-                  <div className="mt-1 h-7 -mx-1">
+                  <div className="mt-1 h-5 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.total_patients, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1138,7 +1138,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* VITALS HEALTH */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals status</p>
                     <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
@@ -1156,7 +1156,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, intelData.vitals_health_percentage)}%` }}
                     />
                   </div>
-                  <div className="mt-1 h-6 -mx-1">
+                  <div className="mt-1 h-5 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.vitals_health_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1175,7 +1175,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* CRITICAL VITALS */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top critical (ML)</p>
                     {(() => {
@@ -1206,7 +1206,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, intelData.critical_vitals_percentage)}%` }}
                     />
                   </div>
-                  <div className="mt-1 h-6 -mx-1">
+                  <div className="mt-1 h-5 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.critical_vitals_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1225,7 +1225,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* AT RISK */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-full bottom-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At risk (ML)</p>
                     <p className="text-[10px] text-tx-secondary">
@@ -1245,11 +1245,11 @@ export default function AdminDashboard() {
               </div>
 
               {/* MIDDLE: ML FORECAST */}
-              <div className="flex flex-col px-4 py-2.5 overflow-hidden">
+              <div className="flex flex-col px-4 py-2 overflow-hidden min-h-0">
                 <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0">
                   🤖 ML RISK FORECAST
                 </p>
-                <div className="mt-2 flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
+                <div className="mt-1.5 flex flex-col gap-0.5 overflow-hidden flex-1 min-h-0">
                   {(() => {
                     const fallbackNames = (intelData.top_risk_patients || "")
                       .split(/,|\n/)
@@ -1288,7 +1288,7 @@ export default function AdminDashboard() {
                       const color = colorFor(label);
                       const badgeClass = badgeFor(label);
                       return (
-                        <div key={`${pt.patient_id || name}-${i}`} className="flex items-center gap-2 py-1 border-b border-dash-border/40 last:border-0">
+                        <div key={`${pt.patient_id || name}-${i}`} className="flex items-center gap-2 py-0.5 border-b border-dash-border/40 last:border-0">
                           <span className="text-[10px] text-tx-muted w-3 shrink-0">{i + 1}</span>
                           <span className="text-[11px] text-tx-primary truncate flex-1 min-w-0">{name}</span>
                           <div className="w-16 h-1.5 rounded-full bg-dash-border overflow-hidden shrink-0">
@@ -1302,7 +1302,7 @@ export default function AdminDashboard() {
                     });
                   })()}
                 </div>
-                <div className="pt-1.5 border-t border-dash-border shrink-0">
+                <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
                     const highRisk =
                       typeof intelData.ml_high_risk_24h_count === "number"
@@ -1320,7 +1320,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* RIGHT: SUGGESTION */}
-              <div className="flex flex-col px-4 py-2.5 overflow-hidden min-h-0">
+              <div className="flex flex-col px-4 py-2 overflow-hidden min-h-0">
                 <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
                   💡 SUGGESTION
                 </p>
@@ -1338,12 +1338,12 @@ export default function AdminDashboard() {
                     "bg-green-500/15 text-kpi-green border-green-500/20";
                   return (
                     <>
-                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 h-[210px] overflow-hidden">
+                      <div className="mt-1.5 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 h-[188px] overflow-hidden shrink-0">
                         <p
                           className="text-kpi-orange font-semibold text-[11px] leading-relaxed overflow-hidden"
                           style={{
                             display: "-webkit-box",
-                            WebkitLineClamp: 9,
+                            WebkitLineClamp: 7,
                             WebkitBoxOrient: "vertical",
                           }}
                         >
