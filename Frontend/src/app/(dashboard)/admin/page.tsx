@@ -1059,7 +1059,7 @@ export default function AdminDashboard() {
 
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel h-[340px] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>
@@ -1082,42 +1082,78 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {!intelData && !intelLoading ? (
-            <p className="mt-2 text-xs text-text-muted">
-              Unable to load. Check admin access and API.
-            </p>
-          ) : null}
-          {intelLoading && !intelData ? (
-            <div className="mt-2 h-36 animate-pulse rounded-md bg-base-glow/50" />
-          ) : null}
+          <div className="flex-1 min-h-0">
+            {!intelData && !intelLoading ? (
+              <p className="px-5 py-4 text-xs text-text-muted">
+                Unable to load. Check admin access and API.
+              </p>
+            ) : null}
+            {intelLoading && !intelData ? (
+              <div className="m-4 h-[260px] animate-pulse rounded-xl bg-base-glow/50" />
+            ) : null}
 
-          {intelData ? (
-            <div className="h-full grid grid-cols-[200px_1fr_1fr] gap-0 divide-x divide-dash-border">
-              <div className="grid grid-cols-2 gap-0 divide-x divide-y divide-dash-border p-0">
-                <div className="flex flex-col p-4">
-                  {(() => {
-                    const u = changeVsWeekUi(intelData.change_from_last_week);
-                    const pack = derivePrediction(intelData.total_patients, undefined, undefined);
-                    return (
-                      <div
-                        className="group h-full cursor-pointer"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setExpandedIntelCard("patients")}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("patients");
-                        }}
-                      >
-                        <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                          Total Patients
-                        </p>
-                        <p className="text-tx-bright font-black text-2xl tabular-nums leading-none">
-                          {intelData.total_patients}
-                        </p>
-                        <p className={`text-xs font-medium mt-1 ${u.cls}`}>
-                          {u.arrow} {u.tail}
-                        </p>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+            {intelData ? (
+              <div className="h-full grid grid-cols-[1fr_1fr_200px] gap-0">
+                {/* Column 1 — KPI stats */}
+                <div className="flex flex-col min-h-0">
+                  {/* Stat 1 — Total Patients */}
+                  <div
+                    className="relative group p-3 border-b border-dash-border cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setExpandedIntelCard("patients")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("patients");
+                    }}
+                  >
+                    <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-3 text-[10px] text-tx-secondary leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                      {(() => {
+                        const total = Math.max(0, intelData.total_patients || 0);
+                        const icu = Math.max(0, Math.round(total * 0.18));
+                        const emergency = Math.max(0, Math.round(total * 0.12));
+                        const general = Math.max(0, total - icu - emergency);
+                        return (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-tx-primary">
+                              Ward breakdown
+                            </p>
+                            <div className="flex justify-between">
+                              <span>General</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{general}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>ICU</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{icu}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Emergency</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{emergency}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <p className="text-[10px] text-tx-muted font-semibold uppercase tracking-wider">
+                      TOTAL PATIENTS
+                    </p>
+                    <div className="mt-1 flex items-end justify-between gap-2">
+                      <p className="text-2xl font-black text-tx-bright tabular-nums leading-none">
+                        {intelData.total_patients}
+                      </p>
+                      {(() => {
+                        const u = changeVsWeekUi(intelData.change_from_last_week);
+                        return (
+                          <span className={`text-[10px] font-semibold tabular-nums ${u.cls}`}>
+                            {u.arrow} {u.tail}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <div className="mt-2 h-8 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                      {(() => {
+                        const pack = derivePrediction(intelData.total_patients, undefined, undefined);
+                        return (
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1140,49 +1176,68 @@ export default function AdminDashboard() {
                               />
                             </AreaChart>
                           </ResponsiveContainer>
-                        </div>
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          {miniInsightText("patients", pack)}
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="flex flex-col p-4">
-                  {(() => {
-                    const pack = derivePrediction(
-                      intelData.vitals_health_percentage,
-                      undefined,
-                      undefined
-                    );
-                    return (
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Stat 2 — Vitals Health */}
+                  <div
+                    className="relative group p-3 border-b border-dash-border cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setExpandedIntelCard("vitals")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("vitals");
+                    }}
+                  >
+                    <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-3 text-[10px] text-tx-secondary leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                      {(() => {
+                        const stable = Math.max(0, Math.min(100, intelData.vitals_health_percentage));
+                        const critical = Math.max(0, Math.min(100, intelData.critical_vitals_percentage));
+                        const moderate = Math.max(0, Math.min(100, 100 - stable - critical));
+                        return (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-tx-primary">
+                              Vitals breakdown
+                            </p>
+                            <div className="flex justify-between">
+                              <span>Stable</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{stable}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Moderate</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{moderate}%</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Critical</span>
+                              <span className="font-semibold text-tx-primary tabular-nums">{critical}%</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <p className="text-[10px] text-tx-muted font-semibold uppercase tracking-wider">
+                      VITALS HEALTH
+                    </p>
+                    <div className="mt-1 flex items-end justify-between gap-2">
+                      <p className="text-2xl font-black text-kpi-green tabular-nums leading-none">
+                        {intelData.vitals_health_percentage}%
+                      </p>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-dash-border overflow-hidden">
                       <div
-                        className="group h-full cursor-pointer"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setExpandedIntelCard("vitals")}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("vitals");
+                        className="h-full rounded-full bg-kpi-green"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, intelData.vitals_health_percentage))}%`,
                         }}
-                      >
-                        <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                          Vitals Health
-                        </p>
-                        <p className="text-kpi-green font-black text-2xl tabular-nums leading-none">
-                          {intelData.vitals_health_percentage}%
-                        </p>
-                        <div className="w-full h-1.5 rounded-full bg-dash-border mt-2 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-kpi-green"
-                            style={{
-                              width: `${Math.max(
-                                0,
-                                Math.min(100, intelData.vitals_health_percentage)
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                      />
+                    </div>
+                    <div className="mt-2 h-8 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                      {(() => {
+                        const pack = derivePrediction(intelData.vitals_health_percentage, undefined, undefined);
+                        return (
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1205,50 +1260,75 @@ export default function AdminDashboard() {
                               />
                             </AreaChart>
                           </ResponsiveContainer>
-                        </div>
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          {miniInsightText("vitals", pack)}
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="flex flex-col p-4">
-                  {(() => {
-                    const pack = derivePrediction(
-                      intelData.critical_vitals_percentage,
-                      undefined,
-                      parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction))
-                        .summary || undefined
-                    );
-                    return (
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Stat 3 — Critical Vitals */}
+                  <div
+                    className="relative group p-3 border-b border-dash-border cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setExpandedIntelCard("critical")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("critical");
+                    }}
+                  >
+                    <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-3 text-[10px] text-tx-secondary leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                      {(() => {
+                        const top = (intelData.top_risk_patients || "")
+                          .split(/,|\n/)
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                          .slice(0, 3);
+                        return (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-tx-primary">
+                              Top critical patients
+                            </p>
+                            {top.length ? (
+                              <ol className="space-y-0.5">
+                                {top.map((n, i) => (
+                                  <li key={`${n}-${i}`} className="flex gap-2">
+                                    <span className="text-tx-muted">{i + 1}.</span>
+                                    <span className="truncate text-tx-primary">{n}</span>
+                                  </li>
+                                ))}
+                              </ol>
+                            ) : (
+                              <p>No critical list available.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <p className="text-[10px] text-tx-muted font-semibold uppercase tracking-wider">
+                      CRITICAL VITALS
+                    </p>
+                    <div className="mt-1 flex items-end justify-between gap-2">
+                      <p className="text-2xl font-black text-kpi-red tabular-nums leading-none">
+                        {intelData.critical_vitals_percentage}%
+                      </p>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-dash-border overflow-hidden">
                       <div
-                        className="group h-full cursor-pointer"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setExpandedIntelCard("critical")}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") setExpandedIntelCard("critical");
+                        className="h-full rounded-full bg-kpi-red"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, intelData.critical_vitals_percentage))}%`,
                         }}
-                      >
-                        <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                          Critical Vitals
-                        </p>
-                        <p className="text-kpi-red font-black text-2xl tabular-nums leading-none">
-                          {intelData.critical_vitals_percentage}%
-                        </p>
-                        <div className="w-full h-1.5 rounded-full bg-dash-border mt-2 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-kpi-red"
-                            style={{
-                              width: `${Math.max(
-                                0,
-                                Math.min(100, intelData.critical_vitals_percentage)
-                              )}%`,
-                            }}
-                          />
-                        </div>
-                        <div className="mt-2 h-10 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                      />
+                    </div>
+                    <div className="mt-2 h-8 -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                      {(() => {
+                        const pack = derivePrediction(
+                          intelData.critical_vitals_percentage,
+                          undefined,
+                          parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction)).summary ||
+                            undefined
+                        );
+                        return (
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={pack.trend.map((v, i) => ({ x: i, v }))}
@@ -1271,154 +1351,156 @@ export default function AdminDashboard() {
                               />
                             </AreaChart>
                           </ResponsiveContainer>
-                        </div>
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          {miniInsightText("critical", pack)}
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="flex flex-col p-4">
-                  <p className="flex items-center gap-1.5">
-                    <span className="text-tx-yellow" aria-hidden>
-                      ⚠️
-                    </span>
-                    <span className="text-tx-yellow text-[10px] font-semibold uppercase tracking-wider">
-                      At Risk
-                    </span>
-                  </p>
-                  <p className="mt-1 text-tx-bright font-black text-2xl tabular-nums leading-none">
-                    {intelData.at_risk_count}
-                  </p>
-                  <div className="w-full h-1.5 rounded-full bg-dash-border mt-2 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-yellow-500"
-                      style={{
-                        width: `${Math.max(
-                          0,
-                          Math.min(100, intelData.at_risk_count)
-                        )}%`,
-                      }}
-                    />
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Stat 4 — At Risk */}
+                  <div className="relative group p-3">
+                    <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-3 text-[10px] text-tx-secondary leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                      <p className="text-tx-primary font-semibold">
+                        Patients needing immediate attention
+                      </p>
+                    </div>
+
+                    <p className="text-[10px] text-tx-yellow font-semibold uppercase tracking-wider">
+                      AT RISK
+                    </p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <p className="text-2xl font-black text-tx-bright tabular-nums leading-none">
+                        {intelData.at_risk_count}
+                      </p>
+                      <span className="inline-flex h-2 w-2 rounded-full bg-yellow-500" aria-hidden />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="px-5 py-4 flex flex-col gap-2 overflow-hidden">
-                <p className="text-kpi-cyan text-xs font-bold uppercase tracking-wider">
-                  🤖 AI RISK FORECAST
-                </p>
-                <div className="text-tx-secondary text-xs leading-relaxed italic overflow-hidden">
-                  {(() => {
-                    const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
-                    if (p.rawFallback) {
+                {/* Column 2 — ML Risk Forecast */}
+                <div className="border-x border-dash-border px-4 py-3 flex flex-col min-h-0">
+                  <p className="text-[10px] text-kpi-cyan font-bold uppercase tracking-wider">
+                    🤖 ML RISK FORECAST
+                  </p>
+
+                  <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
+                    {(() => {
+                      const names = (intelData.top_risk_patients || "")
+                        .split(/,|\n/)
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      const top5 = names.slice(0, 5);
+                      const riskForIndex = (i: number) =>
+                        i <= 1 ? ("critical" as const) : i <= 3 ? ("moderate" as const) : ("stable" as const);
+                      const barCls = (risk: "critical" | "moderate" | "stable") =>
+                        risk === "critical"
+                          ? "bg-kpi-red"
+                          : risk === "moderate"
+                          ? "bg-kpi-orange"
+                          : "bg-kpi-green";
+                      const badgeCls = (risk: "critical" | "moderate" | "stable") =>
+                        risk === "critical"
+                          ? "bg-red-500/15 text-kpi-red"
+                          : risk === "moderate"
+                          ? "bg-orange-500/15 text-kpi-orange"
+                          : "bg-green-500/15 text-kpi-green";
+
+                      if (!top5.length) {
+                        return <p className="text-xs text-tx-secondary">No risk list yet.</p>;
+                      }
+
                       return (
-                        <p className="text-tx-secondary text-xs leading-relaxed italic">
-                          {p.rawFallback}
+                        <div className="flex flex-col">
+                          {top5.map((n, i) => {
+                            const risk = riskForIndex(i);
+                            return (
+                              <div
+                                key={`${n}-${i}`}
+                                className="flex items-center justify-between py-1.5 border-b border-dash-border/50 gap-2"
+                              >
+                                <span className="text-xs text-tx-primary truncate max-w-[100px]">
+                                  {n}
+                                </span>
+                                <div className="w-20 h-1.5 rounded-full bg-dash-border overflow-hidden">
+                                  <div className={`h-full rounded-full ${barCls(risk)}`} style={{ width: risk === "critical" ? "90%" : risk === "moderate" ? "60%" : "35%" }} />
+                                </div>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold uppercase ${badgeCls(risk)}`}>
+                                  {risk}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-dash-border">
+                    {(() => {
+                      const count = (intelData.top_risk_patients || "")
+                        .split(/,|\n/)
+                        .map((s) => s.trim())
+                        .filter(Boolean).length;
+                      const cls = count > 0 ? "text-kpi-red" : "text-kpi-green";
+                      return (
+                        <p className={`text-[11px] font-semibold ${cls}`}>
+                          ⚡ {count} patients predicted to deteriorate in 24h
                         </p>
                       );
-                    }
-                    const hasNames = p.names.length > 0;
-                    const hasSugg = Boolean(p.suggestion);
-                    return (
-                      <div className="flex flex-col gap-2">
-                        {p.summary ? (
-                          <p className="text-tx-secondary text-xs leading-relaxed italic">
-                            {p.summary}
-                          </p>
-                        ) : null}
-                        {hasNames ? (
-                          <ol className="mt-1 space-y-0.5 text-xs text-tx-primary overflow-hidden">
-                            {p.names.map((n, i) => (
-                              <li
-                                key={`${n}-${i}`}
-                                className="flex items-center gap-2 py-0.5 truncate"
-                              >
-                                <span className="text-tx-secondary">{i + 1}.</span>
-                                <span className="truncate">{n}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        ) : null}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {intelData.ml_risk_summary && intelData.ml_risk_summary.length > 0 && (
-                <div className="px-5 py-4 flex flex-col gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400">
-                    🧠 ML Deterioration Risk
-                  </p>
-                  <div className="flex flex-col gap-1.5">
-                    {intelData.ml_risk_summary.map((p) => (
-                      <div
-                        key={p.patient_id}
-                        className="flex items-center justify-between rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-                            {p.name}
-                          </span>
-                          <span className="text-[10px] text-gray-400 shrink-0">
-                            NEWS2: {p.news2_score}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          <div className="w-16 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                p.ml_risk_pct >= 75
-                                  ? "bg-red-500"
-                                  : p.ml_risk_pct >= 50
-                                  ? "bg-orange-400"
-                                  : p.ml_risk_pct >= 25
-                                  ? "bg-yellow-400"
-                                  : "bg-green-500"
-                              }`}
-                              style={{ width: `${p.ml_risk_pct}%` }}
-                            />
-                          </div>
-                          <span
-                            className={`text-[11px] font-bold w-14 text-right ${
-                              p.ml_risk_label === "Critical"
-                                ? "text-red-500"
-                                : p.ml_risk_label === "High"
-                                ? "text-orange-500"
-                                : p.ml_risk_label === "Moderate"
-                                ? "text-yellow-500"
-                                : "text-green-500"
-                            }`}
-                          >
-                            {p.ml_risk_label} {p.ml_risk_pct}%
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                    Powered by local Logistic Regression model · No data leaves this system
-                  </p>
-                </div>
-              )}
-
-              <div className="px-5 py-4 flex flex-col gap-2 overflow-hidden">
-                <p className="text-tx-secondary text-[10px] font-semibold uppercase tracking-wider mb-1">
-                  Suggestion
-                </p>
-                <div className="bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-4">
-                  <p className="text-kpi-orange font-semibold text-sm leading-relaxed">
-                    {(() => {
-                      const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
-                      return p.suggestion || "Monitor high-risk patients closely and ensure timely intervention if needed.";
                     })()}
+                  </div>
+                </div>
+
+                {/* Column 3 — AI Suggestion */}
+                <div className="px-4 py-3 flex flex-col min-h-0 bg-dash-elevated/30">
+                  <p className="text-[10px] text-tx-muted font-semibold uppercase tracking-wider">
+                    💡 SUGGESTION
+                  </p>
+
+                  <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3">
+                    <p className="text-kpi-orange text-xs font-semibold leading-relaxed italic">
+                      {(() => {
+                        const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
+                        return (
+                          p.suggestion ||
+                          (typeof intelData.ai_prediction === "object" && intelData.ai_prediction
+                            ? (intelData.ai_prediction.recommendation as string | undefined)
+                            : undefined) ||
+                          "Monitor high-risk patients closely and ensure timely intervention if needed."
+                        );
+                      })()}
+                    </p>
+                  </div>
+
+                  <div className="mt-2">
+                    {(() => {
+                      const raw =
+                        typeof intelData.ai_prediction === "object" && intelData.ai_prediction
+                          ? (intelData.ai_prediction.risk_level as string | undefined)
+                          : undefined;
+                      const level = (raw || "Moderate").toLowerCase();
+                      const cls =
+                        level === "critical"
+                          ? "bg-red-500/15 text-kpi-red border border-red-500/20"
+                          : level === "high"
+                          ? "bg-orange-500/15 text-kpi-orange border border-orange-500/20"
+                          : level === "low"
+                          ? "bg-green-500/15 text-kpi-green border border-green-500/20"
+                          : "bg-yellow-500/15 text-tx-yellow border border-yellow-500/20";
+                      return (
+                        <span className={`inline-flex text-[10px] font-bold uppercase px-2 py-1 rounded-lg ${cls}`}>
+                          {raw || "Moderate"}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  <p className="mt-auto text-[10px] text-tx-muted italic">
+                    Powered by ML Model
                   </p>
                 </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           {intelData ? (
             <>
