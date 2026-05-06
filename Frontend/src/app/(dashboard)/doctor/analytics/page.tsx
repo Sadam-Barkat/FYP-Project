@@ -19,6 +19,12 @@ export default function DoctorAnalyticsPage() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  type RecentDischarge = {
+    name: string;
+    date: string;
+    outcome: string;
+  };
+
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
@@ -202,7 +208,7 @@ export default function DoctorAnalyticsPage() {
               </tr>
             </thead>
             <tbody>
-              {analytics.recentDischarges.map((discharge, idx) => (
+              {analytics.recentDischarges.map((discharge: RecentDischarge, idx: number) => (
                 <tr key={idx} className="border-b border-base-border last:border-0 hover:bg-base-hover transition-colors duration-150">
                   <td className="py-3 px-4 text-sm font-medium text-text-bright">{discharge.name}</td>
                   <td className="py-3 px-4 text-sm text-text-secondary">{discharge.date}</td>
