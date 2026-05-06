@@ -1098,7 +1098,13 @@ export default function AdminDashboard() {
               {/* LEFT: KPI STACK */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
                 {/* TOTAL PATIENTS */}
-                <div className="flex flex-col justify-center px-3 py-2">
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Total patients</p>
+                    <p className="text-[10px] text-tx-secondary">Previous week: {intelData.previous_week_patients ?? 0}</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Change: {intelData.change_from_last_week ?? 0}</p>
+                    <p className="text-[10px] text-kpi-cyan mt-1">Active admissions snapshot</p>
+                  </div>
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">TOTAL PATIENTS</p>
                   <div className="flex items-end gap-2 mt-0.5">
                     <p className="text-tx-bright font-black text-xl tabular-nums leading-none">
@@ -1132,7 +1138,14 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* VITALS HEALTH */}
-                <div className="flex flex-col justify-center px-3 py-2">
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals status</p>
+                    <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
+                    <p className="text-[10px] text-kpi-red mt-0.5">✗ Critical: {intelData.critical_vitals_percentage}%</p>
+                    <p className="text-[10px] text-tx-yellow mt-0.5">⚠ At risk: {intelData.at_risk_count}</p>
+                    <p className="text-[10px] text-tx-secondary mt-1">Based on latest recorded vitals</p>
+                  </div>
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">VITALS HEALTH</p>
                   <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                     {intelData.vitals_health_percentage}%
@@ -1162,7 +1175,27 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* CRITICAL VITALS */}
-                <div className="flex flex-col justify-center px-3 py-2">
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top critical (ML)</p>
+                    {(() => {
+                      const top = (intelData.ml_forecast || [])
+                        .filter((p) => ["high", "critical"].includes((p.risk_label || "").toLowerCase()))
+                        .slice(0, 3);
+                      return top.length ? (
+                        <div className="space-y-0.5">
+                          {top.map((p, i) => (
+                            <p key={`${p.patient_id}-${i}`} className="text-[10px] text-tx-secondary truncate">
+                              {i + 1}. {p.name} ({p.risk_pct}%)
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-tx-secondary">No high/critical ML patients</p>
+                      );
+                    })()}
+                    <p className="text-[10px] text-tx-secondary mt-1">Hover shows ML high/critical list</p>
+                  </div>
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">CRITICAL VITALS</p>
                   <p className="text-kpi-red font-black text-xl tabular-nums leading-none mt-0.5">
                     {intelData.critical_vitals_percentage}%
@@ -1192,7 +1225,15 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* AT RISK */}
-                <div className="flex flex-col justify-center px-3 py-2">
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At risk (ML)</p>
+                    <p className="text-[10px] text-tx-secondary">
+                      High/Critical in 24h: {intelData.ml_high_risk_24h_count ?? 0}
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Thresholds: High ≥ 0.75, Critical ≥ 0.90</p>
+                    <p className="text-[10px] text-tx-yellow mt-1">Needs immediate attention</p>
+                  </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-tx-yellow text-[10px]">⚠️</span>
                     <p className="text-tx-yellow text-[9px] font-semibold uppercase tracking-wider">AT RISK</p>
