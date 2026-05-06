@@ -878,6 +878,10 @@ export default function AdminDashboard() {
     "total" | "oos" | "low" | "soon" | "expired" | null
   >(null);
 
+  const [financeData, setFinanceData] = useState<any>(null);
+  const [financeLoading, setFinanceLoading] = useState(true);
+  const [financeLastFetch, setFinanceLastFetch] = useState<Date | null>(null);
+
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
       setKpiLoading(true);
@@ -933,6 +937,22 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchFinanceData = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/billing-finance-overview`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Finance fetch failed");
+      const data = await res.json();
+      setFinanceData(data);
+      setFinanceLastFetch(new Date());
+    } catch {
+      // silent fail
+    } finally {
+      setFinanceLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
@@ -944,6 +964,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     void loadPharmacy();
   }, [loadPharmacy]);
+
+  useEffect(() => {
+    void fetchFinanceData();
+    const financeInterval = window.setInterval(() => {
+      void fetchFinanceData();
+    }, 60_000);
+    return () => window.clearInterval(financeInterval);
+  }, [fetchFinanceData]);
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
     void loadKpis();
@@ -2004,6 +2032,476 @@ export default function AdminDashboard() {
               />
             </>
           ) : null}
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* ── Finance & Billing Intelligence Card ── */}
+        <div
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
+        >
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>
+                💰
+              </span>
+              <h2 className="text-tx-bright font-bold text-lg">
+                Finance & Billing Intelligence
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {financeData ? (
+                <span className="whitespace-nowrap text-tx-secondary text-xs">
+                  {intelFooterUpdated(financeLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {financeData ? (
+                <span className="relative flex h-2 w-2" aria-hidden>
+                  <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-kpi-green" />
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {financeLoading && !financeData ? (
+            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+          ) : null}
+
+          {!financeData && !financeLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-xs text-tx-muted">Unable to load finance data.</p>
+            </div>
+          ) : null}
+
+          {financeData ? (
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+              {/* ── COLUMN 1: 4 KPI Stats ── */}
+              <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+                {(() => {
+                  const revenue = Number(financeData?.todays_revenue ?? 0);
+                  const outstanding = Number(financeData?.outstanding_balance ?? 0);
+                  const expenses = Number(financeData?.todays_expenses ?? 0);
+                  const invoices = (financeData?.recent_invoices ?? []) as any[];
+                  const totalTx = invoices.length;
+                  const largestBill = invoices.reduce(
+                    (m, inv) => Math.max(m, Number(inv?.amount ?? 0)),
+                    0
+                  );
+                  const safeK = (v: number) => `₨${(v / 1000).toFixed(1)}k`;
+                  const outstandingPct =
+                    ((outstanding /
+                      Math.max(1, revenue + outstanding)) *
+                      100);
+
+                  return (
+                    <>
+                      {/* Stat 1: Today's Revenue */}
+                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                          <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                            Revenue Breakdown
+                          </p>
+                          <p className="text-[10px] text-kpi-green">
+                            ✓ Paid today: {safeK(revenue)}
+                          </p>
+                          <p className="text-[10px] text-kpi-orange mt-0.5">
+                            ⏳ Outstanding: {safeK(outstanding)}
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            Recent invoices: {totalTx}
+                          </p>
+                        </div>
+                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                          Today&apos;s Revenue
+                        </p>
+                        <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
+                          {safeK(revenue)}
+                        </p>
+                        <div className="mt-1 h-5 -mx-1">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={(financeData.revenue_vs_expenses ?? []).map(
+                                (d: any, i: number) => ({
+                                  x: i,
+                                  v: d.revenue ?? 0,
+                                })
+                              )}
+                              margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient
+                                  id="g-revenue"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#22c55e"
+                                    stopOpacity={0.2}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#22c55e"
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#22c55e"
+                                strokeWidth={1.5}
+                                fill="url(#g-revenue)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Stat 2: Outstanding Balance */}
+                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                          <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                            Outstanding Detail
+                          </p>
+                          <p className="text-[10px] text-kpi-orange">
+                            Amount: {safeK(outstanding)}
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            Largest invoice: {safeK(largestBill)}
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            Share of total: {outstandingPct.toFixed(0)}%
+                          </p>
+                        </div>
+                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                          Outstanding
+                        </p>
+                        <p className="text-kpi-orange font-black text-xl tabular-nums leading-none mt-0.5">
+                          {safeK(outstanding)}
+                        </p>
+                        <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-kpi-orange transition-all"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, outstandingPct))}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="mt-1 h-5 -mx-1">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={(financeData.revenue_vs_expenses ?? []).map(
+                                (d: any, i: number) => ({
+                                  x: i,
+                                  v: d.expenses ?? 0,
+                                })
+                              )}
+                              margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient
+                                  id="g-outstanding"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#f97316"
+                                    stopOpacity={0.2}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#f97316"
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="v"
+                                stroke="#f97316"
+                                strokeWidth={1.5}
+                                fill="url(#g-outstanding)"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Stat 3: Insurance Claims */}
+                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                          <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                            Claims Detail
+                          </p>
+                          <p className="text-[10px] text-kpi-cyan">
+                            Active insurance claims:{" "}
+                            {financeData.insurance_claims ?? 0}
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            Pending verification & approval
+                          </p>
+                        </div>
+                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                          Insurance Claims
+                        </p>
+                        <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
+                          {financeData.insurance_claims ?? 0}
+                        </p>
+                        <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-kpi-cyan"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.max(0, Number(financeData.insurance_claims ?? 0) * 5)
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Stat 4: Today's Expenses */}
+                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                        <div className="absolute left-full bottom-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                          <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                            Expense Ratio
+                          </p>
+                          <p className="text-[10px] text-kpi-red">
+                            Expenses: {safeK(expenses)}
+                          </p>
+                          <p className="text-[10px] text-kpi-green mt-0.5">
+                            Revenue: {safeK(revenue)}
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            Net: {safeK(revenue - expenses)}
+                          </p>
+                        </div>
+                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                          Expenses
+                        </p>
+                        <p className="text-kpi-red font-black text-xl tabular-nums leading-none mt-0.5">
+                          {safeK(expenses)}
+                        </p>
+                        <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-kpi-red"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Math.max(
+                                  0,
+                                  (expenses / Math.max(1, revenue || 1)) * 100
+                                )
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* ── COLUMN 2: Revenue vs Expenses Chart + Recent Invoices ── */}
+              <div className="flex flex-col px-4 py-2 overflow-hidden min-h-0">
+                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  📈 Revenue vs Expenses
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
+                  </span>
+                </p>
+
+                <div className="mt-1.5 h-[100px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={financeData.revenue_vs_expenses ?? []}
+                      margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
+                      barCategoryGap="20%"
+                    >
+                      <XAxis
+                        dataKey="day"
+                        tick={{ fontSize: 9, fill: "#64748b" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 9, fill: "#64748b" }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `₨${(Number(v) / 1000).toFixed(0)}k`}
+                      />
+                      <Bar
+                        dataKey="revenue"
+                        fill="#22c55e"
+                        fillOpacity={0.8}
+                        radius={[2, 2, 0, 0]}
+                        name="Revenue"
+                        isAnimationActive={false}
+                      />
+                      <Bar
+                        dataKey="expenses"
+                        fill="#ef4444"
+                        fillOpacity={0.6}
+                        radius={[2, 2, 0, 0]}
+                        name="Expenses"
+                        isAnimationActive={false}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
+                  Recent Invoices
+                </p>
+                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1 min-h-0">
+                  {(financeData.recent_invoices ?? []).slice(0, 3).map((inv: any, i: number) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
+                    >
+                      <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
+                        {inv.patient}
+                      </span>
+                      <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
+                        ₨{(Number(inv.amount ?? 0) / 1000).toFixed(1)}k
+                      </span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
+                          inv.status === "paid"
+                            ? "bg-green-500/15 text-kpi-green border-green-500/20"
+                            : inv.status === "pending"
+                            ? "bg-orange-500/15 text-kpi-orange border-orange-500/20"
+                            : "bg-red-500/15 text-kpi-red border-red-500/20"
+                        }`}
+                      >
+                        {inv.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
+                  {(() => {
+                    const revenue = Number(financeData?.todays_revenue ?? 0);
+                    const expenses = Number(financeData?.todays_expenses ?? 0);
+                    const net = revenue - expenses;
+                    const isProfit = net >= 0;
+                    return (
+                      <p className={`text-[11px] font-semibold ${isProfit ? "text-kpi-green" : "text-kpi-red"}`}>
+                        ⚡ {isProfit
+                          ? `Net profit ₨${(net / 1000).toFixed(1)}k · Revenue on track`
+                          : `⚠️ Expenses exceed revenue by ₨${(Math.abs(net) / 1000).toFixed(1)}k`}
+                      </p>
+                    );
+                  })()}
+                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
+                    Billing metrics · Paid rows only
+                  </p>
+                </div>
+              </div>
+
+              {/* ── COLUMN 3: Suggestion Panel ── */}
+              <div className="flex flex-col px-4 py-2 bg-white/[0.01] overflow-hidden min-h-0">
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                  💡 Suggestion
+                </p>
+
+                {(() => {
+                  const revenue = Number(financeData?.todays_revenue ?? 0);
+                  const outstanding = Number(financeData?.outstanding_balance ?? 0);
+                  const expenses = Number(financeData?.todays_expenses ?? 0);
+                  const collectionRate = Math.round(
+                    (revenue / Math.max(1, revenue + outstanding)) * 100
+                  );
+
+                  const riskLevel =
+                    collectionRate < 50
+                      ? "Critical"
+                      : collectionRate < 70
+                      ? "High"
+                      : collectionRate < 85
+                      ? "Moderate"
+                      : "Low";
+                  const badgeClass =
+                    riskLevel === "Critical"
+                      ? "bg-red-500/15 text-kpi-red border-red-500/20"
+                      : riskLevel === "High"
+                      ? "bg-orange-500/15 text-kpi-orange border-orange-500/20"
+                      : riskLevel === "Moderate"
+                      ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20"
+                      : "bg-green-500/15 text-kpi-green border-green-500/20";
+
+                  const suggestion =
+                    riskLevel === "Critical"
+                      ? "Collection rate critically low. Immediately follow up on pending bills and escalate overdue accounts."
+                      : riskLevel === "High"
+                      ? `₨${(outstanding / 1000).toFixed(1)}k outstanding. Prioritize collections and send payment reminders today.`
+                      : riskLevel === "Moderate"
+                      ? "Collection is moderate. Review pending invoices and optimize the billing cycle."
+                      : "Finance is healthy. Revenue exceeds expenses. Continue current billing practices.";
+
+                  const net = revenue - expenses;
+                  const netText =
+                    net >= 0
+                      ? `Net +₨${(net / 1000).toFixed(1)}k`
+                      : `Net -₨${(Math.abs(net) / 1000).toFixed(1)}k`;
+
+                  return (
+                    <>
+                      <div className="flex items-center gap-2 mt-1.5 shrink-0">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}>
+                          {riskLevel} Risk
+                        </span>
+                        <span className="text-[10px] text-tx-secondary">
+                          {collectionRate}% collected · {netText}
+                        </span>
+                      </div>
+                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden min-h-0">
+                        <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed">
+                          {suggestion}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
+                  Finance intelligence · Real-time updates
+                </p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Bed & Ward Intelligence card (placeholder) */}
+        <div
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
+        >
+          <div className="h-[44px] box-border flex items-center gap-3 px-5 py-0 border-b border-dash-border shrink-0">
+            <span className="text-xl" aria-hidden>
+              🛏️
+            </span>
+            <h2 className="text-tx-bright font-bold text-lg">
+              Bed & Ward Intelligence
+            </h2>
+          </div>
+          <div className="h-[300px] flex items-center justify-center">
+            <p className="text-tx-muted text-xs">Coming soon...</p>
+          </div>
         </div>
       </div>
 
