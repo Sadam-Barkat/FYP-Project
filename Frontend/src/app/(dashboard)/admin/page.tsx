@@ -1098,7 +1098,7 @@ export default function AdminDashboard() {
               {/* LEFT: KPI STACK */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* TOTAL PATIENTS */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-2 right-2 top-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Total patients</p>
                     <p className="text-[10px] text-tx-secondary">Previous week: {intelData.previous_week_patients ?? 0}</p>
@@ -1119,7 +1119,7 @@ export default function AdminDashboard() {
                       );
                     })()}
                   </div>
-                  <div className="mt-1 h-8 -mx-1">
+                  <div className="mt-1 h-7 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.total_patients, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1138,7 +1138,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* VITALS HEALTH */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-2 right-2 top-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals status</p>
                     <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
@@ -1156,7 +1156,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, intelData.vitals_health_percentage)}%` }}
                     />
                   </div>
-                  <div className="mt-1 h-7 -mx-1">
+                  <div className="mt-1 h-6 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.vitals_health_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1175,7 +1175,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* CRITICAL VITALS */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-2 right-2 top-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top critical (ML)</p>
                     {(() => {
@@ -1206,7 +1206,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, intelData.critical_vitals_percentage)}%` }}
                     />
                   </div>
-                  <div className="mt-1 h-7 -mx-1">
+                  <div className="mt-1 h-6 -mx-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={derivePrediction(intelData.critical_vitals_percentage, undefined, undefined).trend.map((v, i) => ({ x: i, v }))}
@@ -1225,7 +1225,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* AT RISK */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <div className="absolute left-2 right-2 top-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At risk (ML)</p>
                     <p className="text-[10px] text-tx-secondary">
