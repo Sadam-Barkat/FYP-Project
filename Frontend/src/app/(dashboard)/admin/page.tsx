@@ -1236,7 +1236,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 2: ML Risk Forecast ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden">
+              <div className="flex flex-col px-4 py-2.5 overflow-hidden">
                 <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0">
                   🤖 ML Risk Forecast
                   <span className="relative flex h-1.5 w-1.5">
@@ -1246,7 +1246,7 @@ export default function AdminDashboard() {
                 </p>
 
                 {/* Patient risk rows */}
-                <div className="mt-2 flex flex-col gap-1 overflow-hidden flex-1">
+                <div className="mt-1.5 flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
                   {(() => {
                     const names = (intelData.top_risk_patients || "")
                       .split(/,|\n/)
@@ -1279,7 +1279,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ML Prediction summary line */}
-                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                <div className="pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
                     const names = (intelData.top_risk_patients || "")
                       .split(/,|\n/)
@@ -1328,10 +1328,7 @@ export default function AdminDashboard() {
                   );
                 })()}
 
-                {/* Bottom powered by note */}
-                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  AI-powered · No data leaves this system
-                </p>
+                {/* Bottom powered by note removed per request */}
               </div>
             </div>
           ) : null}
