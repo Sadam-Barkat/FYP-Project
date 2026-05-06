@@ -405,6 +405,13 @@ export type PatientIntelResponse = {
   critical_vitals_percentage: number;
   at_risk_count: number;
   top_risk_patients: string;
+  ml_forecast?: Array<{
+    patient_id: number;
+    name: string;
+    risk_prob: number;
+    risk_pct: number;
+    risk_label: string;
+  }>;
   ml_risk_summary?: Array<{
     patient_id: number;
     name: string;
@@ -1202,22 +1209,44 @@ export default function AdminDashboard() {
                 </p>
                 <div className="mt-2 flex flex-col gap-1 overflow-hidden flex-1 min-h-0">
                   {(() => {
-                    const names = (intelData.top_risk_patients || "")
+                    const fallbackNames = (intelData.top_risk_patients || "")
                       .split(/,|\n/)
                       .map((s) => s.trim())
                       .filter(Boolean);
-                    return names.slice(0, 5).map((name, i) => {
-                      const score = Math.max(0, 12 - i * 2);
-                      const pct = Math.min(100, Math.round((score / 15) * 100));
-                      const label = score >= 10 ? "Critical" : score >= 7 ? "High" : score >= 4 ? "Moderate" : "Low";
-                      const color = score >= 10 ? "#ef4444" : score >= 7 ? "#f97316" : score >= 4 ? "#eab308" : "#22c55e";
-                      const badgeClass =
-                        score >= 10 ? "bg-red-500/15 text-kpi-red border-red-500/20" :
-                        score >= 7 ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
-                        score >= 4 ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
-                        "bg-green-500/15 text-kpi-green border-green-500/20";
+                    const rows =
+                      (intelData.ml_forecast && intelData.ml_forecast.length
+                        ? intelData.ml_forecast
+                        : fallbackNames.slice(0, 5).map((n) => ({
+                            patient_id: 0,
+                            name: n,
+                            risk_prob: 0,
+                            risk_pct: 0,
+                            risk_label: "Low",
+                          }))) ?? [];
+
+                    const colorFor = (label: string) => {
+                      const l = (label || "").toLowerCase();
+                      if (l === "critical") return "#ef4444";
+                      if (l === "high") return "#f97316";
+                      if (l === "moderate") return "#eab308";
+                      return "#22c55e";
+                    };
+                    const badgeFor = (label: string) => {
+                      const l = (label || "").toLowerCase();
+                      if (l === "critical") return "bg-red-500/15 text-kpi-red border-red-500/20";
+                      if (l === "high") return "bg-orange-500/15 text-kpi-orange border-orange-500/20";
+                      if (l === "moderate") return "bg-yellow-500/15 text-tx-yellow border-yellow-500/20";
+                      return "bg-green-500/15 text-kpi-green border-green-500/20";
+                    };
+
+                    return rows.slice(0, 5).map((pt, i) => {
+                      const name = pt.name || "Patient";
+                      const pct = Math.max(0, Math.min(100, Number(pt.risk_pct ?? 0)));
+                      const label = pt.risk_label || "Low";
+                      const color = colorFor(label);
+                      const badgeClass = badgeFor(label);
                       return (
-                        <div key={`${name}-${i}`} className="flex items-center gap-2 py-1 border-b border-dash-border/40 last:border-0">
+                        <div key={`${pt.patient_id || name}-${i}`} className="flex items-center gap-2 py-1 border-b border-dash-border/40 last:border-0">
                           <span className="text-[10px] text-tx-muted w-3 shrink-0">{i + 1}</span>
                           <span className="text-[11px] text-tx-primary truncate flex-1 min-w-0">{name}</span>
                           <div className="w-16 h-1.5 rounded-full bg-dash-border overflow-hidden shrink-0">
@@ -1233,11 +1262,13 @@ export default function AdminDashboard() {
                 </div>
                 <div className="pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
-                    const names = (intelData.top_risk_patients || "")
-                      .split(/,|\n/)
-                      .map((s) => s.trim())
-                      .filter(Boolean);
-                    const highRisk = Math.min(names.length, Math.max(0, names.slice(0, 5).length >= 2 ? 2 : names.length));
+                    const ml = intelData.ml_forecast || [];
+                    const highRisk = ml.length
+                      ? ml.filter((p) => ["high", "critical"].includes((p.risk_label || "").toLowerCase())).length
+                      : Math.min(
+                          (intelData.top_risk_patients || "").split(/,|\n/).map((s) => s.trim()).filter(Boolean).length,
+                          5
+                        );
                     return (
                       <p className={`text-[11px] font-semibold ${highRisk > 0 ? "text-kpi-red" : "text-kpi-green"}`}>
                         ⚡ {highRisk} patients predicted to deteriorate in 24h

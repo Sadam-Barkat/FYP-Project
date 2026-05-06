@@ -1,0 +1,31 @@
+{
+  "model_name": "patient_deterioration_model",
+  "version": "1.0",
+  "trained_at": "2026-05-06T04:43:22.742018",
+  "features": [
+    "heart_rate",
+    "blood_pressure_sys",
+    "blood_pressure_dia",
+    "spo2",
+    "temperature",
+    "respiratory_rate",
+    "age",
+    "admission_days",
+    "gender_encoded"
+  ],
+  "target": "deteriorated",
+  "algorithm": "RandomForestClassifier",
+  "accuracy": 1.0,
+  "roc_auc": 1.0,
+  "training_samples": 1572,
+  "labels": {
+    "0": "stable",
+    "1": "at_risk"
+  },
+  "risk_thresholds": {
+    "low": 0.25,
+    "moderate": 0.5,
+    "high": 0.75,
+    "critical": 0.9
+  }
+}

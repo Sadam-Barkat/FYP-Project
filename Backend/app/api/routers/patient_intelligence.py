@@ -17,6 +17,7 @@ from app.models.admission import Admission
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.models.vital import Vital
+from app.services.patient_deterioration_model import predict_deterioration_risk
 
 router = APIRouter(prefix="/api", tags=["patient-intelligence"])
 
@@ -270,8 +271,10 @@ async def get_patient_intelligence(
     total_checks = 0
     abnormal_patient_ids: set[int] = set()
     scored: List[Tuple[int, str, int]] = []
+    ml_rows: List[Dict[str, Any]] = []
 
     for row in adm_rows:
+        admission: Admission = row.Admission
         patient: Patient = row.Patient
         pid = int(patient.id)
         v = latest_by_pid.get(pid)
@@ -296,6 +299,42 @@ async def get_patient_intelligence(
 
         sc = _score_for_vital(v)
         scored.append((sc, name, pid))
+
+        # ML prediction (real model) — uses latest vitals + patient demographics.
+        # If vitals are missing, the model will score with zeros (conservative "Low").
+        admission_days = 0
+        try:
+            admission_days = max(
+                0, int((datetime.utcnow() - (admission.admission_date or datetime.utcnow())).days)
+            )
+        except Exception:
+            admission_days = 0
+
+        gender = (patient.gender or "").strip().lower()
+        gender_encoded = 1 if gender.startswith("m") else 0
+
+        rr = predict_deterioration_risk(
+            {
+                "heart_rate": getattr(v, "heart_rate", None) if v else None,
+                "blood_pressure_sys": getattr(v, "blood_pressure_sys", None) if v else None,
+                "blood_pressure_dia": getattr(v, "blood_pressure_dia", None) if v else None,
+                "spo2": getattr(v, "spo2", None) if v else None,
+                "temperature": getattr(v, "temperature", None) if v else None,
+                "respiratory_rate": getattr(v, "respiratory_rate", None) if v else None,
+                "age": getattr(patient, "age", None),
+                "admission_days": admission_days,
+                "gender_encoded": gender_encoded,
+            }
+        )
+        ml_rows.append(
+            {
+                "patient_id": pid,
+                "name": name,
+                "risk_prob": rr.risk_prob,
+                "risk_pct": rr.risk_pct,
+                "risk_label": rr.risk_label,
+            }
+        )
 
     vitals_health_percentage = (
         int(round(100 * normal_checks / total_checks)) if total_checks else 0
@@ -340,6 +379,10 @@ async def get_patient_intelligence(
         })
     ai_prediction = _generate_local_summary(metrics, top_patients)
 
+    # Top ML forecast patients (by probability)
+    ml_rows.sort(key=lambda r: float(r.get("risk_prob") or 0.0), reverse=True)
+    ml_forecast = ml_rows[:5]
+
     return {
         "total_patients": total_patients,
         "previous_week_patients": previous_week_patients,
@@ -348,5 +391,6 @@ async def get_patient_intelligence(
         "critical_vitals_percentage": critical_vitals_percentage,
         "at_risk_count": at_risk_count,
         "top_risk_patients": top_risk_patients_full or top_risk_patients,
+        "ml_forecast": ml_forecast,
         "ai_prediction": ai_prediction,
     }
