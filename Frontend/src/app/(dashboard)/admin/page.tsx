@@ -1099,7 +1099,7 @@ export default function AdminDashboard() {
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
                 {/* TOTAL PATIENTS */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-2 right-2 bottom-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Total patients</p>
                     <p className="text-[10px] text-tx-secondary">Previous week: {intelData.previous_week_patients ?? 0}</p>
                     <p className="text-[10px] text-tx-secondary mt-0.5">Change: {intelData.change_from_last_week ?? 0}</p>
@@ -1139,7 +1139,7 @@ export default function AdminDashboard() {
 
                 {/* VITALS HEALTH */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-2 right-2 bottom-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals status</p>
                     <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
                     <p className="text-[10px] text-kpi-red mt-0.5">✗ Critical: {intelData.critical_vitals_percentage}%</p>
@@ -1176,7 +1176,7 @@ export default function AdminDashboard() {
 
                 {/* CRITICAL VITALS */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-2 right-2 bottom-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top critical (ML)</p>
                     {(() => {
                       const top = (intelData.ml_forecast || [])
@@ -1226,7 +1226,7 @@ export default function AdminDashboard() {
 
                 {/* AT RISK */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-1 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-2 right-2 bottom-2 z-20 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At risk (ML)</p>
                     <p className="text-[10px] text-tx-secondary">
                       High/Critical in 24h: {intelData.ml_high_risk_24h_count ?? 0}
