@@ -720,6 +720,52 @@ function parseAiForecast(text: string): ParsedAiForecast {
   return { summary: "", names: [], suggestion: "", rawFallback: raw };
 }
 
+type PatientMlSuggestion = {
+  riskLevel: "Critical" | "High" | "Medium" | "Low";
+  suggestion: string;
+};
+
+function derivePatientMlSuggestion(data: PatientIntelResponse): PatientMlSuggestion {
+  const forecast = data.ml_forecast ?? [];
+  const criticalCount = forecast.filter((p) => (p.risk_label || "").toLowerCase() === "critical").length;
+  const highCount = forecast.filter((p) => (p.risk_label || "").toLowerCase() === "high").length;
+  const moderateCount = forecast.filter((p) => {
+    const label = (p.risk_label || "").toLowerCase();
+    return label === "moderate" || label === "medium";
+  }).length;
+  const mlHighRiskCount =
+    typeof data.ml_high_risk_24h_count === "number"
+      ? data.ml_high_risk_24h_count
+      : criticalCount + highCount;
+  const topRiskPct = forecast.reduce((max, p) => Math.max(max, Number(p.risk_pct ?? 0)), 0);
+
+  if (criticalCount > 0 || topRiskPct >= 90 || data.critical_vitals_percentage >= 85) {
+    return {
+      riskLevel: "Critical",
+      suggestion: `ML flags ${Math.max(criticalCount, mlHighRiskCount)} critical/high-risk patient${Math.max(criticalCount, mlHighRiskCount) === 1 ? "" : "s"}. Review top-risk patients now, verify latest vitals, and prepare urgent intervention.`,
+    };
+  }
+
+  if (highCount > 0 || mlHighRiskCount > 0 || data.critical_vitals_percentage >= 60) {
+    return {
+      riskLevel: "High",
+      suggestion: `ML predicts ${mlHighRiskCount} patient${mlHighRiskCount === 1 ? "" : "s"} may deteriorate in 24h. Prioritize bedside review, repeat vitals, and alert assigned doctors/nurses.`,
+    };
+  }
+
+  if (moderateCount > 0 || data.at_risk_count > 0 || data.vitals_health_percentage < 70) {
+    return {
+      riskLevel: "Medium",
+      suggestion: `ML shows moderate risk pressure. Monitor ${data.at_risk_count} at-risk patient${data.at_risk_count === 1 ? "" : "s"}, keep vitals updated, and escalate if scores rise.`,
+    };
+  }
+
+  return {
+    riskLevel: "Low",
+    suggestion: "ML forecast is stable. Continue routine monitoring and keep latest vitals updated for early risk detection.",
+  };
+}
+
 const KPI_CARD_DEFS = [
   {
     label: "Patients today",
@@ -1326,15 +1372,12 @@ export default function AdminDashboard() {
                 </p>
 
                 {(() => {
-                  const p = parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction));
-                  const riskLevel =
-                    typeof intelData.ai_prediction === "object" && intelData.ai_prediction !== null
-                      ? ((intelData.ai_prediction as any).risk_level ?? "High")
-                      : "High";
+                  const mlSuggestion = derivePatientMlSuggestion(intelData);
+                  const riskLevel = mlSuggestion.riskLevel;
                   const badgeClass =
                     riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
                     riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
-                    riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
+                    riskLevel === "Medium" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
                     "bg-green-500/15 text-kpi-green border-green-500/20";
                   return (
                     <>
@@ -1347,7 +1390,7 @@ export default function AdminDashboard() {
                             WebkitBoxOrient: "vertical",
                           }}
                         >
-                          {p.suggestion || "Monitor high-risk patients closely and ensure timely intervention if needed."}
+                          {mlSuggestion.suggestion}
                         </p>
                       </div>
                       <span className={`mt-2 self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
