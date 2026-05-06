@@ -1142,7 +1142,7 @@ export default function AdminDashboard() {
       {/* Patient Intelligence — GET /api/patient-intelligence (2-col row for future cards) */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div
-          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="order-1 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
@@ -1482,7 +1482,7 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
+        <div className="order-3 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
           <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>
@@ -2033,12 +2033,9 @@ export default function AdminDashboard() {
             </>
           ) : null}
         </div>
-      </div>
-
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* ── Finance & Billing Intelligence Card ── */}
         <div
-          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="order-2 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
@@ -2488,7 +2485,7 @@ export default function AdminDashboard() {
 
         {/* Bed & Ward Intelligence card (placeholder) */}
         <div
-          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="order-4 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           <div className="h-[44px] box-border flex items-center gap-3 px-5 py-0 border-b border-dash-border shrink-0">
