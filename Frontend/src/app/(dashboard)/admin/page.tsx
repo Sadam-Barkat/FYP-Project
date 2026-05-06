@@ -1338,8 +1338,15 @@ export default function AdminDashboard() {
                     "bg-green-500/15 text-kpi-green border-green-500/20";
                   return (
                     <>
-                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 min-h-0 overflow-hidden">
-                        <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed overflow-hidden">
+                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 h-[210px] overflow-hidden">
+                        <p
+                          className="text-kpi-orange font-semibold text-[11px] leading-relaxed overflow-hidden"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 9,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
                           {p.suggestion || "Monitor high-risk patients closely and ensure timely intervention if needed."}
                         </p>
                       </div>
