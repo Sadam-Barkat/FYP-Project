@@ -5,7 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, func, and_, or_, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.datetime_bounds import (
+    calendar_today_for_app,
+    day_bounds_utc_naive,
+    get_app_timezone,
+    utc_naive_now,
+)
 from app.database import get_db
+from app.models.billing_extra import Transaction
 from app.models.patient import Patient
 from app.models.bed import Bed, BedStatus
 from app.models.admission import Admission
@@ -40,10 +47,11 @@ def _format_kpi_trend_pct(today: float, yesterday: float) -> str:
 
 async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict[str, Any]:
     """
-    Admin dashboard KPI snapshot for a single calendar day (UTC boundaries).
+    Admin dashboard KPI snapshot for a single calendar day in APP_TIMEZONE
+    (bounds converted to naive UTC for DB comparison).
     """
-    day_start = datetime.combine(base_date, time.min)
-    day_end = datetime.combine(base_date, time.max)
+    tz = get_app_timezone()
+    day_start, day_end = day_bounds_utc_naive(base_date, tz)
 
     # Distinct patients still admitted as of end of this calendar day (census),
     # not "admitted today only" — matches "patients currently in hospital" for the KPI.
@@ -98,11 +106,10 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
     staff_on_duty = int(staff_on_duty_result.scalar_one() or 0)
 
     revenue_today_result = await db.execute(
-        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
             and_(
-                Billing.status == BillingStatus.paid,
-                Billing.date >= day_start,
-                Billing.date <= day_end,
+                Transaction.transaction_date >= day_start,
+                Transaction.transaction_date <= day_end,
             )
         )
     )
@@ -149,8 +156,8 @@ def _classify_latest_condition(condition_level: Optional[str]) -> str:
 
 async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Dict[str, Any]:
     """Detailed KPI breakdowns for admin dashboard tooltips (defaults to 0 when empty)."""
-    day_start = datetime.combine(base_date, time.min)
-    day_end = datetime.combine(base_date, time.max)
+    tz = get_app_timezone()
+    day_start, day_end = day_bounds_utc_naive(base_date, tz)
 
     admitted_today_r = await db.execute(
         select(func.count(func.distinct(Admission.patient_id))).where(
@@ -294,11 +301,10 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
     }
 
     paid_amt_r = await db.execute(
-        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
             and_(
-                Billing.status == BillingStatus.paid,
-                Billing.date >= day_start,
-                Billing.date <= day_end,
+                Transaction.transaction_date >= day_start,
+                Transaction.transaction_date <= day_end,
             )
         )
     )
@@ -347,11 +353,11 @@ async def get_hospital_overview(
     Aggregate key hospital metrics for the Admin 'Hospital Overview' dashboard.
     """
     try:
-        # ---- Time boundaries ----
-        now = datetime.utcnow()
-        base_date = date_param or now.date()
-        day_start = datetime.combine(base_date, time.min)
-        day_end = datetime.combine(base_date, time.max)
+        # ---- Time boundaries (calendar day in APP_TIMEZONE) ----
+        now = utc_naive_now()
+        tz = get_app_timezone()
+        base_date = date_param or calendar_today_for_app(now)
+        day_start, day_end = day_bounds_utc_naive(base_date, tz)
         seven_days_ago = base_date - timedelta(days=6)  # inclusive range [seven_days_ago..base_date]
 
         # ---- total_beds ----
@@ -393,13 +399,12 @@ async def get_hospital_overview(
             "cardiology": int(ward_counts.get("Cardiology", 0)),
         }
 
-        # ---- todays_revenue ----
+        # ---- todays_revenue (payments captured today via transactions) ----
         todays_revenue_result = await db.execute(
-            select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
                 and_(
-                    Billing.status == BillingStatus.paid,
-                    Billing.date >= day_start,
-                    Billing.date <= day_end,
+                    Transaction.transaction_date >= day_start,
+                    Transaction.transaction_date <= day_end,
                 )
             )
         )
@@ -430,7 +435,7 @@ async def get_hospital_overview(
 
         # Fallback: if there is no attendance data for the selected date, use shift window against "now"
         # (keeps production behavior for today's live view).
-        if doctors_on_duty == 0 and base_date == now.date():
+        if doctors_on_duty == 0 and base_date == calendar_today_for_app(now):
             current_time_str = now.strftime("%H:%M")
             doctors_on_duty_result = await db.execute(
                 select(func.count())
@@ -562,8 +567,7 @@ async def get_hospital_overview(
         
         for i in range(7):
             d = seven_days_ago + timedelta(days=i)
-            d_start = datetime.combine(d, time.min)
-            d_end = datetime.combine(d, time.max)
+            d_start, d_end = day_bounds_utc_naive(d, tz)
             
             # Active admissions on day d
             active_d_subq = (
@@ -599,13 +603,12 @@ async def get_hospital_overview(
             icu_pct = (float(icu_occ_d) / float(icu_total) * 100.0) if icu_total > 0 else 0.0
             icu_occupancy_trend.append(icu_pct)
             
-            # Revenue on day d
+            # Revenue on day d (payment transactions)
             rev_d_result = await db.execute(
-                select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+                select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
                     and_(
-                        Billing.status == BillingStatus.paid,
-                        Billing.date >= d_start,
-                        Billing.date <= d_end,
+                        Transaction.transaction_date >= d_start,
+                        Transaction.transaction_date <= d_end,
                     )
                 )
             )

@@ -1,11 +1,18 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import Date, and_, cast, func, select, update
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
+from app.core.datetime_bounds import (
+    calendar_today_for_app,
+    day_bounds_utc_naive,
+    get_app_timezone,
+    utc_naive_now,
+)
 from app.core.websocket_manager import broadcast_admin_data_changed
 from app.database import get_db
 from app.models.billing import Billing, BillingStatus
@@ -33,20 +40,21 @@ async def compute_billing_finance_overview(
 ) -> Dict[str, Any]:
     """
     Core metrics for Billing & Finance (used by HTTP route and PDF export).
-    Revenue uses only rows with status=paid (finance-confirmed).
+    Today's revenue uses payment transactions (transactions.amount_paid) on the
+    selected calendar day in APP_TIMEZONE — not Billing.date, which often reflects
+    admission/charge dates from seeded data.
     """
-    now = datetime.utcnow()
-    base_date = date_param or now.date()
-    day_start = datetime.combine(base_date, time.min)
-    day_end = datetime.combine(base_date, time.max)
+    now = utc_naive_now()
+    tz = get_app_timezone()
+    base_date = date_param or calendar_today_for_app(now)
+    day_start, day_end = day_bounds_utc_naive(base_date, tz)
     seven_days_ago = base_date - timedelta(days=6)
 
     todays_revenue_result = await db.execute(
-        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
             and_(
-                Billing.status == BillingStatus.paid,
-                Billing.date >= day_start,
-                Billing.date <= day_end,
+                Transaction.transaction_date >= day_start,
+                Transaction.transaction_date <= day_end,
             )
         )
     )
@@ -72,6 +80,9 @@ async def compute_billing_finance_overview(
 
     todays_expenses = todays_revenue * 0.3
 
+    week_start_utc, _ = day_bounds_utc_naive(seven_days_ago, tz)
+    _, week_end_utc = day_bounds_utc_naive(base_date, tz)
+
     recent_invoices_result = await db.execute(
         select(
             Billing.id,
@@ -84,8 +95,8 @@ async def compute_billing_finance_overview(
         .join(Patient, Patient.id == Billing.patient_id)
         .where(
             and_(
-                Billing.date >= datetime.combine(seven_days_ago, time.min),
-                Billing.date <= day_end,
+                Billing.date >= week_start_utc,
+                Billing.date <= week_end_utc,
             )
         )
         .order_by(Billing.date.desc())
@@ -95,13 +106,14 @@ async def compute_billing_finance_overview(
     recent_invoices: List[Dict[str, Any]] = []
     for row in recent_invoices_result:
         billing_date: datetime = row.date
+        bd_local = billing_date.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).date()
         day_label = (
             "Today"
-            if billing_date.date() == base_date
+            if bd_local == base_date
             else (
                 "Yesterday"
-                if billing_date.date() == base_date - timedelta(days=1)
-                else billing_date.date().isoformat()
+                if bd_local == base_date - timedelta(days=1)
+                else bd_local.isoformat()
             )
         )
         recent_invoices.append(
@@ -115,24 +127,17 @@ async def compute_billing_finance_overview(
             }
         )
 
-    revenue_trend_result = await db.execute(
-        select(cast(Billing.date, Date).label("day"), func.coalesce(func.sum(Billing.amount), 0.0).label("revenue"))
-        .where(
-            and_(
-                Billing.status == BillingStatus.paid,
-                cast(Billing.date, Date) >= seven_days_ago,
-                cast(Billing.date, Date) <= base_date,
-            )
-        )
-        .group_by("day")
-    )
-    revenue_by_day = {row.day: float(row.revenue or 0.0) for row in revenue_trend_result}
-
     revenue_vs_expenses: List[Dict[str, Any]] = []
     for i in range(7):
         day = seven_days_ago + timedelta(days=i)
         label = day.strftime("%a")
-        day_revenue = float(revenue_by_day.get(day, 0.0))
+        d0, d1 = day_bounds_utc_naive(day, tz)
+        day_rev_r = await db.execute(
+            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                and_(Transaction.transaction_date >= d0, Transaction.transaction_date <= d1)
+            )
+        )
+        day_revenue = float(day_rev_r.scalar_one() or 0.0)
         revenue_vs_expenses.append(
             {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
         )
