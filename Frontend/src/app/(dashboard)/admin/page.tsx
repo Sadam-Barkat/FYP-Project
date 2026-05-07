@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Users,
   Bed,
@@ -885,6 +886,7 @@ export default function AdminDashboard() {
   const [bedsData, setBedsData] = useState<any>(null);
   const [bedsLoading, setBedsLoading] = useState(true);
   const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
+  const bedForecastChartRef = useRef<HTMLDivElement | null>(null);
 
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
@@ -2754,7 +2756,10 @@ export default function AdminDashboard() {
                   </span>
                 </p>
 
-                <div className="mt-2 h-[100px] shrink-0 relative overflow-visible">
+                <div
+                  ref={bedForecastChartRef}
+                  className="mt-2 h-[100px] shrink-0 relative overflow-visible"
+                >
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={bedsData.ml_next_7_days_forecast ?? []}
@@ -2762,29 +2767,53 @@ export default function AdminDashboard() {
                       barCategoryGap="20%"
                     >
                       <RechartsTooltip
-                        wrapperStyle={{ zIndex: 80 }}
+                        wrapperStyle={{ zIndex: 2147483647, pointerEvents: "none" }}
                         cursor={{ fill: "rgba(148,163,184,0.12)" }}
                         allowEscapeViewBox={{ x: true, y: true }}
                         content={(props: any) => {
                           const { active, payload, label, coordinate, viewBox } = props ?? {};
                           if (!active || !payload || payload.length === 0) return null;
+                          if (typeof document === "undefined") return null;
                           const p: any = payload[0]?.payload ?? {};
                           const dateLabel = String(p.date ?? label ?? "—");
                           const adm = Number(p.predicted_admissions ?? 0);
                           const prob = Number(p.shortage_probability ?? 0);
                           const occ = Number(p.estimated_occupancy_pct ?? 0);
                           const occBeds = Number(p.estimated_occupied_beds ?? 0);
-                          const vbW = Number((viewBox as any)?.width ?? 0);
+                          const rect = bedForecastChartRef.current?.getBoundingClientRect();
                           const cx = Number((coordinate as any)?.x ?? 0);
-                          const flipLeft = vbW > 0 && cx > vbW * 0.62;
-                          const dx = flipLeft ? -260 : 12; // keep it away from Suggestion column
-                          return (
+                          const cy = Number((coordinate as any)?.y ?? 0);
+                          const tooltipW = 192;
+                          const tooltipH = 104;
+                          const gap = 14;
+                          const chartLeft = rect?.left ?? Number((viewBox as any)?.x ?? 0);
+                          const chartTop = rect?.top ?? Number((viewBox as any)?.y ?? 0);
+                          const rawLeft = chartLeft + cx + gap;
+                          const shouldFlipLeft = rawLeft + tooltipW > window.innerWidth - 12;
+                          const left = Math.max(
+                            12,
+                            Math.min(
+                              window.innerWidth - tooltipW - 12,
+                              shouldFlipLeft ? chartLeft + cx - tooltipW - gap : rawLeft
+                            )
+                          );
+                          const top = Math.max(
+                            12,
+                            Math.min(
+                              window.innerHeight - tooltipH - 12,
+                              chartTop + cy - tooltipH / 2
+                            )
+                          );
+                          return createPortal(
                             <div
-                              className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2"
+                              className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2 transition-all duration-150 ease-out"
                               style={{
-                                transform: `translate(${dx}px, -6px)`,
+                                position: "fixed",
+                                left,
+                                top,
+                                zIndex: 2147483647,
                                 pointerEvents: "none",
-                                minWidth: 176,
+                                width: tooltipW,
                               }}
                             >
                               <p className="text-[10px] text-tx-muted uppercase font-semibold">
@@ -2809,7 +2838,8 @@ export default function AdminDashboard() {
                                   ({occBeds} beds)
                                 </span>
                               </p>
-                            </div>
+                            </div>,
+                            document.body
                           );
                         }}
                       />
