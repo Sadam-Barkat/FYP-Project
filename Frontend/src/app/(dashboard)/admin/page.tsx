@@ -2923,26 +2923,25 @@ export default function AdminDashboard() {
 
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const available = bedsData.available_beds ?? 0;
                     const ml = bedsData.ml_shortage_risk ?? {};
-                    const riskLabel = ml.risk_label ?? "Low";
-                    const isRisk = riskLabel === "High" || riskLabel === "Critical";
+                    const totalAdmissions =
+                      typeof ml.predicted_admissions_7d_total === "number"
+                        ? ml.predicted_admissions_7d_total
+                        : (bedsData.ml_next_7_days_forecast ?? []).reduce(
+                            (sum: number, item: any) =>
+                              sum + Number(item.predicted_admissions ?? 0),
+                            0
+                          );
                     return (
-                      <p
-                        className={`text-[11px] font-semibold ${
-                          isRisk ? "text-kpi-red" : "text-kpi-green"
-                        }`}
-                      >
-                        ⚡{" "}
-                        {isRisk
-                          ? `ML shortage risk (${riskLabel}) — only ${available} beds left`
-                          : `Capacity stable — ${available} beds available`}
+                      <p className="text-[11px] font-semibold text-kpi-blue">
+                        ⚡ Next 7 days:{" "}
+                        <span className="tabular-nums">
+                          {Math.round(totalAdmissions)}
+                        </span>{" "}
+                        predicted admissions
                       </p>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    ML forecast · Real model predictions active
-                  </p>
                 </div>
               </div>
 
