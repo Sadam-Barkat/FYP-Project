@@ -2236,33 +2236,35 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* Stat 3: Insurance Claims */}
+                      {/* Stat 3: Net Profit */}
                       <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
                         <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                           <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
-                            Claims Detail
+                            Net profit (today)
                           </p>
-                          <p className="text-[10px] text-kpi-cyan">
-                            Active insurance claims:{" "}
-                            {financeData.insurance_claims ?? 0}
+                          <p className="text-[10px] text-kpi-green">
+                            Revenue: {safeK(revenue)}
+                          </p>
+                          <p className="text-[10px] text-kpi-red mt-0.5">
+                            Expenses: {safeK(expenses)}
                           </p>
                           <p className="text-[10px] text-tx-secondary mt-0.5">
-                            Pending verification & approval
+                            Net: {safeK(revenue - expenses)}
                           </p>
                         </div>
                         <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
-                          Insurance Claims
+                          Net Profit
                         </p>
-                        <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
-                          {financeData.insurance_claims ?? 0}
+                        <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
+                          {safeK(revenue - expenses)}
                         </p>
                         <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-kpi-cyan"
+                            className="h-full rounded-full bg-kpi-green"
                             style={{
                               width: `${Math.min(
                                 100,
-                                Math.max(0, Number(financeData.insurance_claims ?? 0) * 5)
+                                Math.max(0, ((revenue - expenses) / Math.max(1, revenue)) * 100)
                               )}%`,
                             }}
                           />
@@ -2397,19 +2399,18 @@ export default function AdminDashboard() {
                   {(() => {
                     const revenue = Number(financeData?.todays_revenue ?? 0);
                     const expenses = Number(financeData?.todays_expenses ?? 0);
-                    const net = revenue - expenses;
-                    const isProfit = net >= 0;
-                    const avgForecast = Array.isArray(financeData?.ml_revenue_forecast)
-                      ? (financeData.ml_revenue_forecast as any[]).reduce(
-                          (s, p) => s + Number(p?.predicted_revenue ?? 0),
-                          0
-                        ) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length)
-                      : 0;
+                    const pts = Array.isArray(financeData?.ml_revenue_forecast)
+                      ? (financeData.ml_revenue_forecast as any[])
+                      : [];
+                    const totalPredRevenue = pts.reduce(
+                      (s, p) => s + Number(p?.predicted_revenue ?? 0),
+                      0
+                    );
+                    const totalPredExpenses = totalPredRevenue * 0.3;
+                    const totalPredNet = totalPredRevenue - totalPredExpenses;
                     return (
-                      <p className={`text-[11px] font-semibold ${isProfit ? "text-kpi-green" : "text-kpi-red"}`}>
-                        ⚡ {isProfit
-                          ? `Net profit ₨${(net / 1000).toFixed(1)}k · Revenue on track`
-                          : `⚠️ Expenses exceed revenue by ₨${(Math.abs(net) / 1000).toFixed(1)}k`}
+                      <p className="text-[11px] font-black text-kpi-cyan">
+                        ⚡ Predicted next 7 days: Revenue ₨{(totalPredRevenue / 1000).toFixed(1)}k · Expenses ₨{(totalPredExpenses / 1000).toFixed(1)}k · Net ₨{(totalPredNet / 1000).toFixed(1)}k
                       </p>
                     );
                   })()}
