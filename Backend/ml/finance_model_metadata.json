@@ -1,0 +1,74 @@
+{
+  "revenue_model": {
+    "name": "finance_revenue_model",
+    "version": "1.0",
+    "trained_at": "2026-05-06T21:49:31.180647",
+    "algorithm": "GradientBoostingRegressor",
+    "features": [
+      "revenue_lag1",
+      "revenue_lag2",
+      "revenue_lag3",
+      "revenue_lag7",
+      "revenue_rolling3",
+      "revenue_rolling7",
+      "total_bills",
+      "collection_rate",
+      "day_of_week",
+      "month",
+      "day_of_month"
+    ],
+    "mae": 16638.16,
+    "r2_score": 0.7994,
+    "training_samples": 139
+  },
+  "default_model": {
+    "name": "finance_default_model",
+    "version": "1.0",
+    "trained_at": "2026-05-06T21:49:31.182192",
+    "algorithm": "RandomForestClassifier",
+    "features": [
+      "amount",
+      "bill_items_count",
+      "total_items_amount",
+      "is_large_bill",
+      "has_items",
+      "payment_method_encoded",
+      "day_of_week",
+      "month",
+      "hour_of_day"
+    ],
+    "accuracy": 1.0,
+    "roc_auc": 1.0,
+    "training_samples": 695
+  },
+  "next_7_days_forecast": [
+    {
+      "date": "2026-05-07",
+      "predicted_revenue": 63253.39
+    },
+    {
+      "date": "2026-05-08",
+      "predicted_revenue": 62870.53
+    },
+    {
+      "date": "2026-05-09",
+      "predicted_revenue": 66430.79
+    },
+    {
+      "date": "2026-05-10",
+      "predicted_revenue": 60117.17
+    },
+    {
+      "date": "2026-05-11",
+      "predicted_revenue": 65384.53
+    },
+    {
+      "date": "2026-05-12",
+      "predicted_revenue": 60827.45
+    },
+    {
+      "date": "2026-05-13",
+      "predicted_revenue": 64743.26
+    }
+  ]
+}

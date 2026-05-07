@@ -24,6 +24,7 @@ from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.schemas.finance_ops import BillingChargeCreate, BillingMarkPaidBody
 from app.services.finance_revenue_model import (
+    predict_collection_default_risk,
     predict_next_7_days_revenue,
     revenue_forecast_risk_label,
 )
@@ -148,9 +149,10 @@ async def compute_billing_finance_overview(
             {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
         )
 
-    # ML revenue forecast (next 7 calendar days). Never fail the endpoint.
+    # ML forecasts (next 7 calendar days + default/collection risk). Never fail the endpoint.
     ml_revenue_forecast: List[Dict[str, Any]] = []
     ml_revenue_risk_level: str = "Low"
+    ml_collection_risk: Dict[str, Any] = {"risk_pct": 0, "risk_label": "Low"}
     try:
         ml_forecast_points = await predict_next_7_days_revenue(db, base_date)
         ml_revenue_forecast = [
@@ -160,6 +162,8 @@ async def compute_billing_finance_overview(
         ml_revenue_risk_level = revenue_forecast_risk_label(
             ml_forecast_points, todays_revenue
         )
+        dr = await predict_collection_default_risk(db, base_date, lookback_days=7)
+        ml_collection_risk = {"risk_pct": int(dr.risk_pct), "risk_label": dr.risk_label}
     except Exception:
         # Fallback to the shipped static forecast JSON (keeps UI alive even if sklearn/model load fails).
         try:
@@ -180,6 +184,7 @@ async def compute_billing_finance_overview(
         except Exception:
             ml_revenue_forecast = []
         ml_revenue_risk_level = "Low"
+        ml_collection_risk = {"risk_pct": 0, "risk_label": "Low"}
 
     return {
         "todays_revenue": todays_revenue,
@@ -190,6 +195,7 @@ async def compute_billing_finance_overview(
         "revenue_vs_expenses": revenue_vs_expenses,
         "ml_revenue_forecast": ml_revenue_forecast,
         "ml_revenue_risk_level": ml_revenue_risk_level,
+        "ml_collection_risk": ml_collection_risk,
         "selected_date": base_date.isoformat(),
     }
 

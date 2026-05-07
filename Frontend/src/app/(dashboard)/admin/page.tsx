@@ -2433,10 +2433,12 @@ export default function AdminDashboard() {
                     (revenue / Math.max(1, revenue + outstanding)) * 100
                   );
 
+                  const mlRevRisk = String(financeData?.ml_revenue_risk_level ?? "Low");
+                  const mlCollRisk = String(financeData?.ml_collection_risk?.risk_label ?? "Low");
                   const riskLevel =
-                    collectionRate < 50
+                    mlRevRisk === "High" || mlRevRisk === "Critical" || mlCollRisk === "Critical"
                       ? "Critical"
-                      : collectionRate < 70
+                      : mlCollRisk === "High" || mlRevRisk === "Moderate" || collectionRate < 70
                       ? "High"
                       : collectionRate < 85
                       ? "Moderate"
@@ -2452,11 +2454,11 @@ export default function AdminDashboard() {
 
                   const suggestion =
                     riskLevel === "Critical"
-                      ? "Collection rate critically low. Immediately follow up on pending bills and escalate overdue accounts."
+                      ? `ML flags elevated finance risk (Revenue=${mlRevRisk}, Collections=${mlCollRisk}). Escalate collections, review large pending bills, and tighten payment follow-up today.`
                       : riskLevel === "High"
-                      ? `₨${(outstanding / 1000).toFixed(1)}k outstanding. Prioritize collections and send payment reminders today.`
+                      ? `ML expects pressure on collections (Collections=${mlCollRisk}). ₨${(outstanding / 1000).toFixed(1)}k outstanding — prioritize follow-ups and reduce pending exposure.`
                       : riskLevel === "Moderate"
-                      ? "Collection is moderate. Review pending invoices and optimize the billing cycle."
+                      ? `ML forecast is stable but watch trends (Revenue=${mlRevRisk}). Review pending bills and keep billing cycle moving.`
                       : "Finance is healthy. Revenue exceeds expenses. Continue current billing practices.";
 
                   const net = revenue - expenses;
@@ -2472,7 +2474,7 @@ export default function AdminDashboard() {
                           {riskLevel} Risk
                         </span>
                         <span className="text-[10px] text-tx-secondary">
-                          {collectionRate}% collected · {netText}
+                          {collectionRate}% collected · {netText} · ML {mlRevRisk}/{mlCollRisk}
                         </span>
                       </div>
                       <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden min-h-0">

@@ -13,13 +13,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.datetime_bounds import day_bounds_utc_naive, get_app_timezone
 from app.models.billing import Billing, BillingStatus
-from app.models.billing_extra import Transaction
+from app.models.billing_extra import BillItem, Transaction
 
 
 @dataclass(frozen=True)
 class RevenueForecastPoint:
     date: str  # ISO date (calendar day in APP_TIMEZONE)
     predicted_revenue: float
+
+
+@dataclass(frozen=True)
+class DefaultRiskResult:
+    risk_prob: float  # 0..1
+    risk_pct: int  # 0..100
+    risk_label: str  # Low/Moderate/High/Critical
 
 
 def _ml_dir() -> str:
@@ -52,6 +59,26 @@ def get_revenue_model_bundle() -> Tuple[Any, List[str]]:
     rm = meta.get("revenue_model") or {}
     features = list(rm.get("features") or [])
     model = _load_revenue_model()
+    return model, features
+
+
+def _load_default_model() -> Any:
+    model_path = os.path.join(_ml_dir(), "finance_default_model.pkl")
+    try:
+        import joblib  # type: ignore
+
+        return joblib.load(model_path)
+    except Exception:
+        with open(model_path, "rb") as f:
+            return pickle.load(f)
+
+
+@lru_cache(maxsize=1)
+def get_default_model_bundle() -> Tuple[Any, List[str]]:
+    meta = _load_metadata()
+    dm = meta.get("default_model") or {}
+    features = list(dm.get("features") or [])
+    model = _load_default_model()
     return model, features
 
 
@@ -97,6 +124,108 @@ async def _daily_totals(
 
 def _mean(xs: List[float]) -> float:
     return sum(xs) / len(xs) if xs else 0.0
+
+
+def _label_from_prob(prob: float) -> str:
+    if prob >= 0.9:
+        return "Critical"
+    if prob >= 0.75:
+        return "High"
+    if prob >= 0.5:
+        return "Moderate"
+    return "Low"
+
+
+def _payment_method_encoded(method: Optional[str]) -> float:
+    m = (method or "").strip().lower()
+    if "card" in m:
+        return 1.0
+    if "bank" in m:
+        return 2.0
+    if "insur" in m:
+        return 3.0
+    return 0.0  # cash/unknown
+
+
+async def predict_collection_default_risk(
+    db: AsyncSession,
+    base_date: date,
+    lookback_days: int = 7,
+) -> DefaultRiskResult:
+    """
+    Uses finance_default_model to estimate a single aggregated default/collection-risk
+    probability from recent pending bills (no identities returned).
+    """
+    model, features = get_default_model_bundle()
+    tz = get_app_timezone()
+
+    start_day = base_date - timedelta(days=max(1, lookback_days) - 1)
+    d0, _ = day_bounds_utc_naive(start_day, tz)
+    _, d1 = day_bounds_utc_naive(base_date, tz)
+
+    pending_r = await db.execute(
+        select(Billing.id, Billing.amount, Billing.date)
+        .where(
+            and_(
+                Billing.status == BillingStatus.pending,
+                Billing.date >= d0,
+                Billing.date <= d1,
+            )
+        )
+        .order_by(Billing.date.desc())
+        .limit(300)
+    )
+    pending_rows = pending_r.all()
+    if not pending_rows:
+        return DefaultRiskResult(risk_prob=0.0, risk_pct=0, risk_label="Low")
+
+    billing_ids = [int(r.id) for r in pending_rows]
+    items_r = await db.execute(
+        select(
+            BillItem.billing_id,
+            func.count(BillItem.id),
+            func.coalesce(func.sum(BillItem.amount), 0.0),
+        )
+        .where(BillItem.billing_id.in_(billing_ids))
+        .group_by(BillItem.billing_id)
+    )
+    by_bid: Dict[int, Dict[str, float]] = {}
+    for bid, cnt, total_amt in items_r.all():
+        by_bid[int(bid)] = {"cnt": float(cnt or 0), "sum": float(total_amt or 0.0)}
+
+    probs: List[float] = []
+    for row in pending_rows:
+        amt = float(row.amount or 0.0)
+        it = by_bid.get(int(row.id), {"cnt": 0.0, "sum": 0.0})
+        bill_items_count = float(it["cnt"])
+        total_items_amount = float(it["sum"])
+        has_items = 1.0 if bill_items_count > 0 else 0.0
+        is_large_bill = 1.0 if amt >= 25000 else 0.0
+
+        feats = {
+            "amount": amt,
+            "bill_items_count": bill_items_count,
+            "total_items_amount": total_items_amount,
+            "is_large_bill": is_large_bill,
+            "has_items": has_items,
+            "payment_method_encoded": _payment_method_encoded(None),
+            "day_of_week": float(base_date.weekday()),
+            "month": float(base_date.month),
+            "hour_of_day": 12.0,
+        }
+        x = [float(feats.get(f, 0.0)) for f in features]
+        try:
+            proba = model.predict_proba([x])  # type: ignore[attr-defined]
+            probs.append(float(proba[0][1]))
+        except Exception:
+            continue
+
+    if not probs:
+        return DefaultRiskResult(risk_prob=0.0, risk_pct=0, risk_label="Low")
+
+    p = float(max(0.0, min(1.0, _mean(probs))))
+    pct = int(round(p * 100))
+    return DefaultRiskResult(risk_prob=p, risk_pct=pct, risk_label=_label_from_prob(p))
 
 
 async def predict_next_7_days_revenue(
