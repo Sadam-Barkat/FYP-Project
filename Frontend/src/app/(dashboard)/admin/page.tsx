@@ -2757,15 +2757,22 @@ export default function AdminDashboard() {
                 <div className="mt-2 h-[100px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={bedsData.admissions_discharges_trend ?? []}
+                      data={bedsData.ml_next_7_days_forecast ?? []}
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
                       <XAxis
-                        dataKey="day"
+                        dataKey="date"
                         tick={{ fontSize: 9, fill: "#64748b" }}
                         axisLine={false}
                         tickLine={false}
+                        tickFormatter={(v) => {
+                          try {
+                            return String(v).slice(5);
+                          } catch {
+                            return v as any;
+                          }
+                        }}
                       />
                       <YAxis
                         tick={{ fontSize: 9, fill: "#64748b" }}
@@ -2773,19 +2780,11 @@ export default function AdminDashboard() {
                         tickLine={false}
                       />
                       <Bar
-                        dataKey="admissions"
+                        dataKey="predicted_admissions"
                         fill="#3b82f6"
                         fillOpacity={0.8}
                         radius={[2, 2, 0, 0]}
-                        name="Admissions"
-                        isAnimationActive={false}
-                      />
-                      <Bar
-                        dataKey="discharges"
-                        fill="#22c55e"
-                        fillOpacity={0.7}
-                        radius={[2, 2, 0, 0]}
-                        name="Discharges"
+                        name="Predicted admissions"
                         isAnimationActive={false}
                       />
                     </BarChart>
@@ -2834,9 +2833,10 @@ export default function AdminDashboard() {
 
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const pct = bedsData.occupancy_percentage ?? 0;
                     const available = bedsData.available_beds ?? 0;
-                    const isRisk = pct >= 85;
+                    const ml = bedsData.ml_shortage_risk ?? {};
+                    const riskLabel = ml.risk_label ?? "Low";
+                    const isRisk = riskLabel === "High" || riskLabel === "Critical";
                     return (
                       <p
                         className={`text-[11px] font-semibold ${
@@ -2845,13 +2845,13 @@ export default function AdminDashboard() {
                       >
                         ⚡{" "}
                         {isRisk
-                          ? `Bed shortage risk — only ${available} beds left`
+                          ? `ML shortage risk (${riskLabel}) — only ${available} beds left`
                           : `Capacity stable — ${available} beds available`}
                       </p>
                     );
                   })()}
                   <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    ML forecast · Admission surge detection active
+                    ML forecast · Real model predictions active
                   </p>
                 </div>
               </div>
@@ -2866,14 +2866,9 @@ export default function AdminDashboard() {
                   const pct = bedsData.occupancy_percentage ?? 0;
                   const available = bedsData.available_beds ?? 0;
 
-                  const riskLevel =
-                    pct >= 95
-                      ? "Critical"
-                      : pct >= 85
-                      ? "High"
-                      : pct >= 70
-                      ? "Moderate"
-                      : "Low";
+                  const ml = bedsData.ml_shortage_risk ?? {};
+                  const riskLevel = (ml.risk_label as any) ?? (pct >= 95 ? "Critical" : pct >= 85 ? "High" : pct >= 70 ? "Moderate" : "Low");
+                  const riskPct = typeof ml.risk_pct === "number" ? ml.risk_pct : null;
 
                   const badgeClass =
                     riskLevel === "Critical"
@@ -2902,7 +2897,7 @@ export default function AdminDashboard() {
                           {riskLevel} Risk
                         </span>
                         <span className="text-[10px] text-tx-secondary">
-                          {pct}% full
+                          {riskPct !== null ? `${riskPct}% ML` : `${pct}% full`}
                         </span>
                       </div>
                       <div className="mt-2 bg-kpi-blue/8 border border-kpi-blue/20 rounded-xl p-3 flex-1 overflow-hidden">
@@ -2915,7 +2910,7 @@ export default function AdminDashboard() {
                 })()}
 
                 <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  ML-powered · Bed surge prediction active
+                  ML-powered · Bed surge + shortage models
                 </p>
               </div>
             </div>

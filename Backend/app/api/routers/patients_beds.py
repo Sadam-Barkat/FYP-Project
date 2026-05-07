@@ -18,6 +18,7 @@ from app.models.assignments import DoctorAssignment, NursePatientAssignment
 from app.models.laboratory_extra import LabRequest
 from app.models.clinical import Appointment, Visit, Prescription, TreatmentPlan
 from app.models.analytics import Categorization, EmergencyLog
+from app.services.bed_occupancy_model import predict_next_7_days_beds
 
 router = APIRouter(prefix="/api", tags=["patients_beds"])
 
@@ -246,6 +247,49 @@ async def get_patients_beds_overview(
         )
         prev_discharges = prev_discharges_result.scalar_one() or 0
 
+        # ----- ML forecast (beds) -----
+        ml_forecast: List[Dict[str, Any]] = []
+        ml_summary: Dict[str, Any] = {}
+        try:
+            points, summary = await predict_next_7_days_beds(
+                db,
+                base_date=base_date,
+                total_capacity=int(total_capacity),
+                occupied_beds=int(occupied_beds),
+            )
+            ml_forecast = [
+                {
+                    "date": p.date,
+                    "predicted_admissions": float(p.predicted_admissions),
+                    "shortage_risk": bool(p.shortage_risk),
+                    "shortage_probability": float(p.shortage_probability),
+                    "estimated_occupancy_pct": float(p.estimated_occupancy_pct),
+                    "estimated_occupied_beds": int(p.estimated_occupied_beds),
+                }
+                for p in points
+            ]
+            ml_summary = dict(summary)
+        except Exception:
+            # Fallback: static JSON forecast (keeps endpoint stable)
+            try:
+                import json
+                import os
+
+                here = os.path.dirname(os.path.abspath(__file__))
+                ml_dir = os.path.abspath(os.path.join(here, "..", "..", "..", "ml"))
+                fp = os.path.join(ml_dir, "bed_7day_forecast.json")
+                with open(fp, "r", encoding="utf-8") as f:
+                    ml_forecast = list(json.load(f) or [])
+            except Exception:
+                ml_forecast = []
+            ml_summary = {
+                "risk_prob": 0.0,
+                "risk_pct": 0,
+                "risk_label": "Low",
+                "predicted_admissions_7d_total": 0.0,
+                "predicted_admissions_7d_avg": 0.0,
+            }
+
         return {
 
             "total_capacity": int(total_capacity),
@@ -264,6 +308,8 @@ async def get_patients_beds_overview(
             "previous_7_days_admissions": int(prev_admissions),
             "previous_7_days_discharges": int(prev_discharges),
             "selected_date": base_date.isoformat(),
+            "ml_next_7_days_forecast": ml_forecast,
+            "ml_shortage_risk": ml_summary,
         }
 
     except Exception as exc:

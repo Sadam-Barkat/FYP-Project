@@ -1,0 +1,110 @@
+{
+  "shortage_model": {
+    "name": "bed_shortage_model",
+    "version": "1.0",
+    "trained_at": "2026-05-07T10:46:38.407181",
+    "algorithm": "RandomForestClassifier",
+    "features": [
+      "admissions_lag1",
+      "admissions_lag2",
+      "admissions_lag3",
+      "admissions_lag7",
+      "admissions_rolling3",
+      "admissions_rolling7",
+      "discharge_rate",
+      "net_occupancy_change",
+      "cumulative_pressure",
+      "avg_patient_age",
+      "day_of_week",
+      "month",
+      "day_of_month"
+    ],
+    "accuracy": 0.8286,
+    "roc_auc": 0.8932,
+    "training_samples": 139
+  },
+  "surge_model": {
+    "name": "bed_surge_model",
+    "version": "1.0",
+    "trained_at": "2026-05-07T10:46:38.412254",
+    "algorithm": "GradientBoostingRegressor",
+    "features": [
+      "admissions_lag1",
+      "admissions_lag2",
+      "admissions_lag3",
+      "admissions_lag7",
+      "admissions_rolling3",
+      "admissions_rolling7",
+      "discharge_rate",
+      "day_of_week",
+      "month",
+      "day_of_month"
+    ],
+    "mae": 0.715,
+    "r2_score": 0.7085,
+    "training_samples": 139
+  },
+  "current_occupancy": {
+    "total_beds": 150,
+    "occupied": 95,
+    "occupancy_pct": 63.3
+  },
+  "next_7_days_forecast": [
+    {
+      "date": "2026-05-08",
+      "predicted_admissions": 4.3,
+      "shortage_risk": true,
+      "shortage_probability": 0.633,
+      "estimated_occupancy_pct": 50.3,
+      "estimated_occupied_beds": 76
+    },
+    {
+      "date": "2026-05-09",
+      "predicted_admissions": 4.0,
+      "shortage_risk": true,
+      "shortage_probability": 0.626,
+      "estimated_occupancy_pct": 37.2,
+      "estimated_occupied_beds": 56
+    },
+    {
+      "date": "2026-05-10",
+      "predicted_admissions": 4.2,
+      "shortage_risk": true,
+      "shortage_probability": 0.626,
+      "estimated_occupancy_pct": 24.1,
+      "estimated_occupied_beds": 36
+    },
+    {
+      "date": "2026-05-11",
+      "predicted_admissions": 4.3,
+      "shortage_risk": true,
+      "shortage_probability": 0.634,
+      "estimated_occupancy_pct": 11.2,
+      "estimated_occupied_beds": 17
+    },
+    {
+      "date": "2026-05-12",
+      "predicted_admissions": 4.6,
+      "shortage_risk": true,
+      "shortage_probability": 0.647,
+      "estimated_occupancy_pct": 0.0,
+      "estimated_occupied_beds": 0
+    },
+    {
+      "date": "2026-05-13",
+      "predicted_admissions": 3.9,
+      "shortage_risk": true,
+      "shortage_probability": 0.634,
+      "estimated_occupancy_pct": 0.0,
+      "estimated_occupied_beds": 0
+    },
+    {
+      "date": "2026-05-14",
+      "predicted_admissions": 4.1,
+      "shortage_risk": true,
+      "shortage_probability": 0.64,
+      "estimated_occupancy_pct": 0.0,
+      "estimated_occupied_beds": 0
+    }
+  ]
+}
