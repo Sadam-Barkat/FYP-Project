@@ -2397,8 +2397,6 @@ export default function AdminDashboard() {
 
                 <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
                   {(() => {
-                    const revenue = Number(financeData?.todays_revenue ?? 0);
-                    const expenses = Number(financeData?.todays_expenses ?? 0);
                     const pts = Array.isArray(financeData?.ml_revenue_forecast)
                       ? (financeData.ml_revenue_forecast as any[])
                       : [];
@@ -2408,15 +2406,25 @@ export default function AdminDashboard() {
                     );
                     const totalPredExpenses = totalPredRevenue * 0.3;
                     const totalPredNet = totalPredRevenue - totalPredExpenses;
+                    const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
                     return (
-                      <p className="text-[11px] font-black text-kpi-cyan">
-                        ⚡ Predicted next 7 days: Revenue ₨{(totalPredRevenue / 1000).toFixed(1)}k · Expenses ₨{(totalPredExpenses / 1000).toFixed(1)}k · Net ₨{(totalPredNet / 1000).toFixed(1)}k
-                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-[11px] font-black text-kpi-cyan">
+                          ⚡ Predicted (Next 7 Days Totals)
+                        </p>
+                        <p className="text-[11px] font-black text-tx-primary tabular-nums">
+                          Revenue: ₨{(totalPredRevenue / 1000).toFixed(1)}k
+                          <span className="text-tx-muted font-black"> · </span>
+                          Expenses: ₨{(totalPredExpenses / 1000).toFixed(1)}k
+                          <span className="text-tx-muted font-black"> · </span>
+                          Net: ₨{(totalPredNet / 1000).toFixed(1)}k
+                        </p>
+                        <p className="text-[10px] font-black text-tx-secondary tabular-nums">
+                          Avg / day (predicted revenue): ₨{(avgPredRevenue / 1000).toFixed(1)}k
+                        </p>
+                      </div>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    ML forecast · Next-7 avg ₨{(Number.isFinite((Array.isArray(financeData?.ml_revenue_forecast) ? (financeData.ml_revenue_forecast as any[]).reduce((s, p) => s + Number(p?.predicted_revenue ?? 0), 0) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length) : 0)) ? ((Array.isArray(financeData?.ml_revenue_forecast) ? (financeData.ml_revenue_forecast as any[]).reduce((s, p) => s + Number(p?.predicted_revenue ?? 0), 0) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length) : 0) / 1000).toFixed(1) : "0.0")}k
-                  </p>
                 </div>
               </div>
 
