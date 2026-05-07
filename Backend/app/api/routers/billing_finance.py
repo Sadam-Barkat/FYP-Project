@@ -1,4 +1,6 @@
 from datetime import date, datetime, timedelta
+import json
+import os
 from zoneinfo import ZoneInfo
 from typing import Any, Dict, List, Optional
 
@@ -146,15 +148,38 @@ async def compute_billing_finance_overview(
             {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
         )
 
-    # ML revenue forecast (next 7 calendar days)
-    ml_forecast_points = await predict_next_7_days_revenue(db, base_date)
-    ml_revenue_forecast = [
-        {"date": p.date, "predicted_revenue": float(p.predicted_revenue)}
-        for p in ml_forecast_points
-    ]
-    ml_revenue_risk_level = revenue_forecast_risk_label(
-        ml_forecast_points, todays_revenue
-    )
+    # ML revenue forecast (next 7 calendar days). Never fail the endpoint.
+    ml_revenue_forecast: List[Dict[str, Any]] = []
+    ml_revenue_risk_level: str = "Low"
+    try:
+        ml_forecast_points = await predict_next_7_days_revenue(db, base_date)
+        ml_revenue_forecast = [
+            {"date": p.date, "predicted_revenue": float(p.predicted_revenue)}
+            for p in ml_forecast_points
+        ]
+        ml_revenue_risk_level = revenue_forecast_risk_label(
+            ml_forecast_points, todays_revenue
+        )
+    except Exception:
+        # Fallback to the shipped static forecast JSON (keeps UI alive even if sklearn/model load fails).
+        try:
+            here = os.path.dirname(os.path.abspath(__file__))
+            ml_dir = os.path.abspath(os.path.join(here, "..", "..", "..", "ml"))
+            fb_path = os.path.join(ml_dir, "finance_7day_forecast.json")
+            with open(fb_path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, list):
+                ml_revenue_forecast = [
+                    {
+                        "date": str(p.get("date") or ""),
+                        "predicted_revenue": float(p.get("predicted_revenue") or 0.0),
+                    }
+                    for p in raw
+                    if isinstance(p, dict)
+                ]
+        except Exception:
+            ml_revenue_forecast = []
+        ml_revenue_risk_level = "Low"
 
     return {
         "todays_revenue": todays_revenue,
