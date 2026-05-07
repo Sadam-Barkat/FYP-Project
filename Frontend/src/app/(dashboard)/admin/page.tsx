@@ -882,6 +882,10 @@ export default function AdminDashboard() {
   const [financeLoading, setFinanceLoading] = useState(true);
   const [financeLastFetch, setFinanceLastFetch] = useState<Date | null>(null);
 
+  const [bedsData, setBedsData] = useState<any>(null);
+  const [bedsLoading, setBedsLoading] = useState(true);
+  const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
+
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
       setKpiLoading(true);
@@ -953,6 +957,22 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchBedsData = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/patients-beds-overview`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Beds fetch failed");
+      const data = await res.json();
+      setBedsData(data);
+      setBedsLastFetch(new Date());
+    } catch {
+      // silent fail
+    } finally {
+      setBedsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
@@ -972,6 +992,14 @@ export default function AdminDashboard() {
     }, 60_000);
     return () => window.clearInterval(financeInterval);
   }, [fetchFinanceData]);
+
+  useEffect(() => {
+    void fetchBedsData();
+    const bedsInterval = window.setInterval(() => {
+      void fetchBedsData();
+    }, 60_000);
+    return () => window.clearInterval(bedsInterval);
+  }, [fetchBedsData]);
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
     void loadKpis();
@@ -2527,17 +2555,365 @@ export default function AdminDashboard() {
           className="order-4 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
-          <div className="h-[44px] box-border flex items-center gap-3 px-5 py-0 border-b border-dash-border shrink-0">
-            <span className="text-xl" aria-hidden>
-              🛏️
-            </span>
-            <h2 className="text-tx-bright font-bold text-lg">
-              Bed & Ward Intelligence
-            </h2>
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>
+                🛏️
+              </span>
+              <h2 className="text-tx-bright font-bold text-lg">
+                Bed & Ward Intelligence
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {bedsData ? (
+                <span className="whitespace-nowrap text-tx-secondary text-xs">
+                  {intelFooterUpdated(bedsLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {bedsData ? (
+                <span className="relative flex h-2 w-2" aria-hidden>
+                  <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-blue opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-kpi-blue" />
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className="h-[300px] flex items-center justify-center">
-            <p className="text-tx-muted text-xs">Coming soon...</p>
-          </div>
+
+          {bedsLoading && !bedsData ? (
+            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+          ) : null}
+
+          {!bedsData && !bedsLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-xs text-tx-muted">Unable to load bed data.</p>
+            </div>
+          ) : null}
+
+          {bedsData ? (
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+              {/* ── COLUMN 1: 4 KPI Stats ── */}
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+                {/* Stat 1: Total Capacity */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                    Total Capacity
+                  </p>
+                  <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
+                    {bedsData.total_capacity ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-blue transition-all"
+                      style={{ width: `${Math.min(100, bedsData.occupancy_percentage ?? 0)}%` }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-tx-secondary mt-1">
+                    {bedsData.occupancy_percentage ?? 0}% occupied
+                  </p>
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                      Capacity Detail
+                    </p>
+                    <p className="text-[10px] text-kpi-blue">
+                      Total beds: {bedsData.total_capacity ?? 0}
+                    </p>
+                    <p className="text-[10px] text-kpi-red mt-0.5">
+                      Occupied: {bedsData.occupied_beds ?? 0}
+                    </p>
+                    <p className="text-[10px] text-kpi-green mt-0.5">
+                      Available: {bedsData.available_beds ?? 0}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stat 2: Occupied Beds */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                    Occupied
+                  </p>
+                  <p className="text-kpi-red font-black text-xl tabular-nums leading-none mt-0.5">
+                    {bedsData.occupied_beds ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-red transition-all"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          ((bedsData.occupied_beds ?? 0) /
+                            Math.max(1, bedsData.total_capacity ?? 1)) *
+                            100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                      Ward Breakdown
+                    </p>
+                    {(bedsData.bed_occupancy_by_department ?? [])
+                      .slice(0, 4)
+                      .map((dep: any, i: number) => (
+                        <p
+                          key={i}
+                          className="text-[10px] text-tx-secondary mt-0.5 truncate"
+                        >
+                          {dep.department}: {dep.occupied}/{dep.total}
+                        </p>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Stat 3: Available Beds */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                    Available
+                  </p>
+                  <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
+                    {bedsData.available_beds ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-green transition-all"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          ((bedsData.available_beds ?? 0) /
+                            Math.max(1, bedsData.total_capacity ?? 1)) *
+                            100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                      Available Beds
+                    </p>
+                    <p className="text-[10px] text-kpi-green">
+                      {bedsData.available_beds ?? 0} beds free now
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      ML predicts shortage risk
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      based on admission trend
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stat 4: Emergency Cases */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-kpi-red text-[10px]">🚨</span>
+                    <p className="text-kpi-red text-[9px] font-semibold uppercase tracking-wider">
+                      Emergency
+                    </p>
+                  </div>
+                  <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
+                    {bedsData.emergency_cases ?? 0}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
+                    </span>
+                    <p className="text-[9px] text-tx-secondary">
+                      {bedsData.critical_condition_cases ?? 0} critical
+                    </p>
+                  </div>
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
+                      Emergency Detail
+                    </p>
+                    <p className="text-[10px] text-kpi-red">
+                      Emergency: {bedsData.emergency_cases ?? 0}
+                    </p>
+                    <p className="text-[10px] text-kpi-orange mt-0.5">
+                      Critical: {bedsData.critical_condition_cases ?? 0}
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Needs immediate bed planning
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── COLUMN 2: Department Occupancy + Trend Chart ── */}
+              <div className="flex flex-col px-4 py-3 overflow-hidden">
+                <p className="text-kpi-blue text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  🏥 ML Bed Forecast
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-blue opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-blue" />
+                  </span>
+                </p>
+
+                <div className="mt-2 h-[100px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={bedsData.admissions_discharges_trend ?? []}
+                      margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
+                      barCategoryGap="20%"
+                    >
+                      <XAxis
+                        dataKey="day"
+                        tick={{ fontSize: 9, fill: "#64748b" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 9, fill: "#64748b" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Bar
+                        dataKey="admissions"
+                        fill="#3b82f6"
+                        fillOpacity={0.8}
+                        radius={[2, 2, 0, 0]}
+                        name="Admissions"
+                        isAnimationActive={false}
+                      />
+                      <Bar
+                        dataKey="discharges"
+                        fill="#22c55e"
+                        fillOpacity={0.7}
+                        radius={[2, 2, 0, 0]}
+                        name="Discharges"
+                        isAnimationActive={false}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
+                  Ward Occupancy
+                </p>
+                <div className="mt-1 flex flex-col gap-1 overflow-hidden flex-1">
+                  {(bedsData.bed_occupancy_by_department ?? [])
+                    .slice(0, 4)
+                    .map((dep: any, i: number) => {
+                      const pct = Math.min(
+                        100,
+                        Math.round(
+                          ((dep.occupied ?? 0) / Math.max(1, dep.total ?? 1)) * 100
+                        )
+                      );
+                      const barColor =
+                        pct >= 90
+                          ? "#ef4444"
+                          : pct >= 75
+                          ? "#f97316"
+                          : pct >= 50
+                          ? "#3b82f6"
+                          : "#22c55e";
+                      return (
+                        <div key={i} className="flex items-center gap-2 py-0.5">
+                          <span className="text-[10px] text-tx-secondary truncate w-20 shrink-0">
+                            {dep.department}
+                          </span>
+                          <div className="flex-1 h-1.5 rounded-full bg-dash-border overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{ width: `${pct}%`, background: barColor }}
+                            />
+                          </div>
+                          <span className="text-[9px] text-tx-muted tabular-nums shrink-0 w-8 text-right">
+                            {pct}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                  {(() => {
+                    const pct = bedsData.occupancy_percentage ?? 0;
+                    const available = bedsData.available_beds ?? 0;
+                    const isRisk = pct >= 85;
+                    return (
+                      <p
+                        className={`text-[11px] font-semibold ${
+                          isRisk ? "text-kpi-red" : "text-kpi-green"
+                        }`}
+                      >
+                        ⚡{" "}
+                        {isRisk
+                          ? `Bed shortage risk — only ${available} beds left`
+                          : `Capacity stable — ${available} beds available`}
+                      </p>
+                    );
+                  })()}
+                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
+                    ML forecast · Admission surge detection active
+                  </p>
+                </div>
+              </div>
+
+              {/* ── COLUMN 3: Suggestion Panel ── */}
+              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                  💡 Suggestion
+                </p>
+
+                {(() => {
+                  const pct = bedsData.occupancy_percentage ?? 0;
+                  const available = bedsData.available_beds ?? 0;
+
+                  const riskLevel =
+                    pct >= 95
+                      ? "Critical"
+                      : pct >= 85
+                      ? "High"
+                      : pct >= 70
+                      ? "Moderate"
+                      : "Low";
+
+                  const badgeClass =
+                    riskLevel === "Critical"
+                      ? "bg-red-500/15 text-kpi-red border-red-500/20"
+                      : riskLevel === "High"
+                      ? "bg-orange-500/15 text-kpi-orange border-orange-500/20"
+                      : riskLevel === "Moderate"
+                      ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20"
+                      : "bg-green-500/15 text-kpi-green border-green-500/20";
+
+                  const suggestion =
+                    riskLevel === "Critical"
+                      ? `Only ${available} beds left. Initiate emergency discharge planning and contact overflow facilities immediately.`
+                      : riskLevel === "High"
+                      ? `${pct}% capacity reached. Accelerate pending discharges and prepare contingency ward expansion.`
+                      : riskLevel === "Moderate"
+                      ? `Occupancy at ${pct}%. Monitor admissions trend and plan for weekend surge if needed.`
+                      : `Bed capacity is healthy at ${pct}%. Continue standard admission protocols.`;
+
+                  return (
+                    <>
+                      <div className="flex items-center gap-2 mt-1.5 shrink-0">
+                        <span
+                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}
+                        >
+                          {riskLevel} Risk
+                        </span>
+                        <span className="text-[10px] text-tx-secondary">
+                          {pct}% full
+                        </span>
+                      </div>
+                      <div className="mt-2 bg-kpi-blue/8 border border-kpi-blue/20 rounded-xl p-3 flex-1 overflow-hidden">
+                        <p className="text-kpi-blue font-semibold text-[11px] leading-relaxed">
+                          {suggestion}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
+                  ML-powered · Bed surge prediction active
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
