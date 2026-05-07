@@ -80,14 +80,23 @@ async def get_patients_beds_overview(
         )
         occupied_beds = occupied_beds_result.scalar_one() or 0
 
-        # Keep "available_beds" consistent with the Admin KPI card:
-        # count beds explicitly marked as available.
+        # Status-based counts (used for tooltip breakdown / KPI alignment).
         available_beds_result = await db.execute(
             select(func.count(Bed.id))
             .select_from(Bed)
             .where(Bed.status == BedStatus.available)
         )
-        available_beds = int(available_beds_result.scalar_one() or 0)
+        available_beds_status = int(available_beds_result.scalar_one() or 0)
+
+        maintenance_beds_result = await db.execute(
+            select(func.count(Bed.id))
+            .select_from(Bed)
+            .where(Bed.status == BedStatus.maintenance)
+        )
+        maintenance_beds = int(maintenance_beds_result.scalar_one() or 0)
+
+        # Capacity-based free beds for this day (matches "Total - Occupied" logic).
+        free_beds = max(int(total_capacity) - int(occupied_beds), 0)
         occupancy_percentage = (
             float(occupied_beds) / float(total_capacity) * 100.0
             if total_capacity > 0
@@ -243,7 +252,11 @@ async def get_patients_beds_overview(
             "total_patients": int(total_patients),
             "occupied_beds": int(occupied_beds),
             "occupancy_percentage": occupancy_percentage,
-            "available_beds": int(available_beds),
+            # Free beds (capacity-based): total - occupied (matches UI expectation).
+            "available_beds": int(free_beds),
+            # Status breakdown (optional UI use)
+            "available_beds_status": int(available_beds_status),
+            "maintenance_beds": int(maintenance_beds),
             "emergency_cases": int(emergency_cases),
             "critical_condition_cases": int(critical_condition_cases),
             "bed_occupancy_by_department": bed_occupancy_by_department,

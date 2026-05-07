@@ -2664,10 +2664,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stat 3: Available Beds */}
+                {/* Stat 3: Free Beds */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
-                    Available
+                    Free Beds
                   </p>
                   <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                     {bedsData.available_beds ?? 0}
@@ -2687,10 +2687,16 @@ export default function AdminDashboard() {
                   </div>
                   <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
-                      Available Beds
+                      Bed Status Breakdown
                     </p>
                     <p className="text-[10px] text-kpi-green">
-                      {bedsData.available_beds ?? 0} beds free now
+                      Free capacity: {bedsData.available_beds ?? 0}
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Status available: {bedsData.available_beds_status ?? "—"}
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Maintenance: {bedsData.maintenance_beds ?? "—"}
                     </p>
                     <p className="text-[10px] text-tx-secondary mt-0.5">
                       ML predicts shortage risk
