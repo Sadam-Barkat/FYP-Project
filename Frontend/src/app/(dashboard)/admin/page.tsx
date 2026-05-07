@@ -2754,7 +2754,7 @@ export default function AdminDashboard() {
                   </span>
                 </p>
 
-                <div className="mt-2 h-[100px] shrink-0">
+                <div className="mt-2 h-[100px] shrink-0 relative overflow-visible">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={bedsData.ml_next_7_days_forecast ?? []}
@@ -2762,11 +2762,13 @@ export default function AdminDashboard() {
                       barCategoryGap="20%"
                     >
                       <Tooltip
+                        wrapperStyle={{ zIndex: 80 }}
                         cursor={{ fill: "rgba(148,163,184,0.12)" }}
+                        allowEscapeViewBox={{ x: true, y: true }}
                         content={({ active, payload, label }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           const p: any = payload[0]?.payload ?? {};
-                          const dateLabel = String(label ?? p.date ?? "—");
+                          const dateLabel = String(p.date ?? label ?? "—");
                           const adm = Number(p.predicted_admissions ?? 0);
                           const prob = Number(p.shortage_probability ?? 0);
                           const occ = Number(p.estimated_occupancy_pct ?? 0);
@@ -2801,16 +2803,20 @@ export default function AdminDashboard() {
                       />
                       <XAxis
                         dataKey="date"
-                        tick={{ fontSize: 9, fill: "#64748b" }}
+                        tick={{ fontSize: 8, fill: "#64748b" }}
                         axisLine={false}
                         tickLine={false}
                         interval={0}
                         minTickGap={0}
-                        tickMargin={6}
+                        tickMargin={8}
+                        angle={-35}
+                        textAnchor="end"
+                        height={28}
                         tickFormatter={(v) => {
                           try {
                             // Show MM-DD, but tooltip keeps full YYYY-MM-DD
-                            return String(v).slice(5);
+                            const s = String(v || "");
+                            return s.length >= 10 ? s.slice(5) : (s || "—");
                           } catch {
                             return v as any;
                           }
