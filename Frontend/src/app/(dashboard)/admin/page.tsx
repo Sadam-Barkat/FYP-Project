@@ -2370,61 +2370,69 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
-                  ML Revenue Forecast (7 days)
-                </p>
-                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1 min-h-0">
-                  {(financeData.ml_revenue_forecast ?? []).slice(0, 5).map((d: any, i: number) => {
-                    const amt = Number(d.predicted_revenue ?? 0);
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
-                      >
-                        <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
-                          {String(d.date ?? "").slice(5)}
-                        </span>
-                        <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
-                          ₨{(amt / 1000).toFixed(1)}k
-                        </span>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 bg-cyan-500/15 text-kpi-cyan border-cyan-500/20">
-                          forecast
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="mt-2 grid grid-cols-[1fr_168px] gap-2 min-h-0 flex-1">
+                  {/* Left: full 7-day list (scroll inside) */}
+                  <div className="min-h-0 flex flex-col overflow-hidden">
+                    <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider shrink-0">
+                      ML revenue forecast (7 days)
+                    </p>
+                    <div className="mt-1 min-h-0 flex flex-col gap-0.5 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                      {(financeData.ml_revenue_forecast ?? []).slice(0, 7).map((d: any, i: number) => {
+                        const amt = Number(d.predicted_revenue ?? 0);
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
+                          >
+                            <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
+                              {String(d.date ?? "").slice(5)}
+                            </span>
+                            <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
+                              ₨{(amt / 1000).toFixed(1)}k
+                            </span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 bg-cyan-500/15 text-kpi-cyan border-cyan-500/20">
+                              forecast
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
-                  {(() => {
-                    const pts = Array.isArray(financeData?.ml_revenue_forecast)
-                      ? (financeData.ml_revenue_forecast as any[])
-                      : [];
-                    const totalPredRevenue = pts.reduce(
-                      (s, p) => s + Number(p?.predicted_revenue ?? 0),
-                      0
-                    );
-                    const totalPredExpenses = totalPredRevenue * 0.3;
-                    const totalPredNet = totalPredRevenue - totalPredExpenses;
-                    const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
-                    return (
-                      <div className="space-y-0.5">
-                        <p className="text-[11px] font-black text-kpi-cyan">
-                          ⚡ Predicted (Next 7 Days Totals)
-                        </p>
-                        <p className="text-[11px] font-black text-tx-primary tabular-nums">
-                          Revenue: ₨{(totalPredRevenue / 1000).toFixed(1)}k
-                          <span className="text-tx-muted font-black"> · </span>
-                          Expenses: ₨{(totalPredExpenses / 1000).toFixed(1)}k
-                          <span className="text-tx-muted font-black"> · </span>
-                          Net: ₨{(totalPredNet / 1000).toFixed(1)}k
-                        </p>
-                        <p className="text-[10px] font-black text-tx-secondary tabular-nums">
-                          Avg / day (predicted revenue): ₨{(avgPredRevenue / 1000).toFixed(1)}k
-                        </p>
-                      </div>
-                    );
-                  })()}
+                  {/* Right: compact predicted summary */}
+                  <div className="min-h-0 flex flex-col rounded-xl border border-dash-border bg-dash-elevated/40 p-2 overflow-hidden">
+                    {(() => {
+                      const pts = Array.isArray(financeData?.ml_revenue_forecast)
+                        ? (financeData.ml_revenue_forecast as any[])
+                        : [];
+                      const totalPredRevenue = pts.reduce(
+                        (s, p) => s + Number(p?.predicted_revenue ?? 0),
+                        0
+                      );
+                      const totalPredExpenses = totalPredRevenue * 0.3;
+                      const totalPredNet = totalPredRevenue - totalPredExpenses;
+                      const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
+                      return (
+                        <>
+                          <p className="text-[10px] font-black text-kpi-cyan">
+                            ⚡ Predicted totals
+                          </p>
+                          <p className="mt-1 text-[10px] font-black text-tx-primary tabular-nums">
+                            Rev: ₨{(totalPredRevenue / 1000).toFixed(1)}k
+                          </p>
+                          <p className="text-[10px] font-black text-tx-primary tabular-nums">
+                            Exp: ₨{(totalPredExpenses / 1000).toFixed(1)}k
+                          </p>
+                          <p className="text-[10px] font-black text-tx-primary tabular-nums">
+                            Net: ₨{(totalPredNet / 1000).toFixed(1)}k
+                          </p>
+                          <p className="mt-1 text-[9px] font-black text-tx-secondary tabular-nums">
+                            Avg/day: ₨{(avgPredRevenue / 1000).toFixed(1)}k
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 
