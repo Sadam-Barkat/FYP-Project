@@ -2747,7 +2747,7 @@ export default function AdminDashboard() {
               {/* ── COLUMN 2: Department Occupancy + Trend Chart ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
                 <p className="text-kpi-blue text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🏥 ML Bed Forecast
+                  🏥 Forecasted Admissions (ML · Next 7 Days)
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-blue opacity-70" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-blue" />
@@ -2761,13 +2761,55 @@ export default function AdminDashboard() {
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
+                      <Tooltip
+                        cursor={{ fill: "rgba(148,163,184,0.12)" }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const p: any = payload[0]?.payload ?? {};
+                          const dateLabel = String(label ?? p.date ?? "—");
+                          const adm = Number(p.predicted_admissions ?? 0);
+                          const prob = Number(p.shortage_probability ?? 0);
+                          const occ = Number(p.estimated_occupancy_pct ?? 0);
+                          const occBeds = Number(p.estimated_occupied_beds ?? 0);
+                          return (
+                            <div className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2">
+                              <p className="text-[10px] text-tx-muted uppercase font-semibold">
+                                {dateLabel}
+                              </p>
+                              <p className="text-[11px] text-kpi-blue font-semibold mt-1">
+                                Pred. admissions:{" "}
+                                <span className="tabular-nums">{adm.toFixed(1)}</span>
+                              </p>
+                              <p className="text-[10px] text-tx-secondary mt-0.5">
+                                Shortage prob:{" "}
+                                <span className="tabular-nums">
+                                  {Math.round(prob * 100)}%
+                                </span>
+                              </p>
+                              <p className="text-[10px] text-tx-secondary mt-0.5">
+                                Est. occupancy:{" "}
+                                <span className="tabular-nums">
+                                  {occ.toFixed(1)}%
+                                </span>{" "}
+                                <span className="text-tx-muted">
+                                  ({occBeds} beds)
+                                </span>
+                              </p>
+                            </div>
+                          );
+                        }}
+                      />
                       <XAxis
                         dataKey="date"
                         tick={{ fontSize: 9, fill: "#64748b" }}
                         axisLine={false}
                         tickLine={false}
+                        interval={0}
+                        minTickGap={0}
+                        tickMargin={6}
                         tickFormatter={(v) => {
                           try {
+                            // Show MM-DD, but tooltip keeps full YYYY-MM-DD
                             return String(v).slice(5);
                           } catch {
                             return v as any;
@@ -2784,7 +2826,7 @@ export default function AdminDashboard() {
                         fill="#3b82f6"
                         fillOpacity={0.8}
                         radius={[2, 2, 0, 0]}
-                        name="Predicted admissions"
+                        name="Forecasted admissions (ML)"
                         isAnimationActive={false}
                       />
                     </BarChart>
