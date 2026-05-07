@@ -2409,7 +2409,7 @@ export default function AdminDashboard() {
                     const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
                     return (
                       <div className="space-y-0.5">
-                        <p className="text-[11px] font-black text-kpi-cyan">
+                        <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider">
                           ⚡ Predicted (Next 7 Days Totals)
                         </p>
                         <p className="text-[11px] font-black text-tx-primary tabular-nums">
@@ -2417,9 +2417,9 @@ export default function AdminDashboard() {
                           <span className="text-tx-muted font-black"> · </span>
                           Expenses: ₨{(totalPredExpenses / 1000).toFixed(1)}k
                           <span className="text-tx-muted font-black"> · </span>
-                          Net: ₨{(totalPredNet / 1000).toFixed(1)}k
+                          Net profit: ₨{(totalPredNet / 1000).toFixed(1)}k
                         </p>
-                        <p className="text-[10px] font-black text-tx-secondary tabular-nums">
+                        <p className="text-[10px] font-bold text-tx-secondary tabular-nums">
                           Avg / day (predicted revenue): ₨{(avgPredRevenue / 1000).toFixed(1)}k
                         </p>
                       </div>
