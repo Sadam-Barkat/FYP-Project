@@ -2612,7 +2612,7 @@ export default function AdminDashboard() {
                   <p className="text-[8px] text-tx-secondary mt-0.5">
                     {Number(bedsData.occupancy_percentage ?? 0).toFixed(1)}% occupied
                   </p>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Capacity Detail
                     </p>
@@ -2649,42 +2649,20 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-[9999] ml-1 w-48 rounded-[8px] bg-[#0f1117] border border-[#3a4060] shadow-[0_16px_40px_rgba(0,0,0,0.45)] px-4 py-3 hidden group-hover:block pointer-events-none">
-                    <p className="text-[13px] text-white font-bold mb-2">
+                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Ward Breakdown
                     </p>
                     {(bedsData.bed_occupancy_by_department ?? [])
                       .slice(0, 4)
-                      .map((dep: any, i: number) => {
-                        const pct = Math.min(
-                          100,
-                          Math.round(
-                            ((dep.occupied ?? 0) / Math.max(1, dep.total ?? 1)) * 100
-                          )
-                        );
-                        const dotColor =
-                          pct >= 90
-                            ? "#ef4444"
-                            : pct >= 75
-                            ? "#f97316"
-                            : pct >= 50
-                            ? "#3b82f6"
-                            : "#22c55e";
-                        return (
-                          <div key={i} className="mt-1.5 flex items-center gap-2">
-                            <span
-                              className="h-2 w-2 rounded-sm shrink-0"
-                              style={{ backgroundColor: dotColor }}
-                            />
-                            <p className="min-w-0 flex-1 truncate text-[12px] text-slate-200">
-                              {dep.department}
-                            </p>
-                            <p className="text-[12px] text-white font-semibold tabular-nums">
-                              {dep.occupied}/{dep.total}
-                            </p>
-                          </div>
-                        );
-                      })}
+                      .map((dep: any, i: number) => (
+                        <p
+                          key={i}
+                          className="text-[10px] text-tx-secondary mt-0.5 truncate"
+                        >
+                          {dep.department}: {dep.occupied}/{dep.total}
+                        </p>
+                      ))}
                   </div>
                 </div>
 
@@ -2709,7 +2687,7 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Bed Status Breakdown
                     </p>
@@ -2751,7 +2729,7 @@ export default function AdminDashboard() {
                       {bedsData.critical_condition_cases ?? 0} critical
                     </p>
                   </div>
-                  <div className="absolute left-full bottom-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full bottom-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Emergency Detail
                     </p>
