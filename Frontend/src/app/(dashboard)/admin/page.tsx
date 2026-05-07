@@ -2552,7 +2552,7 @@ export default function AdminDashboard() {
 
         {/* Bed & Ward Intelligence card (placeholder) */}
         <div
-          className="order-4 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="order-4 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-visible dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
@@ -2590,7 +2590,7 @@ export default function AdminDashboard() {
           ) : null}
 
           {bedsData ? (
-            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-visible">
               {/* ── COLUMN 1: 4 KPI Stats ── */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* Stat 1: Total Capacity */}
