@@ -80,7 +80,14 @@ async def get_patients_beds_overview(
         )
         occupied_beds = occupied_beds_result.scalar_one() or 0
 
-        available_beds = max(int(total_capacity) - int(occupied_beds), 0)
+        # Keep "available_beds" consistent with the Admin KPI card:
+        # count beds explicitly marked as available.
+        available_beds_result = await db.execute(
+            select(func.count(Bed.id))
+            .select_from(Bed)
+            .where(Bed.status == BedStatus.available)
+        )
+        available_beds = int(available_beds_result.scalar_one() or 0)
         occupancy_percentage = (
             float(occupied_beds) / float(total_capacity) * 100.0
             if total_capacity > 0
