@@ -21,6 +21,10 @@ from app.models.billing_signal import BillingServiceSignal
 from app.models.patient import Patient
 from app.models.user import User, UserRole
 from app.schemas.finance_ops import BillingChargeCreate, BillingMarkPaidBody
+from app.services.finance_revenue_model import (
+    predict_next_7_days_revenue,
+    revenue_forecast_risk_label,
+)
 
 router = APIRouter(prefix="/api", tags=["billing_finance"])
 
@@ -142,6 +146,16 @@ async def compute_billing_finance_overview(
             {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
         )
 
+    # ML revenue forecast (next 7 calendar days)
+    ml_forecast_points = await predict_next_7_days_revenue(db, base_date)
+    ml_revenue_forecast = [
+        {"date": p.date, "predicted_revenue": float(p.predicted_revenue)}
+        for p in ml_forecast_points
+    ]
+    ml_revenue_risk_level = revenue_forecast_risk_label(
+        ml_forecast_points, todays_revenue
+    )
+
     return {
         "todays_revenue": todays_revenue,
         "outstanding_balance": outstanding_balance,
@@ -149,6 +163,8 @@ async def compute_billing_finance_overview(
         "todays_expenses": todays_expenses,
         "recent_invoices": recent_invoices,
         "revenue_vs_expenses": revenue_vs_expenses,
+        "ml_revenue_forecast": ml_revenue_forecast,
+        "ml_revenue_risk_level": ml_revenue_risk_level,
         "selected_date": base_date.isoformat(),
     }
 

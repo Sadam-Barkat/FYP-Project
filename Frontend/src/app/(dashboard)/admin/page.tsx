@@ -2324,7 +2324,15 @@ export default function AdminDashboard() {
                 <div className="mt-1.5 h-[100px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={financeData.revenue_vs_expenses ?? []}
+                      data={
+                        (financeData.ml_revenue_forecast ?? []).length
+                          ? (financeData.ml_revenue_forecast ?? []).map((d: any) => ({
+                              day: String(d.date ?? "").slice(5),
+                              revenue: d.predicted_revenue ?? 0,
+                              expenses: (d.predicted_revenue ?? 0) * 0.3,
+                            }))
+                          : (financeData.revenue_vs_expenses ?? [])
+                      }
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
@@ -2361,33 +2369,28 @@ export default function AdminDashboard() {
                 </div>
 
                 <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
-                  Recent Invoices
+                  ML Revenue Forecast (7 days)
                 </p>
                 <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1 min-h-0">
-                  {(financeData.recent_invoices ?? []).slice(0, 3).map((inv: any, i: number) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
-                    >
-                      <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
-                        {inv.patient}
-                      </span>
-                      <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
-                        ₨{(Number(inv.amount ?? 0) / 1000).toFixed(1)}k
-                      </span>
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
-                          inv.status === "paid"
-                            ? "bg-green-500/15 text-kpi-green border-green-500/20"
-                            : inv.status === "pending"
-                            ? "bg-orange-500/15 text-kpi-orange border-orange-500/20"
-                            : "bg-red-500/15 text-kpi-red border-red-500/20"
-                        }`}
+                  {(financeData.ml_revenue_forecast ?? []).slice(0, 5).map((d: any, i: number) => {
+                    const amt = Number(d.predicted_revenue ?? 0);
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
                       >
-                        {inv.status}
-                      </span>
-                    </div>
-                  ))}
+                        <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
+                          {String(d.date ?? "").slice(5)}
+                        </span>
+                        <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
+                          ₨{(amt / 1000).toFixed(1)}k
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 bg-cyan-500/15 text-kpi-cyan border-cyan-500/20">
+                          forecast
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
@@ -2396,6 +2399,12 @@ export default function AdminDashboard() {
                     const expenses = Number(financeData?.todays_expenses ?? 0);
                     const net = revenue - expenses;
                     const isProfit = net >= 0;
+                    const avgForecast = Array.isArray(financeData?.ml_revenue_forecast)
+                      ? (financeData.ml_revenue_forecast as any[]).reduce(
+                          (s, p) => s + Number(p?.predicted_revenue ?? 0),
+                          0
+                        ) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length)
+                      : 0;
                     return (
                       <p className={`text-[11px] font-semibold ${isProfit ? "text-kpi-green" : "text-kpi-red"}`}>
                         ⚡ {isProfit
@@ -2405,7 +2414,7 @@ export default function AdminDashboard() {
                     );
                   })()}
                   <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    Billing metrics · Paid rows only
+                    ML forecast · Next-7 avg ₨{(Number.isFinite((Array.isArray(financeData?.ml_revenue_forecast) ? (financeData.ml_revenue_forecast as any[]).reduce((s, p) => s + Number(p?.predicted_revenue ?? 0), 0) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length) : 0)) ? ((Array.isArray(financeData?.ml_revenue_forecast) ? (financeData.ml_revenue_forecast as any[]).reduce((s, p) => s + Number(p?.predicted_revenue ?? 0), 0) / Math.max(1, (financeData.ml_revenue_forecast as any[]).length) : 0) / 1000).toFixed(1) : "0.0")}k
                   </p>
                 </div>
               </div>
