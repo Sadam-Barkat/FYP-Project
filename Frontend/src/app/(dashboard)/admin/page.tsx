@@ -2594,7 +2594,7 @@ export default function AdminDashboard() {
               {/* ── COLUMN 1: 4 KPI Stats ── */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* Stat 1: Total Capacity */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Total Capacity
                   </p>
@@ -2607,8 +2607,8 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, bedsData.occupancy_percentage ?? 0)}%` }}
                     />
                   </div>
-                  <p className="text-[9px] text-tx-secondary mt-1">
-                    {bedsData.occupancy_percentage ?? 0}% occupied
+                  <p className="text-[8px] text-tx-secondary mt-0.5">
+                    {Number(bedsData.occupancy_percentage ?? 0).toFixed(1)}% occupied
                   </p>
                   <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
@@ -2627,7 +2627,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 2: Occupied Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Occupied
                   </p>
@@ -2665,7 +2665,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 3: Free Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Free Beds
                   </p>
@@ -2708,7 +2708,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 4: Emergency Cases */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors">
+                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
                   <div className="flex items-center gap-1.5">
                     <span className="text-kpi-red text-[10px]">🚨</span>
                     <p className="text-kpi-red text-[9px] font-semibold uppercase tracking-wider">
@@ -2718,12 +2718,12 @@ export default function AdminDashboard() {
                   <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
                     {bedsData.emergency_cases ?? 0}
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-0.5">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
                     </span>
-                    <p className="text-[9px] text-tx-secondary">
+                    <p className="text-[8px] text-tx-secondary">
                       {bedsData.critical_condition_cases ?? 0} critical
                     </p>
                   </div>
