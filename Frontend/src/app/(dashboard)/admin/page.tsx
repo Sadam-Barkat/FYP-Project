@@ -2473,9 +2473,6 @@ export default function AdminDashboard() {
                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}>
                           {riskLevel} Risk
                         </span>
-                        <span className="text-[10px] text-tx-secondary">
-                          {collectionRate}% collected · {netText} · ML {mlRevRisk}/{mlCollRisk}
-                        </span>
                       </div>
                       <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden min-h-0">
                         <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed">
