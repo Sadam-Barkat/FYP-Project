@@ -2727,7 +2727,7 @@ export default function AdminDashboard() {
                       {bedsData.critical_condition_cases ?? 0} critical
                     </p>
                   </div>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full bottom-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Emergency Detail
                     </p>
