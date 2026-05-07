@@ -2761,7 +2761,7 @@ export default function AdminDashboard() {
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
-                      <Tooltip
+                      <RechartsTooltip
                         wrapperStyle={{ zIndex: 80 }}
                         cursor={{ fill: "rgba(148,163,184,0.12)" }}
                         allowEscapeViewBox={{ x: true, y: true }}
