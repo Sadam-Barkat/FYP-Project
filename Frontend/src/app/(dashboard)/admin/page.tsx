@@ -2745,7 +2745,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 2: Department Occupancy + Trend Chart ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden">
+              <div className="flex flex-col px-4 py-3 overflow-hidden relative z-50">
                 <p className="text-kpi-blue text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
                   🏥 Forecasted Admissions (ML · Next 7 Days)
                   <span className="relative flex h-1.5 w-1.5">
@@ -2777,7 +2777,7 @@ export default function AdminDashboard() {
                           const vbW = Number((viewBox as any)?.width ?? 0);
                           const cx = Number((coordinate as any)?.x ?? 0);
                           const flipLeft = vbW > 0 && cx > vbW * 0.62;
-                          const dx = flipLeft ? -190 : 12; // keep it away from Suggestion column
+                          const dx = flipLeft ? -260 : 12; // keep it away from Suggestion column
                           return (
                             <div
                               className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2"
