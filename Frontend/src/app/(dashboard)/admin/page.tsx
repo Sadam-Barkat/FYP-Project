@@ -1092,7 +1092,11 @@ export default function AdminDashboard() {
               </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none">
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none ${
+                  k.label === "Critical Patients" ? "border-b-[3px] border-red-500" : ""
+                }`}
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   {k.chart === "bar" ? (
                     <BarChart
