@@ -2335,7 +2335,7 @@ export default function AdminDashboard() {
                             }))
                           : (financeData.revenue_vs_expenses ?? [])
                       }
-                      margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
+                      margin={{ top: 2, right: 0, left: -10, bottom: 0 }}
                       barCategoryGap="20%"
                     >
                       <XAxis
@@ -2370,7 +2370,7 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
+                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider mt-2 shrink-0">
                   ML Revenue Forecast (7 days)
                 </p>
                 <div className="mt-1 flex flex-col gap-0.5 overflow-y-auto pr-1 flex-1 min-h-0 overscroll-contain [scrollbar-width:thin]">
