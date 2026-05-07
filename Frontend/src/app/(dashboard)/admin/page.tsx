@@ -816,7 +816,7 @@ const KPI_CARD_DEFS = [
     trendKey: "critical_patients_trend" as const,
     icon: AlertTriangle,
     accent:
-      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-red-500 before:pointer-events-none dark:bg-kpi-red dark:shadow-kpi-red dark:hover:shadow-kpi-red-hover",
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-red-500 before:pointer-events-none after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[3px] after:bg-red-500 after:pointer-events-none dark:bg-kpi-red dark:shadow-kpi-red dark:hover:shadow-kpi-red-hover",
     iconWrap:
       "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-red-600 dark:bg-kpi-red/20 dark:border-kpi-red/30 dark:text-kpi-red",
     kind: "int" as const,
@@ -1094,7 +1094,7 @@ export default function AdminDashboard() {
 
               <div
                 className={`absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none ${
-                  k.label === "Critical Patients" ? "rounded-b-2xl border-b-[3px] border-red-500" : ""
+                  k.label === "Critical Patients" ? "pb-[3px]" : ""
                 }`}
               >
                 <ResponsiveContainer width="100%" height="100%">
