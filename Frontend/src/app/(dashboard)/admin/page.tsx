@@ -2373,18 +2373,18 @@ export default function AdminDashboard() {
                 <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
                   ML Revenue Forecast (7 days)
                 </p>
-                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1 min-h-0">
-                  {(financeData.ml_revenue_forecast ?? []).slice(0, 5).map((d: any, i: number) => {
+                <div className="mt-1 flex flex-col gap-0.5 overflow-y-auto pr-1 flex-1 min-h-0 overscroll-contain [scrollbar-width:thin]">
+                  {(financeData.ml_revenue_forecast ?? []).slice(0, 7).map((d: any, i: number) => {
                     const amt = Number(d.predicted_revenue ?? 0);
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0"
+                        className="flex items-center gap-1.5 py-0.5 border-b border-dash-border/40 last:border-0"
                       >
                         <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">
                           {String(d.date ?? "").slice(5)}
                         </span>
-                        <span className="text-[10px] text-tx-secondary mx-2 shrink-0">
+                        <span className="text-[10px] text-tx-secondary shrink-0">
                           ₨{(amt / 1000).toFixed(1)}k
                         </span>
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 bg-cyan-500/15 text-kpi-cyan border-cyan-500/20">
