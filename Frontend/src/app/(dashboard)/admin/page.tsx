@@ -2338,6 +2338,28 @@ export default function AdminDashboard() {
                       margin={{ top: 2, right: 0, left: -10, bottom: 0 }}
                       barCategoryGap="20%"
                     >
+                      <RechartsTooltip
+                        cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const rev = Number(payload.find((p) => p.dataKey === "revenue")?.value ?? 0);
+                          const exp = Number(payload.find((p) => p.dataKey === "expenses")?.value ?? 0);
+                          const fmt = (v: number) => `₨${(v / 1000).toFixed(1)}k`;
+                          return (
+                            <div className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-2.5 py-2">
+                              <p className="text-[10px] text-tx-muted uppercase font-semibold">
+                                {label}
+                              </p>
+                              <p className="mt-1 text-[10px] text-kpi-green font-semibold">
+                                Revenue: {fmt(rev)}
+                              </p>
+                              <p className="text-[10px] text-kpi-red font-semibold mt-0.5">
+                                Expenses: {fmt(exp)}
+                              </p>
+                            </div>
+                          );
+                        }}
+                      />
                       <XAxis
                         dataKey="day"
                         tick={{ fontSize: 9, fill: "#64748b" }}
