@@ -2612,7 +2612,7 @@ export default function AdminDashboard() {
                   <p className="text-[8px] text-tx-secondary mt-0.5">
                     {Number(bedsData.occupancy_percentage ?? 0).toFixed(1)}% occupied
                   </p>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Capacity Detail
                     </p>
@@ -2649,7 +2649,7 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Ward Breakdown
                     </p>
@@ -2687,7 +2687,7 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Bed Status Breakdown
                     </p>
@@ -2729,7 +2729,7 @@ export default function AdminDashboard() {
                       {bedsData.critical_condition_cases ?? 0} critical
                     </p>
                   </div>
-                  <div className="absolute left-full bottom-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className="absolute left-full bottom-0 z-50 ml-1 w-44 rounded-xl bg-[#020617] border border-white/15 ring-1 ring-black/40 shadow-2xl p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Emergency Detail
                     </p>
