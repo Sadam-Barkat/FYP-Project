@@ -2765,7 +2765,7 @@ export default function AdminDashboard() {
                         wrapperStyle={{ zIndex: 80 }}
                         cursor={{ fill: "rgba(148,163,184,0.12)" }}
                         allowEscapeViewBox={{ x: true, y: true }}
-                        content={({ active, payload, label }) => {
+                        content={({ active, payload, label, coordinate, viewBox }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           const p: any = payload[0]?.payload ?? {};
                           const dateLabel = String(p.date ?? label ?? "—");
@@ -2773,8 +2773,19 @@ export default function AdminDashboard() {
                           const prob = Number(p.shortage_probability ?? 0);
                           const occ = Number(p.estimated_occupancy_pct ?? 0);
                           const occBeds = Number(p.estimated_occupied_beds ?? 0);
+                          const vbW = Number((viewBox as any)?.width ?? 0);
+                          const cx = Number((coordinate as any)?.x ?? 0);
+                          const flipLeft = vbW > 0 && cx > vbW * 0.62;
+                          const dx = flipLeft ? -190 : 12; // keep it away from Suggestion column
                           return (
-                            <div className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2">
+                            <div
+                              className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2"
+                              style={{
+                                transform: `translate(${dx}px, -6px)`,
+                                pointerEvents: "none",
+                                minWidth: 176,
+                              }}
+                            >
                               <p className="text-[10px] text-tx-muted uppercase font-semibold">
                                 {dateLabel}
                               </p>
