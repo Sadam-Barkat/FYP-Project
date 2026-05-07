@@ -2765,7 +2765,8 @@ export default function AdminDashboard() {
                         wrapperStyle={{ zIndex: 80 }}
                         cursor={{ fill: "rgba(148,163,184,0.12)" }}
                         allowEscapeViewBox={{ x: true, y: true }}
-                        content={({ active, payload, label, coordinate, viewBox }) => {
+                        content={(props: any) => {
+                          const { active, payload, label, coordinate, viewBox } = props ?? {};
                           if (!active || !payload || payload.length === 0) return null;
                           const p: any = payload[0]?.payload ?? {};
                           const dateLabel = String(p.date ?? label ?? "—");
