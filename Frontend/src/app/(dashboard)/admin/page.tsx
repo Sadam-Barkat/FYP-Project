@@ -1716,16 +1716,16 @@ export default function AdminDashboard() {
               {/* ── COLUMN 2: ML Medicines at Risk (stockout model) ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
 
-                {/* Section header — matches Finance card style */}
+                {/* Section header */}
                 <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🩺 Medicines Running Out Soon
+                  🩺 Medicines Running Out (Next 7 Days)
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
                   </span>
                 </p>
                 <p className="text-[8px] text-tx-muted mt-0.5 mb-1.5 shrink-0">
-                  ML Prediction · How likely each medicine runs out in the next few days
+                  Predicted out-of-stock risk per medicine in the next 7 days
                 </p>
 
                 {/* Row-by-row medicine risk — same pattern as Finance forecast rows */}
@@ -1763,34 +1763,32 @@ export default function AdminDashboard() {
                   }
                 </div>
 
-                {/* Predicted total at risk */}
+                {/* Predicted totals footer */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
+                    const atRisk   = pharmacyData.ml_at_risk_medicines ?? [];
                     const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
                     const high     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
                     const moderate = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
-                    const total = critical + high + moderate;
+                    const total    = critical + high + moderate;
+                    const oos      = pharmacyData.out_of_stock_count ?? 0;
                     return (
                       <>
-                        <p className={`text-[11px] font-bold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                        <p className={`text-[11px] font-bold ${critical > 0 || oos > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
                           ⚡ {total > 0
-                            ? `${total} medicine${total > 1 ? "s" : ""} predicted to run out`
-                            : "All medicines have healthy stock levels ✓"}
+                            ? `In the next 7 days, ${total} medicine${total > 1 ? "s" : ""} predicted to go out of stock`
+                            : `${oos > 0 ? `${oos} currently out of stock` : "No medicines predicted to run out in next 7 days ✓"}`}
                         </p>
                         {total > 0 ? (
                           <p className="text-[9px] text-tx-muted mt-0.5">
-                            {critical > 0 ? `${critical} critical  ` : ""}
-                            {high > 0 ? `${high} high risk  ` : ""}
+                            {critical > 0 ? `${critical} critical · ` : ""}
+                            {high > 0 ? `${high} high risk · ` : ""}
                             {moderate > 0 ? `${moderate} moderate` : ""}
                           </p>
                         ) : null}
                       </>
                     );
                   })()}
-                  <p className="text-[8px] text-tx-muted mt-0.5 italic">
-                    {pharmacyData.ml_available ? "pharmacy_stockout_model.pkl" : "Rule-based estimate"}
-                  </p>
                 </div>
               </div>
 
@@ -1799,13 +1797,13 @@ export default function AdminDashboard() {
 
                 {/* Section header */}
                 <p className="text-tx-muted text-[10px] font-bold uppercase tracking-wider shrink-0">
-                  📈 ML Prescription Forecast (7 Days)
+                  📈 Prescription Forecast (Next 7 Days)
                 </p>
                 <p className="text-[8px] text-tx-muted mt-0.5 mb-1.5 shrink-0">
-                  How many prescriptions are expected each day
+                  Expected number of prescriptions per day
                 </p>
 
-                {/* Row-by-row forecast — exactly like Finance card */}
+                {/* Row-by-row forecast */}
                 <div className="space-y-[3px] shrink-0 overflow-hidden max-h-[110px]">
                   {(pharmacyData.demand_forecast ?? []).length > 0
                     ? (pharmacyData.demand_forecast ?? []).slice(0, 5).map((f, i) => {
@@ -1825,7 +1823,7 @@ export default function AdminDashboard() {
                           </div>
                         );
                       })
-                    : <p className="text-[10px] text-tx-muted">No forecast data available</p>
+                    : null
                   }
                 </div>
 
@@ -1873,14 +1871,11 @@ export default function AdminDashboard() {
                           {riskLevel} Risk
                         </span>
                       </div>
-                      <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-3">
-                        {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
-                      </p>
-                      <p className="text-[8px] text-tx-muted italic mt-1">
-                        {pharmacyData.ml_available
-                          ? "ML · pharmacy_demand_model.pkl"
-                          : "Rule-based estimate"}
-                      </p>
+                      <div className="bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-2.5">
+                        <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-4">
+                          {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
+                        </p>
+                      </div>
                     </div>
                   );
                 })()}
