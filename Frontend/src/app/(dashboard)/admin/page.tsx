@@ -1577,9 +1577,10 @@ export default function AdminDashboard() {
             <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
 
               {/* ── COLUMN 1: 4 KPI Stats ── */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+              {/* overflow-visible so tooltips aren't clipped by the column boundary */}
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
 
-                {/* Stat 1: Total Medicines */}
+                {/* Stat 1: Total Medicines — tooltip opens downward */}
                 <div
                   className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("total")}
@@ -1608,17 +1609,33 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })()}
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Stock Breakdown</p>
-                    <p className="text-[10px] text-kpi-green">✓ Safe: {Math.max(0, pharmacyData.total_medicines - (pharmacyData.out_of_stock_count ?? 0) - (pharmacyData.low_stock_count ?? 0) - (pharmacyData.expiring_soon_count ?? 0) - (pharmacyData.expired_count ?? 0))}</p>
-                    <p className="text-[10px] text-kpi-orange mt-0.5">⚠ Low: {pharmacyData.low_stock_count ?? 0}</p>
-                    <p className="text-[10px] text-tx-yellow mt-0.5">⏳ Expiring: {pharmacyData.expiring_soon_count ?? 0}</p>
-                    <p className="text-[10px] text-kpi-red mt-0.5">✗ OOS + Expired: {(pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0)}</p>
+                  <div className="absolute left-[162px] top-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-bold tracking-wider mb-2">Stock Overview</p>
+                    {(() => {
+                      const total = Math.max(1, pharmacyData.total_medicines);
+                      const oos = pharmacyData.out_of_stock_count ?? 0;
+                      const low = pharmacyData.low_stock_count ?? 0;
+                      const soon = pharmacyData.expiring_soon_count ?? 0;
+                      const expired = pharmacyData.expired_count ?? 0;
+                      const safe = Math.max(0, total - oos - low - soon - expired);
+                      return (
+                        <>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-green">✓ Safe / Healthy</span><span className="text-kpi-green font-bold">{safe}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-orange">⚠ Low Stock</span><span className="text-kpi-orange font-bold">{low}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-tx-yellow">⏳ Expiring Soon</span><span className="text-tx-yellow font-bold">{soon}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-red">✗ Out of Stock</span><span className="text-kpi-red font-bold">{oos}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5"><span className="text-tx-muted">💀 Expired</span><span className="text-tx-muted font-bold">{expired}</span></div>
+                          <div className="mt-2 pt-1.5 border-t border-white/10 flex justify-between text-[10px]">
+                            <span className="text-tx-muted">Health Rate</span>
+                            <span className={`font-bold ${safe / total >= 0.7 ? "text-kpi-green" : safe / total >= 0.4 ? "text-kpi-orange" : "text-kpi-red"}`}>{Math.round((safe / total) * 100)}%</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
-                {/* Stat 2: Out of Stock */}
+                {/* Stat 2: Out of Stock — tooltip opens downward */}
                 <div
                   className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-kpi-red/20"
                   onClick={() => setExpandedPharmacyCard("oos")}
@@ -1639,19 +1656,27 @@ export default function AdminDashboard() {
                       {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.out_of_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Out of Stock</p>
-                    {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 5).map((m, i) => (
-                      <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">• {m}</p>
-                    ))}
-                    {(pharmacyData.out_of_stock_medicines ?? []).length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">None currently</p>
+                  <div className="absolute left-[162px] top-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-kpi-red uppercase font-bold tracking-wider mb-2">Out of Stock — {pharmacyData.out_of_stock_count ?? 0} medicines</p>
+                    {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
+                      <>
+                        {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 6).map((m, i) => (
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                            <span className="w-1 h-1 rounded-full bg-kpi-red shrink-0" />
+                            <p className="text-[10px] text-tx-secondary truncate">{m}</p>
+                          </div>
+                        ))}
+                        {(pharmacyData.out_of_stock_medicines ?? []).length > 6 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.out_of_stock_medicines ?? []).length - 6} more — click to see all</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-kpi-green">✓ All medicines are in stock</p>
                     )}
                   </div>
                 </div>
 
-                {/* Stat 3: Low Stock */}
+                {/* Stat 3: Low Stock — tooltip opens upward */}
                 <div
                   className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("low")}
@@ -1669,19 +1694,27 @@ export default function AdminDashboard() {
                       {(pharmacyData.low_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.low_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Low Stock Items</p>
-                    {(pharmacyData.low_stock_medicines ?? []).slice(0, 5).map((m, i) => (
-                      <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">• {m}</p>
-                    ))}
-                    {(pharmacyData.low_stock_medicines ?? []).length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">None currently</p>
+                  <div className="absolute left-[162px] bottom-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-kpi-orange uppercase font-bold tracking-wider mb-2">Low Stock — {pharmacyData.low_stock_count ?? 0} medicines</p>
+                    {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
+                      <>
+                        {(pharmacyData.low_stock_medicines ?? []).slice(0, 6).map((m, i) => (
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                            <span className="w-1 h-1 rounded-full bg-kpi-orange shrink-0" />
+                            <p className="text-[10px] text-tx-secondary truncate">{m}</p>
+                          </div>
+                        ))}
+                        {(pharmacyData.low_stock_medicines ?? []).length > 6 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.low_stock_medicines ?? []).length - 6} more — click to see all</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-kpi-green">✓ No low stock items</p>
                     )}
                   </div>
                 </div>
 
-                {/* Stat 4: Expiring Soon */}
+                {/* Stat 4: Expiring Soon — tooltip opens upward to prevent bottom overflow */}
                 <div
                   className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("soon")}
@@ -1699,15 +1732,27 @@ export default function AdminDashboard() {
                       {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? ` +${(pharmacyData.expiring_soon_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Hover tooltip */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Expiring in 30 days</p>
-                    {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 5).map((m, i) => (
-                      <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {m}</p>
-                    ))}
-                    {(pharmacyData.expiring_soon_medicines ?? []).length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">None expiring soon</p>
+                  {/* bottom-0 anchors tooltip to the bottom of this row — opens UPWARD, never overflows card bottom */}
+                  <div className="absolute left-[162px] bottom-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-yellow uppercase font-bold tracking-wider mb-2">Expiring in 30 Days — {pharmacyData.expiring_soon_count ?? 0}</p>
+                    {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
+                      <>
+                        {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 6).map((m, i) => (
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                            <span className="w-1 h-1 rounded-full bg-yellow-500 shrink-0" />
+                            <p className="text-[10px] text-tx-secondary truncate">{m}</p>
+                          </div>
+                        ))}
+                        {(pharmacyData.expiring_soon_medicines ?? []).length > 6 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.expiring_soon_medicines ?? []).length - 6} more — click to see all</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-[10px] text-kpi-green">✓ No medicines expiring soon</p>
                     )}
+                    <div className="mt-2 pt-1.5 border-t border-white/10">
+                      <p className="text-[9px] text-tx-muted">Expired (already): <span className="text-tx-secondary font-semibold">{pharmacyData.expired_count ?? 0}</span></p>
+                    </div>
                   </div>
                 </div>
 
