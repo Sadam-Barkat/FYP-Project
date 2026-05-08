@@ -1596,16 +1596,21 @@ export default function AdminDashboard() {
                     const soon = pharmacyData.expiring_soon_count ?? 0;
                     const expired = pharmacyData.expired_count ?? 0;
                     const safe = Math.max(0, total - oos - low - soon - expired);
-                    const pct = (n: number) => Math.max(2, Math.round((n / total) * 100));
+                    // Build segments only for non-zero values, then normalize to <=100%
+                    const rawLow  = low > 0           ? Math.max(2, Math.round((low / total) * 100))             : 0;
+                    const rawSoon = soon > 0          ? Math.max(2, Math.round((soon / total) * 100))            : 0;
+                    const rawOos  = (oos + expired) > 0 ? Math.max(2, Math.round(((oos + expired) / total) * 100)) : 0;
+                    const safePct = Math.max(0, 100 - rawLow - rawSoon - rawOos);
+                    const healthyPct = Math.round((safe / total) * 100);
                     return (
-                      <div className="mt-1.5">
-                        <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 flex">
-                          <span className="h-full bg-emerald-500/70" style={{ width: `${pct(safe)}%` }} />
-                          <span className="h-full bg-orange-500/70" style={{ width: `${pct(low)}%` }} />
-                          <span className="h-full bg-yellow-500/70" style={{ width: `${pct(soon)}%` }} />
-                          <span className="h-full bg-red-500/70" style={{ width: `${pct(oos + expired)}%` }} />
+                      <div className="mt-1.5 max-w-full">
+                        <div className="h-1 w-full max-w-full overflow-hidden rounded-full bg-white/5 flex">
+                          <span className="h-full bg-emerald-500/70" style={{ width: `${safePct}%` }} />
+                          <span className="h-full bg-orange-500/70"  style={{ width: `${rawLow}%` }} />
+                          <span className="h-full bg-yellow-500/70"  style={{ width: `${rawSoon}%` }} />
+                          <span className="h-full bg-red-500/70"     style={{ width: `${rawOos}%` }} />
                         </div>
-                        <p className="text-[9px] text-tx-secondary mt-0.5">{pct(safe)}% healthy</p>
+                        <p className="text-[9px] text-tx-secondary mt-0.5">{healthyPct}% healthy</p>
                       </div>
                     );
                   })()}
