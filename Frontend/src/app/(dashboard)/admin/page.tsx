@@ -1765,17 +1765,37 @@ export default function AdminDashboard() {
               {/* ── COLUMN 2: ML Medicines at Risk (stockout model) ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
 
-                {/* Section header */}
-                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🩺 Medicines Running Out (Next 7 Days)
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
+                {/* Section header with info-icon tooltip */}
+                <div className="flex items-center gap-1.5 shrink-0 mb-1.5">
+                  <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    🩺 Medicines Running Out (Next 7 Days)
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
+                    </span>
+                  </p>
+                  {/* Info icon with hover tooltip — 200ms delay, dark theme */}
+                  <span className="relative group/info inline-flex items-center justify-center cursor-help">
+                    <svg
+                      className="w-3 h-3 text-tx-muted group-hover/info:text-kpi-cyan transition-colors"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md bg-gray-900 border border-white/10 text-white text-[10px] leading-snug px-2 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 group-hover/info:opacity-100 transition-opacity duration-150 delay-200"
+                    >
+                      Predicted out-of-stock risk per medicine in the next 7 days.
+                    </span>
                   </span>
-                </p>
-                <p className="text-[8px] text-tx-muted mt-0.5 mb-1.5 shrink-0">
-                  Predicted out-of-stock risk per medicine in the next 7 days
-                </p>
+                </div>
 
                 {/* Row-by-row medicine risk — same pattern as Finance forecast rows */}
                 <div className="space-y-1 shrink-0 overflow-hidden max-h-[108px]">
