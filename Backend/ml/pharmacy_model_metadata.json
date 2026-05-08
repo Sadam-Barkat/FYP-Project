@@ -1,0 +1,96 @@
+{
+  "stockout_model": {
+    "name": "pharmacy_stockout_model",
+    "version": "1.0",
+    "trained_at": "2026-05-08T12:03:00.485226",
+    "algorithm": "RandomForestClassifier",
+    "features": [
+      "quantity",
+      "low_stock_threshold",
+      "stock_ratio",
+      "days_until_expiry",
+      "days_of_stock",
+      "prescription_count",
+      "avg_daily_doses",
+      "unit_price",
+      "is_expensive"
+    ],
+    "training_samples": 20
+  },
+  "demand_model": {
+    "name": "pharmacy_demand_model",
+    "version": "1.0",
+    "trained_at": "2026-05-08T12:03:00.485252",
+    "algorithm": "GradientBoostingRegressor",
+    "features": [
+      "demand_lag1",
+      "demand_lag7",
+      "demand_rolling7",
+      "unique_medicines",
+      "day_of_week",
+      "month"
+    ]
+  },
+  "at_risk_medicines": [
+    {
+      "medicine_name": "Atorvastatin 40mg",
+      "quantity": 0,
+      "days_of_stock": 0.0,
+      "stockout_probability": 0.96
+    },
+    {
+      "medicine_name": "Amlodipine 5mg",
+      "quantity": 0,
+      "days_of_stock": 0.0,
+      "stockout_probability": 0.94
+    },
+    {
+      "medicine_name": "Losartan 50mg",
+      "quantity": 7,
+      "days_of_stock": 3.1818181818181817,
+      "stockout_probability": 0.9
+    },
+    {
+      "medicine_name": "Ondansetron 4mg",
+      "quantity": 7,
+      "days_of_stock": 7.0,
+      "stockout_probability": 0.89
+    },
+    {
+      "medicine_name": "Metronidazole 400mg",
+      "quantity": 8,
+      "days_of_stock": 3.7333333333333334,
+      "stockout_probability": 0.83
+    }
+  ],
+  "next_7_days_forecast": [
+    {
+      "date": "2026-05-09",
+      "predicted_prescriptions": 3.1
+    },
+    {
+      "date": "2026-05-10",
+      "predicted_prescriptions": 3.1
+    },
+    {
+      "date": "2026-05-11",
+      "predicted_prescriptions": 3.1
+    },
+    {
+      "date": "2026-05-12",
+      "predicted_prescriptions": 3.1
+    },
+    {
+      "date": "2026-05-13",
+      "predicted_prescriptions": 3.1
+    },
+    {
+      "date": "2026-05-14",
+      "predicted_prescriptions": 3.2
+    },
+    {
+      "date": "2026-05-15",
+      "predicted_prescriptions": 3.2
+    }
+  ]
+}

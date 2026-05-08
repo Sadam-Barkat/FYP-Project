@@ -1603,8 +1603,8 @@ export default function AdminDashboard() {
                     const safePct = Math.max(0, 100 - rawLow - rawSoon - rawOos);
                     const healthyPct = Math.round((safe / total) * 100);
                     return (
-                      <div className="mt-1.5 max-w-full">
-                        <div className="h-1 w-full max-w-full overflow-hidden rounded-full bg-white/5 flex">
+                      <div className="mt-1.5 w-[128px] max-w-[128px]">
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 flex">
                           <span className="h-full bg-emerald-500/70" style={{ width: `${safePct}%` }} />
                           <span className="h-full bg-orange-500/70"  style={{ width: `${rawLow}%` }} />
                           <span className="h-full bg-yellow-500/70"  style={{ width: `${rawSoon}%` }} />
