@@ -1609,8 +1609,9 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })()}
-                  <div className="absolute left-[162px] top-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-muted uppercase font-bold tracking-wider mb-2">Stock Overview</p>
+                  {/* Tooltip — opens DOWNWARD inside column 1 width, overlays stats below */}
+                  <div className="absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-bold tracking-wider mb-1.5">Stock Overview</p>
                     {(() => {
                       const total = Math.max(1, pharmacyData.total_medicines);
                       const oos = pharmacyData.out_of_stock_count ?? 0;
@@ -1620,12 +1621,12 @@ export default function AdminDashboard() {
                       const safe = Math.max(0, total - oos - low - soon - expired);
                       return (
                         <>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-green">✓ Safe / Healthy</span><span className="text-kpi-green font-bold">{safe}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-orange">⚠ Low Stock</span><span className="text-kpi-orange font-bold">{low}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-tx-yellow">⏳ Expiring Soon</span><span className="text-tx-yellow font-bold">{soon}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-red">✗ Out of Stock</span><span className="text-kpi-red font-bold">{oos}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-green">✓ Safe</span><span className="text-kpi-green font-bold">{safe}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-orange">⚠ Low</span><span className="text-kpi-orange font-bold">{low}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-tx-yellow">⏳ Expiring</span><span className="text-tx-yellow font-bold">{soon}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-red">✗ OOS</span><span className="text-kpi-red font-bold">{oos}</span></div>
                           <div className="flex justify-between text-[10px] py-0.5"><span className="text-tx-muted">💀 Expired</span><span className="text-tx-muted font-bold">{expired}</span></div>
-                          <div className="mt-2 pt-1.5 border-t border-white/10 flex justify-between text-[10px]">
+                          <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between text-[10px]">
                             <span className="text-tx-muted">Health Rate</span>
                             <span className={`font-bold ${safe / total >= 0.7 ? "text-kpi-green" : safe / total >= 0.4 ? "text-kpi-orange" : "text-kpi-red"}`}>{Math.round((safe / total) * 100)}%</span>
                           </div>
@@ -1656,22 +1657,23 @@ export default function AdminDashboard() {
                       {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.out_of_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  <div className="absolute left-[162px] top-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-kpi-red uppercase font-bold tracking-wider mb-2">Out of Stock — {pharmacyData.out_of_stock_count ?? 0} medicines</p>
+                  {/* Tooltip — opens DOWNWARD inside column 1 */}
+                  <div className="absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-kpi-red uppercase font-bold tracking-wider mb-1.5">Out of Stock — {pharmacyData.out_of_stock_count ?? 0}</p>
                     {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
                       <>
-                        {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 6).map((m, i) => (
+                        {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 5).map((m, i) => (
                           <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-kpi-red shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
                         ))}
-                        {(pharmacyData.out_of_stock_medicines ?? []).length > 6 && (
-                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.out_of_stock_medicines ?? []).length - 6} more — click to see all</p>
+                        {(pharmacyData.out_of_stock_medicines ?? []).length > 5 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.out_of_stock_medicines ?? []).length - 5} more — click for all</p>
                         )}
                       </>
                     ) : (
-                      <p className="text-[10px] text-kpi-green">✓ All medicines are in stock</p>
+                      <p className="text-[10px] text-kpi-green">✓ All in stock</p>
                     )}
                   </div>
                 </div>
@@ -1694,18 +1696,19 @@ export default function AdminDashboard() {
                       {(pharmacyData.low_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.low_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  <div className="absolute left-[162px] bottom-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-kpi-orange uppercase font-bold tracking-wider mb-2">Low Stock — {pharmacyData.low_stock_count ?? 0} medicines</p>
+                  {/* Tooltip — opens UPWARD inside column 1 */}
+                  <div className="absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-kpi-orange uppercase font-bold tracking-wider mb-1.5">Low Stock — {pharmacyData.low_stock_count ?? 0}</p>
                     {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
                       <>
-                        {(pharmacyData.low_stock_medicines ?? []).slice(0, 6).map((m, i) => (
+                        {(pharmacyData.low_stock_medicines ?? []).slice(0, 5).map((m, i) => (
                           <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-kpi-orange shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
                         ))}
-                        {(pharmacyData.low_stock_medicines ?? []).length > 6 && (
-                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.low_stock_medicines ?? []).length - 6} more — click to see all</p>
+                        {(pharmacyData.low_stock_medicines ?? []).length > 5 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.low_stock_medicines ?? []).length - 5} more — click for all</p>
                         )}
                       </>
                     ) : (
@@ -1732,26 +1735,27 @@ export default function AdminDashboard() {
                       {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? ` +${(pharmacyData.expiring_soon_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* bottom-0 anchors tooltip to the bottom of this row — opens UPWARD, never overflows card bottom */}
-                  <div className="absolute left-[162px] bottom-0 z-[9999] w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
-                    <p className="text-[10px] text-tx-yellow uppercase font-bold tracking-wider mb-2">Expiring in 30 Days — {pharmacyData.expiring_soon_count ?? 0}</p>
+                  {/* Tooltip — opens UPWARD inside column 1, anchored above stat to never get cut at bottom */}
+                  <div className="absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-yellow uppercase font-bold tracking-wider mb-1.5">Expiring 30d — {pharmacyData.expiring_soon_count ?? 0}</p>
                     {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
                       <>
-                        {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 6).map((m, i) => (
+                        {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 5).map((m, i) => (
                           <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-yellow-500 shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
                         ))}
-                        {(pharmacyData.expiring_soon_medicines ?? []).length > 6 && (
-                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.expiring_soon_medicines ?? []).length - 6} more — click to see all</p>
+                        {(pharmacyData.expiring_soon_medicines ?? []).length > 5 && (
+                          <p className="text-[9px] text-tx-muted mt-1">+{(pharmacyData.expiring_soon_medicines ?? []).length - 5} more — click for all</p>
                         )}
                       </>
                     ) : (
-                      <p className="text-[10px] text-kpi-green">✓ No medicines expiring soon</p>
+                      <p className="text-[10px] text-kpi-green">✓ None expiring soon</p>
                     )}
-                    <div className="mt-2 pt-1.5 border-t border-white/10">
-                      <p className="text-[9px] text-tx-muted">Expired (already): <span className="text-tx-secondary font-semibold">{pharmacyData.expired_count ?? 0}</span></p>
+                    <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between text-[9px]">
+                      <span className="text-tx-muted">Already expired:</span>
+                      <span className="text-tx-secondary font-bold">{pharmacyData.expired_count ?? 0}</span>
                     </div>
                   </div>
                 </div>
