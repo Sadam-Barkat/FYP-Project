@@ -1713,194 +1713,177 @@ export default function AdminDashboard() {
 
               </div>
 
-              {/* ── COLUMN 2: ML Stockout Predictions + Reorder ── */}
+              {/* ── COLUMN 2: ML Medicines at Risk (stockout model) ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
-                {/* Header */}
+
+                {/* Section header — matches Finance card style */}
                 <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🤖 {pharmacyData.ml_available ? "ML Stockout Model" : "Stockout Forecast"}
+                  🩺 Medicines Running Out Soon
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
                   </span>
                 </p>
-                {pharmacyData.ml_available ? (
-                  <p className="text-[8px] text-tx-muted mt-0.5 shrink-0">
-                    RandomForestClassifier · pharmacy_stockout_model.pkl
-                  </p>
-                ) : null}
+                <p className="text-[8px] text-tx-muted mt-0.5 mb-1.5 shrink-0">
+                  ML Prediction · How likely each medicine runs out in the next few days
+                </p>
 
-                {/* ML at-risk medicine list (real probabilities) */}
-                {(pharmacyData.ml_at_risk_medicines ?? []).length > 0 ? (
-                  <div className="mt-2 shrink-0 space-y-1 overflow-hidden max-h-[100px]">
-                    {(pharmacyData.ml_at_risk_medicines ?? []).slice(0, 4).map((m, i) => {
-                      const pct = Math.round(m.stockout_probability * 100);
-                      const color =
-                        pct >= 80 ? "text-kpi-red" :
-                        pct >= 50 ? "text-kpi-orange" : "text-tx-yellow";
-                      const barColor =
-                        pct >= 80 ? "bg-kpi-red" :
-                        pct >= 50 ? "bg-kpi-orange" : "bg-yellow-500";
-                      return (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[9px] text-tx-secondary truncate">{m.medicine_name}</p>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
-                              <div className={`h-full ${barColor}/70`} style={{ width: `${pct}%` }} />
+                {/* Row-by-row medicine risk — same pattern as Finance forecast rows */}
+                <div className="space-y-1 shrink-0 overflow-hidden max-h-[108px]">
+                  {(pharmacyData.ml_at_risk_medicines ?? []).length > 0
+                    ? (pharmacyData.ml_at_risk_medicines ?? []).slice(0, 5).map((m, i) => {
+                        const pct = Math.round(m.stockout_probability * 100);
+                        const badgeClass =
+                          pct >= 80 ? "bg-red-500/20 text-kpi-red border-red-500/30" :
+                          pct >= 50 ? "bg-orange-500/20 text-kpi-orange border-orange-500/30" :
+                                      "bg-yellow-500/20 text-tx-yellow border-yellow-500/30";
+                        const label =
+                          pct >= 80 ? "critical" :
+                          pct >= 50 ? "high risk" : "moderate";
+                        return (
+                          <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
+                            <p className="text-[10px] text-tx-secondary truncate flex-1">{m.medicine_name}</p>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-[10px] text-tx-muted tabular-nums">{pct}%</span>
+                              <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                                {label}
+                              </span>
                             </div>
-                            <span className={`text-[9px] font-bold tabular-nums ${color}`}>{pct}%</span>
                           </div>
+                        );
+                      })
+                    : (pharmacyData.medicines_to_reorder ?? []).slice(0, 5).map((name, i) => (
+                        <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
+                          <p className="text-[10px] text-tx-secondary truncate flex-1">{name}</p>
+                          <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border bg-red-500/20 text-kpi-red border-red-500/30 shrink-0">
+                            reorder
+                          </span>
                         </div>
-                      );
-                    })}
-                    {(pharmacyData.ml_at_risk_medicines ?? []).length > 4 ? (
-                      <p className="text-[9px] text-tx-muted">
-                        +{(pharmacyData.ml_at_risk_medicines ?? []).length - 4} more at risk
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="mt-2 shrink-0">
-                    <p className="text-tx-secondary text-[11px] leading-relaxed line-clamp-3">
-                      {pharmacyData.stockout_prediction}
-                    </p>
-                  </div>
-                )}
-
-                {/* Reorder list (ML-ranked by probability) */}
-                <div className="mt-2 shrink-0">
-                  <p className="text-kpi-cyan text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    🛒 Reorder Now
-                  </p>
-                  <div className="flex flex-wrap gap-1 overflow-hidden max-h-[44px]">
-                    {pharmacyData.medicines_to_reorder.slice(0, 8).map((m, i) => (
-                      <span
-                        key={`${m}-${i}`}
-                        className="bg-dash-elevated border border-dash-border text-tx-secondary text-[9px] px-2 py-0.5 rounded-lg hover:border-kpi-blue/50 hover:text-tx-primary transition-all duration-150"
-                      >
-                        {m}
-                      </span>
-                    ))}
-                    {pharmacyData.medicines_to_reorder.length > 8 ? (
-                      <span className="text-[9px] text-tx-muted self-center">
-                        +{pharmacyData.medicines_to_reorder.length - 8} more
-                      </span>
-                    ) : null}
-                  </div>
+                      ))
+                  }
                 </div>
 
-                {/* Expiry warning */}
-                <div className="mt-2 shrink-0">
-                  <p className="text-kpi-red text-[10px] font-bold uppercase tracking-wider mb-0.5">
-                    🟥 Expiry Warning
-                  </p>
-                  <p className="text-tx-secondary text-[10px] leading-relaxed line-clamp-2">
-                    {pharmacyData.expiry_warning}
-                  </p>
-                </div>
-
-                {/* Footer */}
+                {/* Predicted total at risk */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
                     const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
                     const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
-                    const high = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
-                    if (!pharmacyData.ml_available) {
-                      const c = (pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0);
-                      const w = (pharmacyData.low_stock_count ?? 0) + (pharmacyData.expiring_soon_count ?? 0);
-                      return (
-                        <p className={`text-[11px] font-semibold ${c > 0 ? "text-kpi-red" : w > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
-                          ⚡ {c > 0 ? `${c} need immediate action` : w > 0 ? `${w} need attention` : "All levels healthy ✓"}
-                        </p>
-                      );
-                    }
+                    const high     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
+                    const moderate = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
+                    const total = critical + high + moderate;
                     return (
-                      <p className={`text-[11px] font-semibold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
-                        ⚡ {critical > 0 ? `${critical} critical risk` : high > 0 ? `${high} high risk` : "Model: stock stable ✓"}
-                      </p>
+                      <>
+                        <p className={`text-[11px] font-bold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                          ⚡ {total > 0
+                            ? `${total} medicine${total > 1 ? "s" : ""} predicted to run out`
+                            : "All medicines have healthy stock levels ✓"}
+                        </p>
+                        {total > 0 ? (
+                          <p className="text-[9px] text-tx-muted mt-0.5">
+                            {critical > 0 ? `${critical} critical  ` : ""}
+                            {high > 0 ? `${high} high risk  ` : ""}
+                            {moderate > 0 ? `${moderate} moderate` : ""}
+                          </p>
+                        ) : null}
+                      </>
                     );
                   })()}
                   <p className="text-[8px] text-tx-muted mt-0.5 italic">
-                    {pharmacyData.ml_available
-                      ? "pharmacy_stockout_model.pkl · RandomForestClassifier"
-                      : "Rule-based fallback active"}
+                    {pharmacyData.ml_available ? "pharmacy_stockout_model.pkl" : "Rule-based estimate"}
                   </p>
                 </div>
               </div>
 
-              {/* ── COLUMN 3: Demand Forecast + Suggestion ── */}
+              {/* ── COLUMN 3: 7-Day Demand Forecast + Suggestion ── */}
               <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
-                {/* Demand forecast (GradientBoostingRegressor) */}
-                {(pharmacyData.demand_forecast ?? []).length > 0 ? (
-                  <>
-                    <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
-                      📈 7-Day Demand Forecast
-                    </p>
-                    <p className="text-[8px] text-tx-muted mt-0.5 mb-1 shrink-0">
-                      GradientBoostingRegressor · pharmacy_demand_model.pkl
-                    </p>
-                    <div className="flex items-end gap-[3px] h-[44px] shrink-0">
-                      {(pharmacyData.demand_forecast ?? []).map((f, i) => {
-                        const allVals = (pharmacyData.demand_forecast ?? []).map(x => x.predicted_prescriptions);
-                        const maxVal = Math.max(...allVals, 1);
-                        const heightPct = Math.max(8, Math.round((f.predicted_prescriptions / maxVal) * 100));
-                        const dayLabel = new Date(f.date).toLocaleDateString("en-US", { weekday: "short" });
+
+                {/* Section header */}
+                <p className="text-tx-muted text-[10px] font-bold uppercase tracking-wider shrink-0">
+                  📈 ML Prescription Forecast (7 Days)
+                </p>
+                <p className="text-[8px] text-tx-muted mt-0.5 mb-1.5 shrink-0">
+                  How many prescriptions are expected each day
+                </p>
+
+                {/* Row-by-row forecast — exactly like Finance card */}
+                <div className="space-y-[3px] shrink-0 overflow-hidden max-h-[110px]">
+                  {(pharmacyData.demand_forecast ?? []).length > 0
+                    ? (pharmacyData.demand_forecast ?? []).slice(0, 5).map((f, i) => {
+                        const dateLabel = new Date(f.date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" });
+                        const dayLabel  = new Date(f.date).toLocaleDateString("en-US", { weekday: "short" });
                         return (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group/bar">
-                            <span className="text-[8px] text-tx-muted opacity-0 group-hover/bar:opacity-100 transition-opacity tabular-nums">{f.predicted_prescriptions}</span>
-                            <div className="w-full bg-kpi-cyan/20 rounded-sm overflow-hidden" style={{ height: `${heightPct}%` }}>
-                              <div className="w-full h-full bg-kpi-cyan/60 hover:bg-kpi-cyan transition-colors" />
+                          <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
+                            <p className="text-[10px] text-tx-secondary tabular-nums">{dateLabel} <span className="text-tx-muted">({dayLabel})</span></p>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-[10px] text-kpi-cyan font-semibold tabular-nums">
+                                {f.predicted_prescriptions} Rx
+                              </span>
+                              <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border bg-kpi-cyan/10 text-kpi-cyan border-kpi-cyan/20">
+                                forecast
+                              </span>
                             </div>
-                            <span className="text-[7px] text-tx-muted">{dayLabel}</span>
                           </div>
                         );
-                      })}
-                    </div>
-                  </>
+                      })
+                    : <p className="text-[10px] text-tx-muted">No forecast data available</p>
+                  }
+                </div>
+
+                {/* Predicted totals summary — matches Finance "PREDICTED NEXT 7 DAYS TOTALS" */}
+                {(pharmacyData.demand_forecast ?? []).length > 0 ? (
+                  <div className="mt-2 pt-1.5 border-t border-dash-border shrink-0">
+                    {(() => {
+                      const total = (pharmacyData.demand_forecast ?? []).reduce((s, f) => s + f.predicted_prescriptions, 0);
+                      const avg   = total / Math.max((pharmacyData.demand_forecast ?? []).length, 1);
+                      return (
+                        <>
+                          <p className="text-[10px] font-bold text-tx-primary">
+                            ⚡ Predicted Next 7 Days Totals
+                          </p>
+                          <p className="text-[10px] text-tx-secondary mt-0.5">
+                            <span className="font-semibold text-kpi-cyan">{Math.round(total)} Rx</span> total
+                            <span className="text-tx-muted mx-1">·</span>
+                            Avg / day: <span className="font-semibold text-kpi-cyan">{avg.toFixed(1)} Rx</span>
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
                 ) : null}
 
                 {/* Suggestion */}
-                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0 mt-2">
-                  💡 Suggestion
-                </p>
                 {(() => {
                   const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
                   const criticalCount = atRisk.filter(m => m.stockout_probability >= 0.80).length;
-                  const highCount = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
-                  const moderateCount = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
-
+                  const highCount     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
                   const riskLevel =
                     criticalCount > 2 ? "Critical" :
                     criticalCount > 0 ? "High" :
-                    highCount > 3 ? "Moderate" : "Low";
-
+                    highCount > 3     ? "Moderate" : "Low";
                   const badgeClass =
                     riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
                     riskLevel === "High"     ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
                     riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
                                               "bg-green-500/15 text-kpi-green border-green-500/20";
-
                   return (
-                    <>
-                      <span className={`mt-1 self-start text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
-                        {riskLevel} Risk
-                        {pharmacyData.ml_available ? " · ML" : ""}
-                      </span>
-                      <div className="mt-1.5 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-2.5 flex-1 overflow-hidden">
-                        <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-4">
-                          {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
-                        </p>
+                    <div className="mt-auto shrink-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">💡 Suggestion</p>
+                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                          {riskLevel} Risk
+                        </span>
                       </div>
-                    </>
+                      <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-3">
+                        {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
+                      </p>
+                      <p className="text-[8px] text-tx-muted italic mt-1">
+                        {pharmacyData.ml_available
+                          ? "ML · pharmacy_demand_model.pkl"
+                          : "Rule-based estimate"}
+                      </p>
+                    </div>
                   );
                 })()}
-
-                <p className="text-[8px] text-tx-muted italic mt-1.5 shrink-0">
-                  {pharmacyData.ml_available
-                    ? "ML · RandomForestClassifier + GradientBoostingRegressor"
-                    : "Rule-based · no ML models loaded"}
-                </p>
               </div>
 
             </div>
