@@ -431,6 +431,18 @@ export type PatientIntelResponse = {
       };
 };
 
+export type PharmacyMLAtRisk = {
+  medicine_name: string;
+  quantity: number;
+  days_of_stock: number;
+  stockout_probability: number;
+};
+
+export type PharmacyDemandForecast = {
+  date: string;
+  predicted_prescriptions: number;
+};
+
 export type PharmacyIntelResponse = {
   total_medicines: number;
   out_of_stock_count: number;
@@ -446,6 +458,13 @@ export type PharmacyIntelResponse = {
   medicines_to_reorder: string[];
   expiry_warning: string;
   suggestion: string;
+  // ML model outputs
+  ml_at_risk_medicines?: PharmacyMLAtRisk[];
+  demand_forecast?: PharmacyDemandForecast[];
+  ml_model_stockout?: string;
+  ml_model_demand?: string;
+  generated_by?: string;
+  ml_available?: boolean;
 };
 
 type PharmacyStatHover = "oos" | "low" | "soon" | "expired" | null;
@@ -1694,27 +1713,67 @@ export default function AdminDashboard() {
 
               </div>
 
-              {/* ── COLUMN 2: Stockout Forecast + Reorder List ── */}
+              {/* ── COLUMN 2: ML Stockout Predictions + Reorder ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
+                {/* Header */}
                 <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🤖 Stockout Forecast
+                  🤖 {pharmacyData.ml_available ? "ML Stockout Model" : "Stockout Forecast"}
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
                   </span>
                 </p>
-
-                <div className="mt-2 shrink-0">
-                  <p className="text-tx-secondary text-[11px] leading-relaxed">
-                    {pharmacyData.stockout_prediction}
+                {pharmacyData.ml_available ? (
+                  <p className="text-[8px] text-tx-muted mt-0.5 shrink-0">
+                    RandomForestClassifier · pharmacy_stockout_model.pkl
                   </p>
-                </div>
+                ) : null}
 
+                {/* ML at-risk medicine list (real probabilities) */}
+                {(pharmacyData.ml_at_risk_medicines ?? []).length > 0 ? (
+                  <div className="mt-2 shrink-0 space-y-1 overflow-hidden max-h-[100px]">
+                    {(pharmacyData.ml_at_risk_medicines ?? []).slice(0, 4).map((m, i) => {
+                      const pct = Math.round(m.stockout_probability * 100);
+                      const color =
+                        pct >= 80 ? "text-kpi-red" :
+                        pct >= 50 ? "text-kpi-orange" : "text-tx-yellow";
+                      const barColor =
+                        pct >= 80 ? "bg-kpi-red" :
+                        pct >= 50 ? "bg-kpi-orange" : "bg-yellow-500";
+                      return (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] text-tx-secondary truncate">{m.medicine_name}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
+                              <div className={`h-full ${barColor}/70`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className={`text-[9px] font-bold tabular-nums ${color}`}>{pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {(pharmacyData.ml_at_risk_medicines ?? []).length > 4 ? (
+                      <p className="text-[9px] text-tx-muted">
+                        +{(pharmacyData.ml_at_risk_medicines ?? []).length - 4} more at risk
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="mt-2 shrink-0">
+                    <p className="text-tx-secondary text-[11px] leading-relaxed line-clamp-3">
+                      {pharmacyData.stockout_prediction}
+                    </p>
+                  </div>
+                )}
+
+                {/* Reorder list (ML-ranked by probability) */}
                 <div className="mt-2 shrink-0">
                   <p className="text-kpi-cyan text-[10px] font-semibold uppercase tracking-wider mb-1">
                     🛒 Reorder Now
                   </p>
-                  <div className="flex flex-wrap gap-1 overflow-hidden max-h-[52px]">
+                  <div className="flex flex-wrap gap-1 overflow-hidden max-h-[44px]">
                     {pharmacyData.medicines_to_reorder.slice(0, 8).map((m, i) => (
                       <span
                         key={`${m}-${i}`}
@@ -1731,63 +1790,105 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Expiry warning */}
                 <div className="mt-2 shrink-0">
-                  <p className="text-kpi-red text-[10px] font-bold uppercase tracking-wider mb-1">
+                  <p className="text-kpi-red text-[10px] font-bold uppercase tracking-wider mb-0.5">
                     🟥 Expiry Warning
                   </p>
-                  <p className="text-tx-secondary text-[11px] leading-relaxed line-clamp-2">
+                  <p className="text-tx-secondary text-[10px] leading-relaxed line-clamp-2">
                     {pharmacyData.expiry_warning}
                   </p>
                 </div>
 
+                {/* Footer */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const critical = (pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0);
-                    const warning = (pharmacyData.low_stock_count ?? 0) + (pharmacyData.expiring_soon_count ?? 0);
+                    const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
+                    const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
+                    const high = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
+                    if (!pharmacyData.ml_available) {
+                      const c = (pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0);
+                      const w = (pharmacyData.low_stock_count ?? 0) + (pharmacyData.expiring_soon_count ?? 0);
+                      return (
+                        <p className={`text-[11px] font-semibold ${c > 0 ? "text-kpi-red" : w > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                          ⚡ {c > 0 ? `${c} need immediate action` : w > 0 ? `${w} need attention` : "All levels healthy ✓"}
+                        </p>
+                      );
+                    }
                     return (
-                      <p className={`text-[11px] font-semibold ${critical > 0 ? "text-kpi-red" : warning > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
-                        ⚡ {critical > 0
-                          ? `${critical} medicines need immediate action`
-                          : warning > 0
-                          ? `${warning} medicines need attention this week`
-                          : "All stock levels healthy ✓"}
+                      <p className={`text-[11px] font-semibold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                        ⚡ {critical > 0 ? `${critical} critical risk` : high > 0 ? `${high} high risk` : "Model: stock stable ✓"}
                       </p>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">Demand prediction active</p>
+                  <p className="text-[8px] text-tx-muted mt-0.5 italic">
+                    {pharmacyData.ml_available
+                      ? "pharmacy_stockout_model.pkl · RandomForestClassifier"
+                      : "Rule-based fallback active"}
+                  </p>
                 </div>
               </div>
 
-              {/* ── COLUMN 3: Suggestion Panel ── */}
+              {/* ── COLUMN 3: Demand Forecast + Suggestion ── */}
               <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
-                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                {/* Demand forecast (GradientBoostingRegressor) */}
+                {(pharmacyData.demand_forecast ?? []).length > 0 ? (
+                  <>
+                    <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                      📈 7-Day Demand Forecast
+                    </p>
+                    <p className="text-[8px] text-tx-muted mt-0.5 mb-1 shrink-0">
+                      GradientBoostingRegressor · pharmacy_demand_model.pkl
+                    </p>
+                    <div className="flex items-end gap-[3px] h-[44px] shrink-0">
+                      {(pharmacyData.demand_forecast ?? []).map((f, i) => {
+                        const allVals = (pharmacyData.demand_forecast ?? []).map(x => x.predicted_prescriptions);
+                        const maxVal = Math.max(...allVals, 1);
+                        const heightPct = Math.max(8, Math.round((f.predicted_prescriptions / maxVal) * 100));
+                        const dayLabel = new Date(f.date).toLocaleDateString("en-US", { weekday: "short" });
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group/bar">
+                            <span className="text-[8px] text-tx-muted opacity-0 group-hover/bar:opacity-100 transition-opacity tabular-nums">{f.predicted_prescriptions}</span>
+                            <div className="w-full bg-kpi-cyan/20 rounded-sm overflow-hidden" style={{ height: `${heightPct}%` }}>
+                              <div className="w-full h-full bg-kpi-cyan/60 hover:bg-kpi-cyan transition-colors" />
+                            </div>
+                            <span className="text-[7px] text-tx-muted">{dayLabel}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : null}
+
+                {/* Suggestion */}
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0 mt-2">
                   💡 Suggestion
                 </p>
-
                 {(() => {
-                  const oos = pharmacyData.out_of_stock_count ?? 0;
-                  const low = pharmacyData.low_stock_count ?? 0;
-                  const expired = pharmacyData.expired_count ?? 0;
-                  const expiring = pharmacyData.expiring_soon_count ?? 0;
+                  const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
+                  const criticalCount = atRisk.filter(m => m.stockout_probability >= 0.80).length;
+                  const highCount = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
+                  const moderateCount = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
 
                   const riskLevel =
-                    (oos + expired) > 5 ? "Critical" :
-                    (oos + expired) > 2 ? "High" :
-                    (low + expiring) > 5 ? "Moderate" : "Low";
+                    criticalCount > 2 ? "Critical" :
+                    criticalCount > 0 ? "High" :
+                    highCount > 3 ? "Moderate" : "Low";
 
                   const badgeClass =
                     riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
-                    riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
+                    riskLevel === "High"     ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
                     riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
-                    "bg-green-500/15 text-kpi-green border-green-500/20";
+                                              "bg-green-500/15 text-kpi-green border-green-500/20";
 
                   return (
                     <>
-                      <span className={`mt-1.5 self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
+                      <span className={`mt-1 self-start text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
                         {riskLevel} Risk
+                        {pharmacyData.ml_available ? " · ML" : ""}
                       </span>
-                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden">
-                        <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed">
+                      <div className="mt-1.5 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-2.5 flex-1 overflow-hidden">
+                        <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-4">
                           {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
                         </p>
                       </div>
@@ -1795,8 +1896,10 @@ export default function AdminDashboard() {
                   );
                 })()}
 
-                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  Stockout prediction active
+                <p className="text-[8px] text-tx-muted italic mt-1.5 shrink-0">
+                  {pharmacyData.ml_available
+                    ? "ML · RandomForestClassifier + GradientBoostingRegressor"
+                    : "Rule-based · no ML models loaded"}
                 </p>
               </div>
 
