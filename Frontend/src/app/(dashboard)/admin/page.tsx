@@ -1574,15 +1574,14 @@ export default function AdminDashboard() {
 
           {/* Body — 3 columns same as Patient Intelligence */}
           {pharmacyData ? (
-            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] min-w-0 grid grid-cols-[160px_minmax(0,1fr)_180px] divide-x divide-dash-border overflow-hidden">
 
               {/* ── COLUMN 1: 4 KPI Stats ── */}
-              {/* overflow-visible so tooltips aren't clipped by the column boundary */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+              <div className="min-w-0 grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
 
                 {/* Stat 1: Total Medicines — tooltip opens downward */}
                 <div
-                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("total")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
@@ -1603,7 +1602,7 @@ export default function AdminDashboard() {
                     const safePct = Math.max(0, 100 - rawLow - rawSoon - rawOos);
                     const healthyPct = Math.round((safe / total) * 100);
                     return (
-                      <div className="mt-1.5 w-[128px] max-w-[128px]">
+                      <div className="mt-1.5 w-[120px] max-w-[120px]">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 flex">
                           <span className="h-full bg-emerald-500/70" style={{ width: `${safePct}%` }} />
                           <span className="h-full bg-orange-500/70"  style={{ width: `${rawLow}%` }} />
@@ -1643,7 +1642,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 2: Out of Stock — tooltip opens downward */}
                 <div
-                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
+                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
                   onClick={() => setExpandedPharmacyCard("oos")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Out of Stock</p>
@@ -1657,7 +1656,7 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                   {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
-                    <p className="text-[9px] text-kpi-red/70 mt-0.5 truncate">
+                    <p className="block w-[120px] max-w-[120px] overflow-hidden truncate whitespace-nowrap text-[9px] text-kpi-red/70 mt-0.5">
                       {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 2).join(", ")}
                       {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.out_of_stock_medicines ?? []).length - 2}` : ""}
                     </p>
@@ -1685,7 +1684,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 3: Low Stock — tooltip opens upward */}
                 <div
-                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("low")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Low Stock</p>
@@ -1696,7 +1695,7 @@ export default function AdminDashboard() {
                     <span className="w-1.5 h-1.5 rounded-full bg-kpi-orange" />
                   </div>
                   {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
-                    <p className="text-[9px] text-kpi-orange/70 mt-0.5 truncate">
+                    <p className="block w-[120px] max-w-[120px] overflow-hidden truncate whitespace-nowrap text-[9px] text-kpi-orange/70 mt-0.5">
                       {(pharmacyData.low_stock_medicines ?? []).slice(0, 2).join(", ")}
                       {(pharmacyData.low_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.low_stock_medicines ?? []).length - 2}` : ""}
                     </p>
@@ -1724,7 +1723,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 4: Expiring Soon — tooltip opens upward to prevent bottom overflow */}
                 <div
-                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("soon")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Expiring Soon</p>
@@ -1735,7 +1734,7 @@ export default function AdminDashboard() {
                     <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
                   </div>
                   {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
-                    <p className="text-[9px] text-tx-yellow/70 mt-0.5 truncate">
+                    <p className="block w-[120px] max-w-[120px] overflow-hidden truncate whitespace-nowrap text-[9px] text-tx-yellow/70 mt-0.5">
                       {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 2).join(", ")}
                       {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? ` +${(pharmacyData.expiring_soon_medicines ?? []).length - 2}` : ""}
                     </p>
@@ -1768,7 +1767,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 2: ML Medicines at Risk (stockout model) ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden">
+              <div className="min-w-0 flex flex-col px-4 py-3 overflow-hidden">
 
                 {/* Section header with info-icon tooltip */}
                 <div className="flex items-center gap-1.5 shrink-0 mb-1.5">
@@ -1891,7 +1890,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 3: 7-Day Demand Forecast + Suggestion ── */}
-              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+              <div className="min-w-0 flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
 
                 {/* Section header */}
                 <p className="text-tx-muted text-[10px] font-bold uppercase tracking-wider shrink-0">
