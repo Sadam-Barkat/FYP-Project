@@ -1767,23 +1767,47 @@ export default function AdminDashboard() {
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
                     const atRisk   = pharmacyData.ml_at_risk_medicines ?? [];
-                    const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
-                    const high     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
-                    const moderate = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
-                    const total    = critical + high + moderate;
-                    const oos      = pharmacyData.out_of_stock_count ?? 0;
+                    const reorder  = pharmacyData.medicines_to_reorder ?? [];
+                    const useML    = atRisk.length > 0;
+
+                    if (useML) {
+                      const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
+                      const high     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
+                      const moderate = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
+                      const total    = critical + high + moderate;
+                      return (
+                        <>
+                          <p className={`text-[11px] font-bold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                            ⚡ {total > 0
+                              ? `In the next 7 days, ${total} medicine${total > 1 ? "s" : ""} predicted to go out of stock`
+                              : "No medicines predicted to run out in next 7 days ✓"}
+                          </p>
+                          {total > 0 ? (
+                            <p className="text-[9px] text-tx-muted mt-0.5">
+                              {critical > 0 ? `${critical} critical · ` : ""}
+                              {high > 0 ? `${high} high risk · ` : ""}
+                              {moderate > 0 ? `${moderate} moderate` : ""}
+                            </p>
+                          ) : null}
+                        </>
+                      );
+                    }
+
+                    // No ML — count matches the reorder list shown above
+                    const total = reorder.length;
+                    const oosCount = pharmacyData.out_of_stock_count ?? 0;
+                    const lowCount = pharmacyData.low_stock_count ?? 0;
                     return (
                       <>
-                        <p className={`text-[11px] font-bold ${critical > 0 || oos > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                        <p className={`text-[11px] font-bold ${total > 0 ? "text-kpi-red" : "text-kpi-green"}`}>
                           ⚡ {total > 0
-                            ? `In the next 7 days, ${total} medicine${total > 1 ? "s" : ""} predicted to go out of stock`
-                            : `${oos > 0 ? `${oos} currently out of stock` : "No medicines predicted to run out in next 7 days ✓"}`}
+                            ? `${total} medicine${total > 1 ? "s" : ""} need reordering`
+                            : "All medicines have healthy stock levels ✓"}
                         </p>
                         {total > 0 ? (
                           <p className="text-[9px] text-tx-muted mt-0.5">
-                            {critical > 0 ? `${critical} critical · ` : ""}
-                            {high > 0 ? `${high} high risk · ` : ""}
-                            {moderate > 0 ? `${moderate} moderate` : ""}
+                            {oosCount > 0 ? `${oosCount} out of stock · ` : ""}
+                            {lowCount > 0 ? `${lowCount} low stock` : ""}
                           </p>
                         ) : null}
                       </>
