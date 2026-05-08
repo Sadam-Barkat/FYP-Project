@@ -1889,7 +1889,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* ── COLUMN 3: 7-Day Demand Forecast + Suggestion ── */}
+              {/* ── COLUMN 3: 7-Day Demand Forecast ── */}
               <div className="min-w-0 flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
 
                 {/* Section header */}
@@ -1900,10 +1900,10 @@ export default function AdminDashboard() {
                   Expected number of prescriptions per day
                 </p>
 
-                {/* Row-by-row forecast */}
-                <div className="space-y-[3px] shrink-0 overflow-hidden max-h-[110px]">
+                {/* Row-by-row forecast: show all 7 days with internal scrolling */}
+                <div className="space-y-[3px] flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-kpi-cyan/25 scrollbar-track-transparent">
                   {(pharmacyData.demand_forecast ?? []).length > 0
-                    ? (pharmacyData.demand_forecast ?? []).slice(0, 5).map((f, i) => {
+                    ? (pharmacyData.demand_forecast ?? []).slice(0, 7).map((f, i) => {
                         const dateLabel = new Date(f.date).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" });
                         const dayLabel  = new Date(f.date).toLocaleDateString("en-US", { weekday: "short" });
                         return (
@@ -1945,37 +1945,6 @@ export default function AdminDashboard() {
                     })()}
                   </div>
                 ) : null}
-
-                {/* Suggestion */}
-                {(() => {
-                  const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
-                  const criticalCount = atRisk.filter(m => m.stockout_probability >= 0.80).length;
-                  const highCount     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
-                  const riskLevel =
-                    criticalCount > 2 ? "Critical" :
-                    criticalCount > 0 ? "High" :
-                    highCount > 3     ? "Moderate" : "Low";
-                  const badgeClass =
-                    riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
-                    riskLevel === "High"     ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
-                    riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
-                                              "bg-green-500/15 text-kpi-green border-green-500/20";
-                  return (
-                    <div className="mt-auto shrink-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">💡 Suggestion</p>
-                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${badgeClass}`}>
-                          {riskLevel} Risk
-                        </span>
-                      </div>
-                      <div className="bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-2.5">
-                        <p className="text-kpi-orange font-semibold text-[10px] leading-relaxed line-clamp-4">
-                          {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
 
             </div>
