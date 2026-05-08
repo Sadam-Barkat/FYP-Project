@@ -1582,7 +1582,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 1: Total Medicines — tooltip opens downward */}
                 <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("total")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
@@ -1638,7 +1638,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 2: Out of Stock — tooltip opens downward */}
                 <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-kpi-red/20"
+                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
                   onClick={() => setExpandedPharmacyCard("oos")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Out of Stock</p>
@@ -1680,7 +1680,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 3: Low Stock — tooltip opens upward */}
                 <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("low")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Low Stock</p>
@@ -1719,7 +1719,7 @@ export default function AdminDashboard() {
 
                 {/* Stat 4: Expiring Soon — tooltip opens upward to prevent bottom overflow */}
                 <div
-                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("soon")}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Expiring Soon</p>
