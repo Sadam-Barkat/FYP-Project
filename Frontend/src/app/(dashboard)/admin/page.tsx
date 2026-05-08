@@ -1801,10 +1801,10 @@ export default function AdminDashboard() {
                   </span>
                 </div>
 
-                {/* Row-by-row medicine risk — same pattern as Finance forecast rows */}
-                <div className="space-y-1 shrink-0 overflow-hidden max-h-[108px]">
+                {/* Row-by-row medicine risk: show all rows with internal scrolling */}
+                <div className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-kpi-red/25 scrollbar-track-transparent">
                   {(pharmacyData.ml_at_risk_medicines ?? []).length > 0
-                    ? (pharmacyData.ml_at_risk_medicines ?? []).slice(0, 5).map((m, i) => {
+                    ? (pharmacyData.ml_at_risk_medicines ?? []).map((m, i) => {
                         const pct = Math.round(m.stockout_probability * 100);
                         const badgeClass =
                           pct >= 80 ? "bg-red-500/20 text-kpi-red border-red-500/30" :
@@ -1825,7 +1825,7 @@ export default function AdminDashboard() {
                           </div>
                         );
                       })
-                    : (pharmacyData.medicines_to_reorder ?? []).slice(0, 5).map((name, i) => (
+                    : (pharmacyData.medicines_to_reorder ?? []).map((name, i) => (
                         <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
                           <p className="text-[10px] text-tx-secondary truncate flex-1">{name}</p>
                           <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border bg-red-500/20 text-kpi-red border-red-500/30 shrink-0">
