@@ -1846,8 +1846,13 @@ export default function AdminDashboard() {
                     if (useML) {
                       const critical = atRisk.filter(m => m.stockout_probability >= 0.80).length;
                       const high     = atRisk.filter(m => m.stockout_probability >= 0.50 && m.stockout_probability < 0.80).length;
-                      const moderate = atRisk.filter(m => m.stockout_probability >= 0.30 && m.stockout_probability < 0.50).length;
-                      const total    = critical + high + moderate;
+                      const moderate = Math.max(0, atRisk.length - critical - high);
+                      const total    = atRisk.length;
+                      const riskParts = [
+                        critical > 0 ? `${critical} critical` : "",
+                        high > 0 ? `${high} high risk` : "",
+                        moderate > 0 ? `${moderate} moderate` : "",
+                      ].filter(Boolean).join(" · ");
                       return (
                         <>
                           <p className={`text-[11px] font-bold ${critical > 0 ? "text-kpi-red" : high > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
@@ -1857,9 +1862,7 @@ export default function AdminDashboard() {
                           </p>
                           {total > 0 ? (
                             <p className="text-[9px] text-tx-muted mt-0.5">
-                              {critical > 0 ? `${critical} critical · ` : ""}
-                              {high > 0 ? `${high} high risk · ` : ""}
-                              {moderate > 0 ? `${moderate} moderate` : ""}
+                              {riskParts}
                             </p>
                           ) : null}
                         </>
