@@ -1516,12 +1516,14 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        <div className="order-3 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dash-border">
+        <div
+          className="order-3 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
+        >
+          {/* Header */}
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
             <div className="flex items-center gap-3">
-              <span className="text-xl" aria-hidden>
-                💊
-              </span>
+              <span className="text-xl" aria-hidden>💊</span>
               <h2 className="text-tx-bright font-bold text-lg">Pharmacy Intelligence</h2>
             </div>
             <div className="flex items-center gap-2">
@@ -1539,484 +1541,269 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {!pharmacyData && !pharmacyLoading ? (
-            <p className="mt-3 text-text-muted text-sm">
-              Unable to load. Check admin access and API.
-            </p>
-          ) : null}
+          {/* Loading */}
           {pharmacyLoading && !pharmacyData ? (
-            <div className="mt-3 h-32 animate-pulse rounded-xl bg-base-muted/40" />
+            <div className="h-[300px] animate-pulse bg-dash-border/20" />
           ) : null}
 
+          {/* Error */}
+          {!pharmacyData && !pharmacyLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-xs text-tx-muted">Unable to load. Check admin access and API.</p>
+            </div>
+          ) : null}
+
+          {/* Body — 3 columns same as Patient Intelligence */}
           {pharmacyData ? (
-            <div className="h-full grid grid-cols-[1fr_280px] gap-0 divide-x divide-dash-border">
-              <div className="h-full grid grid-cols-2 grid-rows-3 gap-0 divide-x divide-y divide-dash-border">
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+
+              {/* ── COLUMN 1: 4 KPI Stats ── */}
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+
+                {/* Stat 1: Total Medicines */}
                 <div
-                  className="flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
-                  role="button"
-                  tabIndex={0}
+                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("total")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("total");
-                  }}
                 >
-                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    Total medicines
-                  </p>
-                  <p className="text-tx-bright font-black text-2xl tabular-nums leading-none">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
+                  <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
                     {pharmacyData.total_medicines}
                   </p>
                   {(() => {
-                    const pack = derivePrediction(pharmacyData.total_medicines, undefined, undefined);
                     const total = Math.max(1, pharmacyData.total_medicines);
-                    const oos = Math.max(0, pharmacyData.out_of_stock_count);
-                    const low = Math.max(0, pharmacyData.low_stock_count);
-                    const soon = Math.max(0, pharmacyData.expiring_soon_count);
-                    const expired = Math.max(0, pharmacyData.expired_count);
-                    const safe = Math.max(0, total - (oos + low + soon + expired));
-                    const pct = (n: number) => Math.max(2, Math.min(100, Math.round((n / total) * 100)));
+                    const oos = pharmacyData.out_of_stock_count ?? 0;
+                    const low = pharmacyData.low_stock_count ?? 0;
+                    const soon = pharmacyData.expiring_soon_count ?? 0;
+                    const expired = pharmacyData.expired_count ?? 0;
+                    const safe = Math.max(0, total - oos - low - soon - expired);
+                    const pct = (n: number) => Math.max(2, Math.round((n / total) * 100));
                     return (
-                      <>
-                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={pack.trend.map((v, i) => ({ x: i, v }))}
-                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="pharm-total-grad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.18} />
-                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="v"
-                                stroke="#06b6d4"
-                                strokeWidth={1.6}
-                                fill="url(#pharm-total-grad)"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
+                      <div className="mt-1.5">
+                        <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 flex">
+                          <span className="h-full bg-emerald-500/70" style={{ width: `${pct(safe)}%` }} />
+                          <span className="h-full bg-orange-500/70" style={{ width: `${pct(low)}%` }} />
+                          <span className="h-full bg-yellow-500/70" style={{ width: `${pct(soon)}%` }} />
+                          <span className="h-full bg-red-500/70" style={{ width: `${pct(oos + expired)}%` }} />
                         </div>
-                        <div className="mt-1.5">
-                          <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-tx-muted">
-                              Inventory risk mix
-                            </p>
-                            <p className="text-[10px] text-tx-secondary tabular-nums">
-                              {pct(safe)}% healthy
-                            </p>
-                          </div>
-                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                            <div className="h-full flex">
-                              <span className="h-full bg-emerald-500/70" style={{ width: `${pct(safe)}%` }} />
-                              <span className="h-full bg-orange-500/70" style={{ width: `${pct(low)}%` }} />
-                              <span className="h-full bg-yellow-500/70" style={{ width: `${pct(soon)}%` }} />
-                              <span className="h-full bg-red-500/70" style={{ width: `${pct(oos + expired)}%` }} />
-                            </div>
-                          </div>
-                          <div className="mt-1 grid grid-cols-4 gap-1 text-[10px] text-tx-secondary">
-                            <span className="truncate">Safe {safe}</span>
-                            <span className="truncate text-kpi-orange">Low {low}</span>
-                            <span className="truncate text-tx-yellow">Soon {soon}</span>
-                            <span className="truncate text-kpi-red">Risk {oos + expired}</span>
-                          </div>
-                        </div>
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          {miniInsightText("patients", pack)}
-                        </p>
-                      </>
+                        <p className="text-[9px] text-tx-secondary mt-0.5">{pct(safe)}% healthy</p>
+                      </div>
                     );
                   })()}
+                  {/* Hover tooltip */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Stock Breakdown</p>
+                    <p className="text-[10px] text-kpi-green">✓ Safe: {Math.max(0, pharmacyData.total_medicines - (pharmacyData.out_of_stock_count ?? 0) - (pharmacyData.low_stock_count ?? 0) - (pharmacyData.expiring_soon_count ?? 0) - (pharmacyData.expired_count ?? 0))}</p>
+                    <p className="text-[10px] text-kpi-orange mt-0.5">⚠ Low: {pharmacyData.low_stock_count ?? 0}</p>
+                    <p className="text-[10px] text-tx-yellow mt-0.5">⏳ Expiring: {pharmacyData.expiring_soon_count ?? 0}</p>
+                    <p className="text-[10px] text-kpi-red mt-0.5">✗ OOS + Expired: {(pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0)}</p>
+                  </div>
                 </div>
+
+                {/* Stat 2: Out of Stock */}
                 <div
-                  className="relative flex flex-col min-h-0 overflow-hidden p-4 ring-1 ring-kpi-red/20 cursor-pointer group"
-                  onMouseEnter={() => setPharmacyStatHover("oos")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                  role="button"
-                  tabIndex={0}
+                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-kpi-red/20"
                   onClick={() => setExpandedPharmacyCard("oos")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("oos");
-                  }}
                 >
-                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    Out of stock
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-kpi-red font-black text-2xl tabular-nums leading-none">
-                      {pharmacyData.out_of_stock_count}
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Out of Stock</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
+                      {pharmacyData.out_of_stock_count ?? 0}
                     </p>
-                    <span className="relative flex h-2 w-2">
+                    <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-kpi-red" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
                     </span>
                   </div>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "oos"}
-                    title="Out of stock"
-                    names={pharmacyData.out_of_stock_medicines ?? []}
-                  />
-                  {(() => {
-                    const pack = derivePrediction(pharmacyData.out_of_stock_count, undefined, undefined);
-                    const top = (pharmacyData.out_of_stock_medicines ?? []).slice(0, 2);
-                    return (
-                      <>
-                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={pack.trend.map((v, i) => ({ x: i, v }))}
-                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="pharm-oos-grad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.18} />
-                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="v"
-                                stroke="#ef4444"
-                                strokeWidth={1.6}
-                                fill="url(#pharm-oos-grad)"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        {top.length ? (
-                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                            {top.map((n, i) => (
-                              <span
-                                key={`${n}-${i}`}
-                                className="max-w-[120px] truncate rounded-lg bg-red-500/10 border border-red-500/15 px-2 py-0.5 text-[10px] text-red-300"
-                                title={n}
-                              >
-                                {n}
-                              </span>
-                            ))}
-                            {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? (
-                              <span className="text-[10px] text-tx-secondary">
-                                +{(pharmacyData.out_of_stock_medicines ?? []).length - 2} more
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
-                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400/70" aria-hidden />
-                            Review substitution list and vendor lead-times
-                          </div>
-                        )}
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} out-of-stock in 3 days.
-                        </p>
-                      </>
-                    );
-                  })()}
+                  {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
+                    <p className="text-[9px] text-kpi-red/70 mt-0.5 truncate">
+                      {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 2).join(", ")}
+                      {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.out_of_stock_medicines ?? []).length - 2}` : ""}
+                    </p>
+                  ) : null}
+                  {/* Hover tooltip */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Out of Stock</p>
+                    {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 5).map((m, i) => (
+                      <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">• {m}</p>
+                    ))}
+                    {(pharmacyData.out_of_stock_medicines ?? []).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">None currently</p>
+                    )}
+                  </div>
                 </div>
+
+                {/* Stat 3: Low Stock */}
                 <div
-                  className="relative flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
-                  onMouseEnter={() => setPharmacyStatHover("low")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                  role="button"
-                  tabIndex={0}
+                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("low")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("low");
-                  }}
                 >
-                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    Low stock
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-kpi-orange font-black text-2xl tabular-nums leading-none">
-                      {pharmacyData.low_stock_count}
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Low Stock</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-kpi-orange font-black text-xl tabular-nums leading-none">
+                      {pharmacyData.low_stock_count ?? 0}
                     </p>
-                    <span className="w-2 h-2 rounded-full bg-kpi-orange" aria-hidden />
+                    <span className="w-1.5 h-1.5 rounded-full bg-kpi-orange" />
                   </div>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "low"}
-                    title="Low stock"
-                    names={pharmacyData.low_stock_medicines ?? []}
-                  />
-                  {(() => {
-                    const pack = derivePrediction(pharmacyData.low_stock_count, undefined, undefined);
-                    const top = (pharmacyData.low_stock_medicines ?? []).slice(0, 2);
-                    return (
-                      <>
-                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={pack.trend.map((v, i) => ({ x: i, v }))}
-                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="pharm-low-grad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.18} />
-                                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="v"
-                                stroke="#f97316"
-                                strokeWidth={1.6}
-                                fill="url(#pharm-low-grad)"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        {top.length ? (
-                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                            {top.map((n, i) => (
-                              <span
-                                key={`${n}-${i}`}
-                                className="max-w-[120px] truncate rounded-lg bg-orange-500/10 border border-orange-500/15 px-2 py-0.5 text-[10px] text-orange-300"
-                                title={n}
-                              >
-                                {n}
-                              </span>
-                            ))}
-                            {(pharmacyData.low_stock_medicines ?? []).length > 2 ? (
-                              <span className="text-[10px] text-tx-secondary">
-                                +{(pharmacyData.low_stock_medicines ?? []).length - 2} more
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
-                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-orange-400/70" aria-hidden />
-                            Bundle reorders to avoid near-term stockouts
-                          </div>
-                        )}
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          Projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} low-stock in 3 days.
-                        </p>
-                      </>
-                    );
-                  })()}
+                  {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
+                    <p className="text-[9px] text-kpi-orange/70 mt-0.5 truncate">
+                      {(pharmacyData.low_stock_medicines ?? []).slice(0, 2).join(", ")}
+                      {(pharmacyData.low_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.low_stock_medicines ?? []).length - 2}` : ""}
+                    </p>
+                  ) : null}
+                  {/* Hover tooltip */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Low Stock Items</p>
+                    {(pharmacyData.low_stock_medicines ?? []).slice(0, 5).map((m, i) => (
+                      <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">• {m}</p>
+                    ))}
+                    {(pharmacyData.low_stock_medicines ?? []).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">None currently</p>
+                    )}
+                  </div>
                 </div>
+
+                {/* Stat 4: Expiring Soon */}
                 <div
-                  className="relative flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
-                  onMouseEnter={() => setPharmacyStatHover("soon")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                  role="button"
-                  tabIndex={0}
+                  className="relative group flex flex-col justify-center px-3 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => setExpandedPharmacyCard("soon")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("soon");
-                  }}
                 >
-                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    Expiring soon
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-tx-yellow font-black text-2xl tabular-nums leading-none">
-                      {pharmacyData.expiring_soon_count}
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Expiring Soon</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-tx-yellow font-black text-xl tabular-nums leading-none">
+                      {pharmacyData.expiring_soon_count ?? 0}
                     </p>
-                    <span className="w-2 h-2 rounded-full bg-yellow-500" aria-hidden />
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
                   </div>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "soon"}
-                    title="Expiring soon (30d)"
-                    names={pharmacyData.expiring_soon_medicines ?? []}
-                  />
-                  {(() => {
-                    const pack = derivePrediction(pharmacyData.expiring_soon_count, undefined, undefined);
-                    const top = (pharmacyData.expiring_soon_medicines ?? []).slice(0, 2);
-                    return (
-                      <>
-                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={pack.trend.map((v, i) => ({ x: i, v }))}
-                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="pharm-soon-grad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#eab308" stopOpacity={0.18} />
-                                  <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="v"
-                                stroke="#eab308"
-                                strokeWidth={1.6}
-                                fill="url(#pharm-soon-grad)"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        {top.length ? (
-                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                            {top.map((n, i) => (
-                              <span
-                                key={`${n}-${i}`}
-                                className="max-w-[120px] truncate rounded-lg bg-yellow-500/10 border border-yellow-500/15 px-2 py-0.5 text-[10px] text-yellow-200"
-                                title={n}
-                              >
-                                {n}
-                              </span>
-                            ))}
-                            {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? (
-                              <span className="text-[10px] text-tx-secondary">
-                                +{(pharmacyData.expiring_soon_medicines ?? []).length - 2} more
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
-                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-yellow-300/70" aria-hidden />
-                            Prioritize FEFO allocation this week
-                          </div>
-                        )}
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          Review expiry list; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
-                        </p>
-                      </>
-                    );
-                  })()}
-                </div>
-                <div
-                  className="relative col-span-2 flex flex-col min-h-0 overflow-hidden p-4 cursor-pointer group"
-                  onMouseEnter={() => setPharmacyStatHover("expired")}
-                  onMouseLeave={() => setPharmacyStatHover(null)}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setExpandedPharmacyCard("expired")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setExpandedPharmacyCard("expired");
-                  }}
-                >
-                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider mb-1">
-                    Expired
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-kpi-red font-black text-2xl tabular-nums leading-none">
-                      {pharmacyData.expired_count}
+                  {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
+                    <p className="text-[9px] text-tx-yellow/70 mt-0.5 truncate">
+                      {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 2).join(", ")}
+                      {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? ` +${(pharmacyData.expiring_soon_medicines ?? []).length - 2}` : ""}
                     </p>
-                    <span className="animate-live-pulse w-2 h-2 rounded-full bg-kpi-red" aria-hidden />
+                  ) : null}
+                  {/* Hover tooltip */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-44 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Expiring in 30 days</p>
+                    {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 5).map((m, i) => (
+                      <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {m}</p>
+                    ))}
+                    {(pharmacyData.expiring_soon_medicines ?? []).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">None expiring soon</p>
+                    )}
                   </div>
-                  <PharmacyMedicineTooltip
-                    open={pharmacyStatHover === "expired"}
-                    title="Expired"
-                    names={pharmacyData.expired_medicines ?? []}
-                  />
-                  {(() => {
-                    const pack = derivePrediction(pharmacyData.expired_count, undefined, undefined);
-                    const top = (pharmacyData.expired_medicines ?? []).slice(0, 2);
-                    return (
-                      <>
-                        <div className="mt-2 h-9 min-h-[36px] -mx-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={pack.trend.map((v, i) => ({ x: i, v }))}
-                              margin={{ top: 6, right: 0, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="pharm-expired-grad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.18} />
-                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <Area
-                                type="monotone"
-                                dataKey="v"
-                                stroke="#ef4444"
-                                strokeWidth={1.6}
-                                fill="url(#pharm-expired-grad)"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        {top.length ? (
-                          <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden whitespace-nowrap">
-                            {top.map((n, i) => (
-                              <span
-                                key={`${n}-${i}`}
-                                className="max-w-[160px] truncate rounded-lg bg-red-500/10 border border-red-500/15 px-2 py-0.5 text-[10px] text-red-300"
-                                title={n}
-                              >
-                                {n}
-                              </span>
-                            ))}
-                            {(pharmacyData.expired_medicines ?? []).length > 2 ? (
-                              <span className="text-[10px] text-tx-secondary">
-                                +{(pharmacyData.expired_medicines ?? []).length - 2} more
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-tx-secondary">
-                            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-red-400/70" aria-hidden />
-                            Quarantine & log disposal today
-                          </div>
-                        )}
-                        <p className="mt-1 text-[10px] text-tx-secondary">
-                          Immediate action: quarantine/dispose; projected ~{(pack.prediction[2] ?? pack.current).toFixed(0)} in 3 days.
-                        </p>
-                      </>
-                    );
-                  })()}
                 </div>
+
               </div>
 
-              <div className="px-5 py-4 flex flex-col gap-3 overflow-hidden">
-                <div>
-                  <p className="text-tx-yellow text-[10px] font-bold uppercase tracking-wider mb-1">
-                    ⚠️ Stockout Prediction
-                  </p>
-                  <p className="text-tx-secondary text-xs leading-relaxed">
+              {/* ── COLUMN 2: Stockout Forecast + Reorder List ── */}
+              <div className="flex flex-col px-4 py-3 overflow-hidden">
+                <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  🤖 Stockout Forecast
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-cyan opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-cyan" />
+                  </span>
+                </p>
+
+                <div className="mt-2 shrink-0">
+                  <p className="text-tx-secondary text-[11px] leading-relaxed">
                     {pharmacyData.stockout_prediction}
                   </p>
                 </div>
-                <div>
-                  <p className="text-kpi-cyan text-xs font-semibold cursor-pointer hover:text-white transition-colors">
-                    🛒 REORDER NOW
+
+                <div className="mt-2 shrink-0">
+                  <p className="text-kpi-cyan text-[10px] font-semibold uppercase tracking-wider mb-1">
+                    🛒 Reorder Now
                   </p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {pharmacyData.medicines_to_reorder.map((m, i) => (
+                  <div className="flex flex-wrap gap-1 overflow-hidden max-h-[52px]">
+                    {pharmacyData.medicines_to_reorder.slice(0, 8).map((m, i) => (
                       <span
                         key={`${m}-${i}`}
-                        className="bg-dash-elevated border border-dash-border text-tx-secondary text-[10px] px-2.5 py-1 rounded-lg hover:border-kpi-blue/50 hover:text-tx-primary transition-all duration-150"
+                        className="bg-dash-elevated border border-dash-border text-tx-secondary text-[9px] px-2 py-0.5 rounded-lg hover:border-kpi-blue/50 hover:text-tx-primary transition-all duration-150"
                       >
                         {m}
                       </span>
                     ))}
+                    {pharmacyData.medicines_to_reorder.length > 8 ? (
+                      <span className="text-[9px] text-tx-muted self-center">
+                        +{pharmacyData.medicines_to_reorder.length - 8} more
+                      </span>
+                    ) : null}
                   </div>
                 </div>
-                <div>
+
+                <div className="mt-2 shrink-0">
                   <p className="text-kpi-red text-[10px] font-bold uppercase tracking-wider mb-1">
                     🟥 Expiry Warning
                   </p>
-                  <p className="text-tx-secondary text-xs leading-relaxed">
+                  <p className="text-tx-secondary text-[11px] leading-relaxed line-clamp-2">
                     {pharmacyData.expiry_warning}
                   </p>
                 </div>
-                <div>
-                  <p className="text-tx-yellow text-[10px] font-bold uppercase tracking-wider mb-1">
-                    💡 Suggestion
-                  </p>
-                  <p className="text-kpi-green text-xs font-medium italic">
-                    {pharmacyData.suggestion}
-                  </p>
+
+                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                  {(() => {
+                    const critical = (pharmacyData.out_of_stock_count ?? 0) + (pharmacyData.expired_count ?? 0);
+                    const warning = (pharmacyData.low_stock_count ?? 0) + (pharmacyData.expiring_soon_count ?? 0);
+                    return (
+                      <p className={`text-[11px] font-semibold ${critical > 0 ? "text-kpi-red" : warning > 0 ? "text-kpi-orange" : "text-kpi-green"}`}>
+                        ⚡ {critical > 0
+                          ? `${critical} medicines need immediate action`
+                          : warning > 0
+                          ? `${warning} medicines need attention this week`
+                          : "All stock levels healthy ✓"}
+                      </p>
+                    );
+                  })()}
+                  <p className="text-[9px] text-tx-muted mt-0.5 italic">Demand prediction active</p>
                 </div>
               </div>
+
+              {/* ── COLUMN 3: Suggestion Panel ── */}
+              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                  💡 Suggestion
+                </p>
+
+                {(() => {
+                  const oos = pharmacyData.out_of_stock_count ?? 0;
+                  const low = pharmacyData.low_stock_count ?? 0;
+                  const expired = pharmacyData.expired_count ?? 0;
+                  const expiring = pharmacyData.expiring_soon_count ?? 0;
+
+                  const riskLevel =
+                    (oos + expired) > 5 ? "Critical" :
+                    (oos + expired) > 2 ? "High" :
+                    (low + expiring) > 5 ? "Moderate" : "Low";
+
+                  const badgeClass =
+                    riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
+                    riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
+                    riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
+                    "bg-green-500/15 text-kpi-green border-green-500/20";
+
+                  return (
+                    <>
+                      <span className={`mt-1.5 self-start text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass} shrink-0`}>
+                        {riskLevel} Risk
+                      </span>
+                      <div className="mt-2 bg-kpi-orange/8 border border-kpi-orange/20 rounded-xl p-3 flex-1 overflow-hidden">
+                        <p className="text-kpi-orange font-semibold text-[11px] leading-relaxed">
+                          {pharmacyData.suggestion || "Monitor stock levels and reorder medicines before they run out."}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
+                  Stockout prediction active
+                </p>
+              </div>
+
             </div>
           ) : null}
 
+          {/* Keep ALL 5 PharmacyStatModal components */}
           {pharmacyData ? (
             <>
               <PharmacyStatModal
