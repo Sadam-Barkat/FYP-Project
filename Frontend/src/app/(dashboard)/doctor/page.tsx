@@ -9,6 +9,10 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_BASE = getApiBaseUrl();
 
+/** Matches admin overview panel cards (light + dark). */
+const panelCard =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] dark:border-white/[0.06] dark:bg-panel dark:shadow-panel";
+
 function useDoctorDisplayName() {
   const [name, setName] = useState("");
   useEffect(() => {
@@ -37,7 +41,7 @@ function getStatusClasses(status: PatientStatus) {
     case "Emergency":
       return "bg-status-danger text-white text-xs font-semibold px-2.5 py-1 rounded-full animate-pulse";
     default:
-      return "bg-base-muted text-text-primary text-xs font-medium px-2.5 py-1 rounded-full";
+      return "bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-white/10 dark:text-tx-secondary";
   }
 }
 
@@ -129,26 +133,30 @@ export default function DoctorDashboardPage() {
   );
 
   return (
-    <div id="dashboard-content" className="bg-base-surface min-h-screen px-8 py-8 space-y-8">
-      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div
+      id="dashboard-content"
+      className="admin-overview-theme min-h-[calc(100dvh-72px)] w-full bg-gray-50 px-4 py-3 text-gray-900 sm:px-6 dark:bg-dash-bg dark:text-tx-primary"
+    >
+      <div className="dashboard-page-shell max-w-7xl mx-auto space-y-4 sm:space-y-6">
+      <div className={`${panelCard} p-5 sm:p-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center`}>
         <div>
-          <h2 className="text-text-primary font-semibold text-xl tracking-tight">
+          <h2 className="text-slate-900 font-semibold text-xl tracking-tight dark:text-tx-bright">
             My Patients Overview
           </h2>
-          <p className="text-text-primary text-sm leading-relaxed mt-1">
+          <p className="text-slate-600 text-sm leading-relaxed mt-1 dark:text-tx-secondary">
             Prioritized view of your assigned patients. Updates in real time when nurses record vitals.
           </p>
           {userDisplayName && (
-            <p className="text-text-secondary text-sm mt-2">
+            <p className="text-slate-500 text-sm mt-2 dark:text-tx-muted">
               Logged in as{" "}
-              <span className="text-text-primary font-medium">{userDisplayName}</span>
+              <span className="text-slate-900 font-medium dark:text-tx-bright">{userDisplayName}</span>
             </p>
           )}
         </div>
         <div className="flex w-full flex-col gap-2 xs:flex-row xs:flex-wrap sm:w-auto sm:items-center sm:gap-3">
           <Link
             href="/doctor/analytics"
-            className="bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 inline-flex items-center justify-center gap-2"
+            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-all duration-200 hover:border-brand-blue/40 hover:text-slate-900 inline-flex items-center justify-center gap-2 dark:border-white/[0.08] dark:bg-dash-elevated dark:text-tx-secondary dark:hover:border-brand-blue/40 dark:hover:text-tx-bright"
           >
             <Activity size={16} />
             View My Analytics
@@ -157,7 +165,7 @@ export default function DoctorDashboardPage() {
             type="button"
             onClick={handleManualRefresh}
             disabled={isRefreshing || loading}
-            className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="bg-btn-primary text-white font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCcw size={16} className={isRefreshing ? "animate-spin" : ""} />
             {isRefreshing ? "Refreshing" : "Refresh"}
@@ -166,28 +174,28 @@ export default function DoctorDashboardPage() {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-12 gap-2 text-text-muted">
+        <div className="flex items-center justify-center py-12 gap-2 text-slate-500 dark:text-tx-muted">
           <Loader2 size={20} className="animate-spin" />
           Loading assigned patients...
         </div>
       )}
 
       {!loading && patients.length === 0 && (
-        <div className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md p-12 text-center text-text-secondary">
+        <div className={`${panelCard} p-12 text-center text-slate-600 dark:text-tx-secondary`}>
           No patients assigned to you. The list updates when reception assigns new patients.
         </div>
       )}
 
       {hasEmergency && !loading && (
-        <div className="bg-status-danger/10 border border-status-danger/30 text-status-danger rounded-xl px-5 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-status-danger/20 flex items-center justify-center">
+        <div className="rounded-2xl border border-status-danger/35 bg-white px-5 py-4 text-status-danger shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-3 dark:border-status-danger/40 dark:bg-dash-card dark:shadow-panel">
+          <div className="w-10 h-10 rounded-full bg-status-danger/15 flex items-center justify-center">
             <AlertTriangle size={20} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium">
+            <p className="text-sm font-semibold text-slate-900 dark:text-tx-bright">
               Emergency patients detected
             </p>
-            <p className="text-sm font-medium opacity-80">
+            <p className="text-sm text-status-danger/90 dark:text-status-danger mt-0.5">
               Patients marked as Emergency are at the top for immediate attention.
             </p>
           </div>
@@ -202,18 +210,18 @@ export default function DoctorDashboardPage() {
               <Link
                 key={patient.id}
                 href={`/doctor/patients/${patient.id}`}
-                className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md hover:bg-base-hover hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between min-h-[160px] group"
+                className={`${panelCard} flex flex-col justify-between min-h-[160px] group hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all duration-200 dark:hover:shadow-panel`}
               >
                 <div className="p-5 flex-1 flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-text-muted text-xs mt-0.5 font-mono">
+                      <p className="text-slate-400 text-xs mt-0.5 font-mono dark:text-tx-muted">
                         #{patient.id}
                       </p>
-                      <h3 className="text-text-primary font-semibold text-sm mt-1">
+                      <h3 className="text-slate-900 font-semibold text-sm mt-1 dark:text-tx-bright">
                         {patient.name}
                       </h3>
-                      <p className="text-text-muted text-xs mt-0.5">
+                      <p className="text-slate-500 text-xs mt-0.5 dark:text-tx-secondary">
                         {patient.age} yrs
                       </p>
                     </div>
@@ -223,13 +231,13 @@ export default function DoctorDashboardPage() {
                       {status}
                     </span>
                   </div>
-                  <div className="bg-base-muted rounded-xl p-4 mt-1">
-                    <p className="text-text-primary text-sm leading-relaxed">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 mt-1 dark:border-white/[0.06] dark:bg-dash-elevated">
+                    <p className="text-slate-700 text-sm leading-relaxed dark:text-tx-secondary">
                       Vitals updated by nurse. View details for full history and discharge.
                     </p>
                   </div>
                 </div>
-                <div className="px-5 py-3 border-t border-base-border flex items-center justify-between text-text-muted text-xs bg-base-muted/30 rounded-b-2xl">
+                <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between text-slate-500 text-xs bg-slate-50/80 rounded-b-2xl dark:border-dash-border dark:bg-white/[0.03] dark:text-tx-muted">
                   <span>Assigned patient</span>
                   <span className="group-hover:text-brand-blue font-medium transition-colors duration-150">
                     View details →
@@ -240,6 +248,7 @@ export default function DoctorDashboardPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }
