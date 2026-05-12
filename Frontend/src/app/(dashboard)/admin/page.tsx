@@ -2943,14 +2943,16 @@ export default function AdminDashboard() {
                       ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20"
                       : "bg-green-500/15 text-kpi-green border-green-500/20";
 
+                  const formattedPct = typeof pct === "number" ? pct.toFixed(1).replace(/\.0$/, '') : pct;
+
                   const suggestion =
                     riskLevel === "Critical"
                       ? `Only ${available} beds left. Initiate emergency discharge planning and contact overflow facilities immediately.`
                       : riskLevel === "High"
-                      ? `${pct}% capacity reached. Accelerate pending discharges and prepare contingency ward expansion.`
+                      ? `${formattedPct}% capacity reached. Accelerate pending discharges and prepare contingency ward expansion.`
                       : riskLevel === "Moderate"
-                      ? `Occupancy at ${pct}%. Monitor admissions trend and plan for weekend surge if needed.`
-                      : `Bed capacity is healthy at ${pct}%. Continue standard admission protocols.`;
+                      ? `Occupancy at ${formattedPct}%. Monitor admissions trend and plan for weekend surge if needed.`
+                      : `Bed capacity is healthy at ${formattedPct}%. Continue standard admission protocols.`;
 
                   return (
                     <>
@@ -2961,7 +2963,7 @@ export default function AdminDashboard() {
                           {riskLevel} Risk
                         </span>
                         <span className="text-[10px] text-tx-secondary">
-                          {riskPct !== null ? `${riskPct}% ML` : `${pct}% full`}
+                          {riskPct !== null ? `${riskPct}% ML` : `${formattedPct}% full`}
                         </span>
                       </div>
                       <div className="mt-2 bg-kpi-blue/8 border border-kpi-blue/20 rounded-xl p-3 flex-1 overflow-hidden">
