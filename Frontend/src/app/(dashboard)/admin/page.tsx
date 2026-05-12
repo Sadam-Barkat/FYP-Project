@@ -118,28 +118,49 @@ function pharmacyDemandForecastModalPayload(pharmacyData: Record<string, unknown
   };
 }
 
-const INPATIENT_TABLE_COLS = [
-  { key: "patient_id", label: "ID" },
-  { key: "name", label: "Patient" },
-  { key: "age", label: "Age" },
-  { key: "gender", label: "Gender" },
-  { key: "blood_group", label: "Blood" },
-  { key: "admission_date", label: "Admitted" },
-  { key: "bed_id", label: "Bed" },
-  { key: "reason_for_admission", label: "Reason" },
-  { key: "contact", label: "Contact" },
-  { key: "address", label: "Address" },
-  { key: "news2_score", label: "NEWS2" },
-  { key: "heart_rate", label: "HR" },
-  { key: "spo2", label: "SpO2" },
-  { key: "temperature", label: "Temp°C" },
-  { key: "blood_pressure_sys", label: "BP sys" },
-  { key: "blood_pressure_dia", label: "BP dia" },
-  { key: "respiratory_rate", label: "RR" },
-  { key: "ml_risk_label", label: "ML risk" },
-  { key: "ml_risk_pct", label: "ML %" },
-  { key: "has_abnormal_vital", label: "Abnl vitals" },
+/** Roster modal columns — aligned with Staff & Attendance (readable, no raw DB ids, no clinical scoring jargon in headers). */
+const INPATIENT_ROSTER_MODAL_COLS = [
+  { key: "patient", label: "Patient" },
+  { key: "demographics", label: "Demographics" },
+  { key: "admitted", label: "Admitted" },
+  { key: "bed", label: "Bed" },
+  { key: "reason", label: "Reason" },
+  { key: "status", label: "Status" },
 ] as const;
+
+function formatInpatientAdmissionDate(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return String(iso).slice(0, 10);
+  }
+}
+
+function mapInpatientRosterModalRow(r: ActiveInpatientRosterRow): Record<string, string> {
+  const agePart = r.age != null && Number.isFinite(Number(r.age)) ? String(r.age) : "—";
+  const genderPart = (r.gender || "").trim() || "—";
+  const blood = (r.blood_group || "").trim();
+  const demographics = blood ? `${agePart} · ${genderPart} · ${blood}` : `${agePart} · ${genderPart}`;
+  const reasonRaw = (r.reason_for_admission || "—").trim() || "—";
+  const reason = reasonRaw.length > 100 ? `${reasonRaw.slice(0, 97)}…` : reasonRaw;
+  const vitals = r.has_abnormal_vital ? "Vitals review" : "Vitals OK";
+  const label = (r.ml_risk_label || "—").trim() || "—";
+  const pct = Math.round(Number(r.ml_risk_pct ?? 0));
+  const status = `${vitals} · ${label} (${pct}%)`;
+  const bed =
+    r.bed_id != null && Number(r.bed_id) > 0 ? `Bed ${r.bed_id}` : "—";
+  return {
+    patient: (r.name || "—").trim() || "—",
+    demographics,
+    admitted: formatInpatientAdmissionDate(r.admission_date),
+    bed,
+    reason,
+    status,
+  };
+}
 
 function patientIntelRosterTablePayload(
   intel: PatientIntelResponse,
@@ -167,22 +188,22 @@ function patientIntelRosterTablePayload(
     );
     rows = roster.filter((r) => ids.has(Number(r.patient_id)));
   }
-  const mapped = rows.map((r) => ({
-    ...r,
-    has_abnormal_vital: r.has_abnormal_vital,
-  })) as unknown as Record<string, string | number | boolean | null | undefined>[];
+  const mapped = rows.map((r) => mapInpatientRosterModalRow(r)) as unknown as Record<
+    string,
+    string | number | boolean | null | undefined
+  >[];
 
   const subtitle =
     roster.length === 0
-      ? "Refresh patient intelligence after deploy — roster payload missing."
-      : `${mapped.length} row(s) · filter: ${filter.replace(/_/g, " ")}`;
+      ? "No inpatient roster in this response — try refreshing."
+      : `${mapped.length} inpatient${mapped.length === 1 ? "" : "s"}`;
 
   return {
     title,
     subtitle,
     table: {
-      caption: "Active inpatients (undischarged)",
-      columns: INPATIENT_TABLE_COLS.map((c) => ({ key: c.key, label: c.label })),
+      caption: `Inpatients (${mapped.length})`,
+      columns: INPATIENT_ROSTER_MODAL_COLS.map((c) => ({ key: c.key, label: c.label })),
       rows: mapped,
     },
     blocks: [],
@@ -193,13 +214,16 @@ function patientIntelSingleRowTable(intel: PatientIntelResponse, patientId: numb
   const roster = intel.active_inpatient_roster ?? [];
   const row = roster.find((r) => r.patient_id === patientId);
   const mapped = row
-    ? ([row] as unknown as Record<string, string | number | boolean | null | undefined>[])
+    ? ([mapInpatientRosterModalRow(row)] as unknown as Record<string, string | number | boolean | null | undefined>[])
     : [];
   return {
     title: "Patient detail",
-    subtitle: row ? row.name : `ID ${patientId} not in current inpatient roster`,
+    subtitle: row
+      ? `${row.name} · admitted ${formatInpatientAdmissionDate(row.admission_date)}`
+      : "Not on the current inpatient roster.",
     table: {
-      columns: INPATIENT_TABLE_COLS.map((c) => ({ key: c.key, label: c.label })),
+      caption: row ? "Inpatient (1)" : undefined,
+      columns: INPATIENT_ROSTER_MODAL_COLS.map((c) => ({ key: c.key, label: c.label })),
       rows: mapped,
     },
     blocks: [],
@@ -1934,7 +1958,7 @@ export default function AdminDashboard() {
                       patientIntelRosterTablePayload(
                         intelData,
                         "at_risk",
-                        "At risk (NEWS2 / ML) — inpatient roster",
+                        "At risk — inpatient roster",
                       ),
                     )
                   }
