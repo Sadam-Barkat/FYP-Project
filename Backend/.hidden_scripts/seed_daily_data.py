@@ -56,18 +56,18 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
             if row[1] == 'doctor': doctors.append(row[0])
             elif row[1] == 'nurse': nurses.append(row[0])
 
-        med_res = await conn.execute(text("SELECT id FROM medicines"))
+        med_res = await conn.execute(text("SELECT id FROM pharmacy_stock"))
         medicine_ids = [row[0] for row in med_res.fetchall()]
 
         lab_cat_res = await conn.execute(text("SELECT id FROM lab_categories"))
         lab_cat_ids = [row[0] for row in lab_cat_res.fetchall()]
 
-        bed_res = await conn.execute(text("SELECT id, is_occupied FROM beds"))
+        bed_res = await conn.execute(text("SELECT id, status FROM beds"))
         all_beds = []
         available_beds = []
         for row in bed_res.fetchall():
             all_beds.append(row[0])
-            if not row[1]:
+            if row[1] == "available":
                 available_beds.append(row[0])
 
         # 2. Iterate through requested days
@@ -76,6 +76,7 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
             target_datetime = datetime.combine(target_date, time(12, 0)) # noon
             
             print(f"\n--- Seeding data for {target_date} ---")
+            now = datetime.utcnow()
             
             # A. ATTENDANCE & SHIFTS
             if do_att:
@@ -84,7 +85,6 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                 
                 att_rows = []
                 shift_rows = []
-                now = datetime.utcnow()
                 
                 for sid in staff_ids:
                     status = random.choice(["present", "present", "present", "present", "absent", "leave"])
@@ -123,13 +123,13 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                     gender = random.choice(["Male", "Female"])
                     name = random.choice(MALE_NAMES) if gender == "Male" else random.choice(FEMALE_NAMES)
                     p_res = await conn.execute(text(
-                        "INSERT INTO patients (name, age, gender, blood_group, contact_number, address, emergency_contact, registration_date, created_at, updated_at) "
-                        "VALUES (:n, :a, :g, :bg, :c_no, :addr, :ec, :rd, :c, :u) RETURNING id"
+                        "INSERT INTO patients (name, age, gender, blood_group, contact, address, created_at, updated_at) "
+                        "VALUES (:n, :a, :g, :bg, :c_no, :addr, :c, :u) RETURNING id"
                     ), {
                         "n": name, "a": random.randint(1, 85), "g": gender,
                         "bg": random.choice(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]),
-                        "c_no": rand_phone(), "addr": random.choice(ADDRESSES), "ec": rand_phone(),
-                        "rd": target_datetime, "c": now, "u": now
+                        "c_no": rand_phone(), "addr": random.choice(ADDRESSES),
+                        "c": target_datetime, "u": now
                     })
                     new_patient_ids.append(p_res.scalar())
 
@@ -147,7 +147,7 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                     ), {"pid": pid, "bid": bed_id, "ad": target_datetime, "r": random.choice(REASONS), "c": now, "u": now})
                     
                     # Mark bed occupied
-                    await conn.execute(text("UPDATE beds SET is_occupied=true WHERE id=:bid"), {"bid": bed_id})
+                    await conn.execute(text("UPDATE beds SET status='occupied' WHERE id=:bid"), {"bid": bed_id})
 
                     # Doctor & Nurse Assignment
                     if doctors:
@@ -157,9 +157,9 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                         ), {"did": random.choice(doctors), "pid": pid, "ad": target_date, "c": now, "u": now})
                     if nurses:
                         await conn.execute(text(
-                            "INSERT INTO nurse_patient_assignments (nurse_id, patient_id, shift_type, assigned_date, created_at, updated_at) "
-                            "VALUES (:nid, :pid, :st, :ad, :c, :u)"
-                        ), {"nid": random.choice(nurses), "pid": pid, "st": random.choice(["morning", "evening", "night"]), "ad": target_date, "c": now, "u": now})
+                            "INSERT INTO nurse_patient_assignments (nurse_id, patient_id, assigned_date, status, created_at, updated_at) "
+                            "VALUES (:nid, :pid, :ad, 'active', :c, :u)"
+                        ), {"nid": random.choice(nurses), "pid": pid, "ad": target_date, "c": now, "u": now})
 
             # D. DISCHARGING SOME PATIENTS (to free up beds)
             # Find active admissions
@@ -171,7 +171,7 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                 for adm in active_admissions:
                     if random.random() < 0.15: # 15% chance to discharge today
                         await conn.execute(text("UPDATE admissions SET discharge_date=:dd WHERE id=:aid"), {"dd": target_datetime + timedelta(hours=5), "aid": adm[0]})
-                        await conn.execute(text("UPDATE beds SET is_occupied=false WHERE id=:bid"), {"bid": adm[2]})
+                        await conn.execute(text("UPDATE beds SET status='available' WHERE id=:bid"), {"bid": adm[2]})
                         await conn.execute(text("UPDATE doctor_assignments SET status='completed' WHERE patient_id=:pid"), {"pid": adm[1]})
                         available_beds.append(adm[2])
                         discharged_today += 1
@@ -245,7 +245,7 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                         "VALUES (:pid, :tn, :rv, :unit, 'Normal', :ca, :c, :u)"
                     ), {"pid": pid, "tn": test_name, "rv": str(random.randint(50, 150)), "unit": test_unit, "ca": target_datetime, "c": now, "u": now})
 
-            # H. PHARMACY (Prescriptions & Dispensations)
+            # H. PHARMACY (Prescriptions)
             if do_pha and all_patients and medicine_ids and doctors:
                 for _ in range(random.randint(5, 12)):
                     pid = random.choice(all_patients)
@@ -258,15 +258,9 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                         "VALUES (:pid, :did, :mid, '1 tab', 'Twice a day', :sd, :ed, :c, :u) RETURNING id"
                     ), {"pid": pid, "did": random.choice(doctors), "mid": mid, "sd": target_date, "ed": target_date + timedelta(days=5), "c": now, "u": now})
                     
-                    # Dispensation (lowers stock)
-                    await conn.execute(text(
-                        "INSERT INTO pharmacy_dispensations (prescription_id, medicine_id, patient_id, quantity_dispensed, dispensed_date, status, created_at, updated_at) "
-                        "VALUES (:prid, :mid, :pid, :qty, :dd, 'completed', :c, :u)"
-                    ), {"prid": pr_res.scalar(), "mid": mid, "pid": pid, "qty": qty, "dd": target_datetime, "c": now, "u": now})
-                    
                     # Decrease stock
                     await conn.execute(text(
-                        "UPDATE pharmacy_stock SET current_stock = GREATEST(0, current_stock - :qty), updated_at = :u WHERE medicine_id = :mid"
+                        "UPDATE pharmacy_stock SET quantity = GREATEST(0, quantity - :qty), updated_at = :u WHERE id = :mid"
                     ), {"qty": qty, "mid": mid, "u": now})
 
             print(f"  ✅ Added {new_patients} new admissions/patients, {num_billings} billings (${finance_amount:,.2f}), discharged {discharged_today} patients, generated vitals, labs & pharmacy data.")
