@@ -3225,7 +3225,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 2: ML Absenteeism Forecast + Attendance Trend ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden">
+              <div className="flex min-h-0 flex-col px-4 py-3 overflow-hidden">
                 <div className="flex items-center gap-1.5 shrink-0 mb-0.5">
                   <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                     🤖 Absenteeism Forecast (ML · Next 7 Days)
@@ -3354,9 +3354,9 @@ export default function AdminDashboard() {
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1">
-                  {(staffData.live_staff_status ?? []).slice(0, 4).map((s: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0">
+                <div className="mt-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+                  {(staffData.live_staff_status ?? []).map((s: any, i: number) => (
+                    <div key={`${s.name ?? "staff"}-${i}`} className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0 shrink-0">
                       <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">{s.name}</span>
                       <span className="text-[9px] text-tx-secondary mx-2 shrink-0 truncate max-w-[60px]">{s.department}</span>
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
@@ -3372,18 +3372,37 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                {/* ML prediction summary line */}
+                {/* 7-day forecast totals (sum of bar chart values) */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const absent = staffData.absent_today ?? 0;
-                    const total = (staffData.staff_on_duty ?? 0) + absent + (staffData.on_leave ?? 0);
-                    const absentRate = Math.round((absent / Math.max(1, total)) * 100);
-                    const isRisk = staffData.understaffing_risk ?? (absentRate >= 15);
+                    const trend = staffData.attendance_trend ?? [];
+                    let sumPresent = 0;
+                    let sumAbsent = 0;
+                    let sumLeave = 0;
+                    for (const row of trend) {
+                      const r = row as { present?: number; absent?: number; leave?: number };
+                      sumPresent += Number(r.present ?? 0);
+                      sumAbsent += Number(r.absent ?? 0);
+                      sumLeave += Number(r.leave ?? 0);
+                    }
+                    if (trend.length === 0) {
+                      return (
+                        <p className="text-[11px] font-semibold text-tx-muted">
+                          No 7-day forecast data yet.
+                        </p>
+                      );
+                    }
                     return (
-                      <p className={`text-[11px] font-semibold ${isRisk ? "text-kpi-red" : "text-kpi-green"}`}>
-                        ⚡ {isRisk
-                          ? `High absenteeism ${absentRate}% — understaffing risk today`
-                          : `Staffing normal · ${absentRate}% absence rate`}
+                      <p className="text-[11px] font-semibold leading-snug text-tx-primary">
+                        <span className="text-kpi-green">Next 7 days</span>
+                        <span className="text-tx-muted font-normal"> (ML forecast totals)</span>
+                        {": "}
+                        <span className="text-kpi-green tabular-nums">{sumPresent}</span>
+                        {" present · "}
+                        <span className="text-kpi-red tabular-nums">{sumAbsent}</span>
+                        {" absent · "}
+                        <span className="text-tx-yellow tabular-nums">{sumLeave}</span>
+                        {" on leave"}
                       </p>
                     );
                   })()}
