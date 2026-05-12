@@ -2,12 +2,33 @@ import asyncio
 import os
 import random
 import argparse
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
+from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
 # Database URL from environment
 DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+def _app_tz() -> ZoneInfo:
+    name = (os.environ.get("APP_TIMEZONE") or "Asia/Karachi").strip()
+    try:
+        return ZoneInfo(name)
+    except Exception:
+        return ZoneInfo("UTC")
+
+
+def calendar_date_in_app_tz(utc_naive_now: datetime) -> date:
+    """Match Backend calendar_today_for_app (DB stores naive UTC)."""
+    tz = _app_tz()
+    return utc_naive_now.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz).date()
+
+
+def utc_naive_noon_for_calendar_day(d: date, tz: ZoneInfo) -> datetime:
+    """Noon on calendar day `d` in app TZ, stored as naive UTC (same convention as API)."""
+    noon_local = datetime.combine(d, time(12, 0), tzinfo=tz)
+    return noon_local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
 # --- DATA POOLS FOR RANDOM GENERATION ---
 MALE_NAMES = ["Ahmed Khan", "Muhammad Ali", "Usman Malik", "Hassan Raza", "Bilal Sheikh", "Tariq Mehmood", "Zubair Ahmed", "Faisal Nawaz", "Junaid Anwar", "Rizwan Saeed"]
@@ -43,7 +64,8 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
     do_lab = do_all or "labs" in data_types
     
     async with engine.begin() as conn:
-        today = datetime.utcnow().date()
+        tz = _app_tz()
+        today = calendar_date_in_app_tz(datetime.utcnow())
         
         # 1. Fetch reference data
         staff_res = await conn.execute(text("SELECT id FROM staff"))
@@ -73,7 +95,7 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
         # 2. Iterate through requested days
         for i in range(days_back, -1, -1):
             target_date = today - timedelta(days=i)
-            target_datetime = datetime.combine(target_date, time(12, 0)) # noon
+            target_datetime = utc_naive_noon_for_calendar_day(target_date, tz)
             
             print(f"\n--- Seeding data for {target_date} ---")
             now = datetime.utcnow()
@@ -228,7 +250,12 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                     pid = random.choice(new_patient_ids) if new_patient_ids and random.random() < 0.5 else random.choice(all_patients)
                     amount = round(random.uniform(2000, 50000), 2)
                     finance_amount += amount
-                    bill_status = random.choices(["paid", "pending"], weights=[70, 30])[0]
+                    finance_today = target_date == today
+                    bill_status = (
+                        "paid"
+                        if finance_today
+                        else random.choices(["paid", "pending"], weights=[70, 30])[0]
+                    )
                     
                     b_res = await conn.execute(text(
                         "INSERT INTO billings (patient_id, amount, status, date, description, created_at, updated_at) "

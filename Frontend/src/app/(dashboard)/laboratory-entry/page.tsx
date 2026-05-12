@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown, X } from "lucide-react";
 import { CompactMetricCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 
 const API_BASE = getApiBaseUrl();
 
@@ -32,7 +33,7 @@ interface LabEntry {
 }
 
 export default function LaboratoryEntryPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatLocalDateISO(new Date());
 
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/auth";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import { Users, TrendingUp, TrendingDown, AlertTriangle, CheckSquare, UserCheck, MessageSquareWarning } from "lucide-react";
 
 export default function StaffIntelligenceCard({ className = "" }: { className?: string }) {
@@ -19,10 +20,10 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
         const API_BASE = getApiBaseUrl();
         
         const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const todayStr = formatLocalDateISO(today);
         const y = new Date(today);
         y.setDate(today.getDate() - 1);
-        const yStr = y.toISOString().slice(0, 10);
+        const yStr = formatLocalDateISO(y);
 
         const [tH, yH, hosp] = await Promise.all([
           fetch(`${API_BASE}/api/hr-staff-overview?date=${todayStr}`, { headers }).then(r => r.json()),

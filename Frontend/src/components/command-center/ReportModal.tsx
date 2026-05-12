@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar } from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import { getAuthHeaders } from "@/lib/auth";
 
 const API_BASE = getApiBaseUrl();
@@ -49,10 +50,11 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
     setLoading(true);
     try {
       const headers = getAuthHeaders();
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const y = new Date();
+      const today = new Date();
+      const todayStr = formatLocalDateISO(today);
+      const y = new Date(today);
       y.setDate(y.getDate() - 1);
-      const yStr = y.toISOString().slice(0, 10);
+      const yStr = formatLocalDateISO(y);
 
       const [hosp, hospY, pharm, hr, fin, forecast] = await Promise.all([
         fetch(`${API_BASE}/api/hospital-overview?date=${todayStr}`, { headers }).then(r => r.json()),

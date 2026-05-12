@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import { getAuthHeaders } from "@/lib/auth";
 import { LayoutDashboard, TrendingUp, AlertTriangle, CheckCircle2, ChevronRight, AlertCircle } from "lucide-react";
 
@@ -154,10 +155,10 @@ export default function CoreHospitalKpisCard({ className = "" }: { className?: s
       try {
         const headers = getAuthHeaders();
         const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const todayStr = formatLocalDateISO(today);
         const y = new Date(today);
         y.setDate(today.getDate() - 1);
-        const yStr = y.toISOString().slice(0, 10);
+        const yStr = formatLocalDateISO(y);
 
         const [tO, yO, tH, yH] = await Promise.all([
           fetch(`${API_BASE}/api/hospital-overview?date=${todayStr}`, { headers }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),

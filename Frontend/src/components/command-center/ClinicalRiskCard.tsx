@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/auth";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import { Activity, ChevronRight, Bell, BarChart3, ClipboardList, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Bar, BarChart, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -20,10 +21,10 @@ export default function ClinicalRiskCard({ className = "" }: { className?: strin
         const API_BASE = getApiBaseUrl();
         
         const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const todayStr = formatLocalDateISO(today);
         const y = new Date(today);
         y.setDate(today.getDate() - 1);
-        const yStr = y.toISOString().slice(0, 10);
+        const yStr = formatLocalDateISO(y);
 
         const [alerts, hosp, hospY] = await Promise.all([
           fetch(`${API_BASE}/api/alerts-overview`, { headers }).then(r => r.json()),

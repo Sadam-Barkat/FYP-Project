@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Lightbulb, Check, Minus } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import ReportModal from "./ReportModal";
 
 interface Observation {
@@ -35,7 +36,7 @@ export default function ExecutiveSummaryCard() {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const yStr = yesterday.toISOString().split("T")[0];
+        const yStr = formatLocalDateISO(yesterday);
 
         const headers = getAuthHeaders();
         const API_BASE = getApiBaseUrl();

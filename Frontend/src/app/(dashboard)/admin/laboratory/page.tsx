@@ -20,6 +20,7 @@ import {
   Line,
 } from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 
 const API_BASE = getApiBaseUrl();
 
@@ -50,7 +51,7 @@ export default function LaboratoryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    formatLocalDateISO(new Date())
   );
 
   const fetchOverview = useCallback(async () => {

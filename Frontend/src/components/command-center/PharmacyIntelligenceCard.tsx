@@ -12,6 +12,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 import { getAuthHeaders } from "@/lib/auth";
 
 const API_BASE = getApiBaseUrl();
@@ -25,7 +26,7 @@ export default function PharmacyIntelligenceCard({ className = "" }: { className
     const fetchData = async () => {
       setLoading(true);
       try {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = formatLocalDateISO(new Date());
         const res = await fetch(`${API_BASE}/api/pharmacy-overview?date=${today}`, {
           headers: getAuthHeaders(),
         });

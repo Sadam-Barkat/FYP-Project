@@ -9,6 +9,7 @@ import {
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { formatLocalDateISO } from "@/lib/calendarDate";
 
 type StaffRow = {
   name: string;
@@ -45,7 +46,7 @@ export default function HRStaffPage() {
   const [overview, setOverview] = useState<HrStaffOverview | null>(null);
   const [chartData, setChartData] = useState<AttendancePoint[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
+    formatLocalDateISO(new Date())
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
