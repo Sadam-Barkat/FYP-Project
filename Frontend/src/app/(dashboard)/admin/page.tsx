@@ -2150,7 +2150,9 @@ export default function AdminDashboard() {
                     <>
                       {/* Stat 1: Today's Revenue */}
                       <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                        <div
+                          className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                        >
                           <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                             Revenue Breakdown
                           </p>
@@ -2217,7 +2219,9 @@ export default function AdminDashboard() {
 
                       {/* Stat 2: Outstanding Balance */}
                       <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                        <div
+                          className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                        >
                           <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                             Outstanding Detail
                           </p>
@@ -2292,7 +2296,9 @@ export default function AdminDashboard() {
 
                       {/* Stat 3: Net Profit */}
                       <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                        <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                        <div
+                          className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                        >
                           <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                             Net profit (today)
                           </p>
@@ -2327,7 +2333,9 @@ export default function AdminDashboard() {
 
                       {/* Stat 4: Today's Expenses */}
                       <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                        <div className="absolute left-full bottom-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                        <div
+                          className={`absolute left-full bottom-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                        >
                           <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                             Expense Ratio
                           </p>
@@ -2400,7 +2408,13 @@ export default function AdminDashboard() {
                           const exp = Number(payload.find((p) => p.dataKey === "expenses")?.value ?? 0);
                           const fmt = (v: number) => `₨${(v / 1000).toFixed(1)}k`;
                           return (
-                            <div className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-2.5 py-2">
+                            <div
+                              className={
+                                htmlIsDark
+                                  ? "rounded-xl border border-white/10 bg-[#0d1424] px-2.5 py-2 shadow-panel"
+                                  : "rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]"
+                              }
+                            >
                               <p className="text-[10px] text-tx-muted uppercase font-semibold">
                                 {label}
                               </p>
@@ -2636,7 +2650,9 @@ export default function AdminDashboard() {
                   <p className="text-[8px] text-tx-secondary mt-0.5">
                     {Number(bedsData.occupancy_percentage ?? 0).toFixed(1)}% occupied
                   </p>
-                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Capacity Detail
                     </p>
@@ -2673,7 +2689,9 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Ward Breakdown
                     </p>
@@ -2711,7 +2729,9 @@ export default function AdminDashboard() {
                       }}
                     />
                   </div>
-                  <div className="absolute left-full top-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Bed Status Breakdown
                     </p>
@@ -2753,7 +2773,9 @@ export default function AdminDashboard() {
                       {bedsData.critical_condition_cases ?? 0} critical
                     </p>
                   </div>
-                  <div className="absolute left-full bottom-0 z-[9999] ml-1 w-44 rounded-xl bg-[#0f1117] border border-[#3a4060] shadow-2xl p-2.5 hidden group-hover:block pointer-events-none">
+                  <div
+                    className={`absolute left-full bottom-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">
                       Emergency Detail
                     </p>
@@ -2830,7 +2852,11 @@ export default function AdminDashboard() {
                           );
                           return createPortal(
                             <div
-                              className="rounded-xl bg-[#0c1120] border border-white/10 shadow-panel px-3 py-2 transition-all duration-150 ease-out"
+                              className={
+                                htmlIsDark
+                                  ? "rounded-xl border border-white/10 bg-[#0d1424] px-3 py-2 shadow-panel transition-all duration-150 ease-out"
+                                  : "rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.1)] transition-all duration-150 ease-out"
+                              }
                               style={{
                                 position: "fixed",
                                 left,
@@ -3075,10 +3101,10 @@ export default function AdminDashboard() {
 
           {/* Body — 3 columns same as all other cards */}
           {staffData ? (
-            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-visible">
 
               {/* ── COLUMN 1: 4 KPI Stats with TOOLTIPS ── */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
 
                 {/* Stat 1: Staff On Duty */}
                 <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
@@ -3093,7 +3119,9 @@ export default function AdminDashboard() {
                     />
                   </div>
                   {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Staff Breakdown</p>
                     {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'present').slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">✓ {s.name} · {s.role}</p>
@@ -3118,7 +3146,9 @@ export default function AdminDashboard() {
                     />
                   </div>
                   {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Shift Coverage</p>
                     <p className="text-[10px] text-kpi-cyan">Morning shift: Active</p>
                     <p className="text-[10px] text-tx-secondary mt-0.5">Evening shift: Active</p>
@@ -3150,7 +3180,9 @@ export default function AdminDashboard() {
                     />
                   </div>
                   {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Absent Staff</p>
                     {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'absent').slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">✗ {s.name} · {s.department}</p>
@@ -3176,8 +3208,10 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((staffData.on_leave ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.on_leave ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  {/* TOOLTIP — opens upward on last row */}
+                  <div
+                    className={`absolute left-full bottom-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">On Leave</p>
                     {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'leave').slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {s.name} · {s.department}</p>
@@ -3192,13 +3226,39 @@ export default function AdminDashboard() {
 
               {/* ── COLUMN 2: ML Absenteeism Forecast + Attendance Trend ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
-                <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🤖 ML Absenteeism Forecast
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-green" />
+                <div className="flex items-center gap-1.5 shrink-0 mb-0.5">
+                  <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    🤖 ML Absenteeism Forecast
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-green" />
+                    </span>
+                  </p>
+                  <span className="relative group/staffmlinfo inline-flex items-center justify-center cursor-help">
+                    <svg
+                      className="w-3 h-3 text-tx-muted transition-colors group-hover/staffmlinfo:text-kpi-green"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span
+                      role="tooltip"
+                      className={
+                        htmlIsDark
+                          ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[210px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffmlinfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[210px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffmlinfo:opacity-100"
+                      }
+                    >
+                      Seven-day attendance trend (present, absent, on leave). Hover bars for counts per day.
+                    </span>
                   </span>
-                </p>
+                </div>
 
                 {/* Attendance trend 7-day bar chart */}
                 <div className="mt-2 h-[100px] shrink-0">
@@ -3229,9 +3289,33 @@ export default function AdminDashboard() {
                         }}
                       />
                       <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "10px" }}
-                        itemStyle={{ color: "#f8fafc" }}
+                      <RechartsTooltip
+                        cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const panel = htmlIsDark
+                            ? "rounded-lg border border-white/10 bg-[#0d1424] px-2.5 py-2 shadow-panel"
+                            : "rounded-lg border border-slate-200 bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
+                          const titleCls = htmlIsDark
+                            ? "text-[10px] font-semibold uppercase text-tx-muted"
+                            : "text-[10px] font-semibold uppercase text-slate-500";
+                          const rowCls = htmlIsDark
+                            ? "text-[10px] text-tx-secondary"
+                            : "text-[10px] text-slate-700";
+                          return (
+                            <div className={panel}>
+                              <p className={titleCls}>{String(label ?? "—")}</p>
+                              <div className="mt-1 space-y-0.5">
+                                {payload.map((entry: any) => (
+                                  <p key={String(entry.dataKey)} className={rowCls}>
+                                    <span style={{ color: entry.color }}>{entry.name}: </span>
+                                    <span className="font-semibold tabular-nums">{entry.value}</span>
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }}
                       />
                       <Bar dataKey="present" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Present" />
                       <Bar dataKey="absent" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Absent" />
@@ -3241,9 +3325,35 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Live staff status list */}
-                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
-                  Live Staff Status
-                </p>
+                <div className="mt-2 flex items-center gap-1.5 shrink-0">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
+                    Live Staff Status
+                  </p>
+                  <span className="relative group/staffliveinfo inline-flex items-center justify-center cursor-help">
+                    <svg
+                      className="w-3 h-3 text-tx-muted transition-colors group-hover/staffliveinfo:text-kpi-green"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span
+                      role="tooltip"
+                      className={
+                        htmlIsDark
+                          ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[200px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffliveinfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[200px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffliveinfo:opacity-100"
+                      }
+                    >
+                      Snapshot of roster status (present, absent, leave) for quick scanning.
+                    </span>
+                  </span>
+                </div>
                 <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1">
                   {(staffData.live_staff_status ?? []).slice(0, 4).map((s: any, i: number) => (
                     <div key={i} className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0">
@@ -3285,9 +3395,35 @@ export default function AdminDashboard() {
 
               {/* ── COLUMN 3: Suggestion Panel ── */}
               <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
-                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
-                  💡 Suggestion
-                </p>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider">
+                    💡 Suggestion
+                  </p>
+                  <span className="relative group/staffsuginfo inline-flex items-center justify-center cursor-help">
+                    <svg
+                      className="w-3 h-3 text-tx-muted transition-colors group-hover/staffsuginfo:text-tx-secondary"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span
+                      role="tooltip"
+                      className={
+                        htmlIsDark
+                          ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[220px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffsuginfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[220px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffsuginfo:opacity-100"
+                      }
+                    >
+                      Guidance from today&apos;s absence rate vs on-duty and on-leave counts. Risk bands: Low &lt;8%, Moderate 8–14%, High 15–24%, Critical ≥25%.
+                    </span>
+                  </span>
+                </div>
 
                 {(() => {
                   const absent = staffData.absent_today ?? 0;
