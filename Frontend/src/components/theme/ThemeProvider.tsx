@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 export type ThemeMode = "dark" | "light";
 
@@ -55,5 +63,25 @@ export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
   return ctx;
+}
+
+function subscribeHtmlClass(callback: () => void) {
+  const el = document.documentElement;
+  const obs = new MutationObserver(() => callback());
+  obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+  return () => obs.disconnect();
+}
+
+function getHtmlHasDarkClass(): boolean {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+}
+
+/**
+ * Tracks `class="dark"` on <html> (same signal Tailwind `dark:` uses).
+ * Prefer this for UI that must match the visible theme on first paint
+ * (React theme state may lag one frame behind localStorage / blocking script).
+ */
+export function useHtmlDarkClass(): boolean {
+  return useSyncExternalStore(subscribeHtmlClass, getHtmlHasDarkClass, () => true);
 }
 
