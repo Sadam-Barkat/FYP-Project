@@ -35,6 +35,7 @@ from app.api.routers import (
     analytics_forecasts,
     export_pdf,
     ops_copilot,
+    data_entry,
 )
 
 
@@ -182,6 +183,7 @@ app.include_router(alerts_overview.router)
 app.include_router(analytics_forecasts.router)
 app.include_router(export_pdf.router)
 app.include_router(ops_copilot.router)
+app.include_router(data_entry.router)
 
 
 @app.websocket("/ws")

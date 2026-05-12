@@ -7,6 +7,7 @@ import {
   useRealtimeEvent,
 } from "@/hooks/useRealtimeEvent";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthHeaders } from "@/lib/auth";
 
 const STAFF_PER_PAGE = 8;
 const PATIENTS_PER_PAGE = 8;
@@ -466,7 +467,7 @@ function EditStaffModal({
 }
 
 export default function StaffAndPatientsPage() {
-  const [activeTab, setActiveTab] = useState<"staff" | "patients">("staff");
+  const [activeTab, setActiveTab] = useState<"staff" | "patients" | "data_entry">("staff");
 
   return (
     <div
@@ -509,10 +510,22 @@ export default function StaffAndPatientsPage() {
         >
           Patients
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("data_entry")}
+          className={`shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors sm:px-6 ${
+            activeTab === "data_entry"
+              ? "border-brand-blue text-text-bright"
+              : "border-transparent text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          Data Entry
+        </button>
       </div>
 
       {activeTab === "staff" && <StaffTab />}
       {activeTab === "patients" && <PatientsTab />}
+      {activeTab === "data_entry" && <DataEntryTab />}
     </div>
   );
 }
@@ -1271,6 +1284,133 @@ function PatientsTab() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function DataEntryTab() {
+  const [daysBack, setDaysBack] = useState<number>(0);
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [overallLoading, setOverallLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const handleSeedDaily = async () => {
+    try {
+      setDailyLoading(true);
+      setMessage(null);
+      const res = await fetch(`${API_BASE}/api/data-entry/seed-daily`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ days_back: daysBack }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to generate daily data");
+      setMessage({ text: data.message, type: "success" });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : "Unknown error", type: "error" });
+    } finally {
+      setDailyLoading(false);
+    }
+  };
+
+  const handleSeedOverall = async () => {
+    if (!window.confirm("WARNING: This will completely wipe the database and regenerate all dummy data from scratch. This action cannot be undone. Are you sure you want to proceed?")) {
+      return;
+    }
+    
+    try {
+      setOverallLoading(true);
+      setMessage(null);
+      const res = await fetch(`${API_BASE}/api/data-entry/seed-overall`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to generate overall data");
+      setMessage({ text: data.message, type: "success" });
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : "Unknown error", type: "error" });
+    } finally {
+      setOverallLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {message && (
+        <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 ${message.type === 'success' ? 'bg-status-success/10 text-status-success border border-status-success/20' : 'bg-status-danger/10 text-status-danger border border-status-danger/20'}`}>
+          {message.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0" /> : <AlertTriangle className="w-5 h-5 shrink-0" />}
+          <span className="whitespace-pre-wrap">{message.text}</span>
+        </div>
+      )}
+
+      {/* Daily Data Generator */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] dark:bg-panel dark:border-white/[0.06] dark:shadow-panel">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center">
+            <UserPlus size={20} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-text-primary">Generate Daily Data</h3>
+            <p className="text-sm text-text-secondary">Add attendance, shifts, and financial transactions for the past N days.</p>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1 w-full">
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              Days Back (0 = Today Only)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="30"
+              value={daysBack}
+              onChange={(e) => setDaysBack(parseInt(e.target.value) || 0)}
+              className="w-full bg-base-surface border border-base-border text-text-primary rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-blue/50"
+              placeholder="e.g. 0, 1, 6"
+            />
+          </div>
+          <button
+            onClick={handleSeedDaily}
+            disabled={dailyLoading || overallLoading}
+            className="w-full sm:w-auto px-6 py-2.5 bg-brand-blue text-white font-medium rounded-xl hover:bg-brand-indigo transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+          >
+            {dailyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generate"}
+          </button>
+        </div>
+      </div>
+
+      {/* Complete Data Reset */}
+      <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] dark:bg-panel dark:border-red-900/30 dark:shadow-panel">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-status-danger/10 text-status-danger flex items-center justify-center">
+            <AlertTriangle size={20} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-status-danger">Complete Database Reset</h3>
+            <p className="text-sm text-text-secondary">Wipe all existing data and regenerate hospital records, patients, and staff from scratch.</p>
+          </div>
+        </div>
+        
+        <div className="mt-6">
+          <button
+            onClick={handleSeedOverall}
+            disabled={dailyLoading || overallLoading}
+            className="px-6 py-2.5 bg-status-danger text-white font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {overallLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Factory Reset & Regenerate Data"}
+          </button>
+          <p className="mt-3 text-xs text-status-danger/80 italic">
+            Warning: This action will completely delete all existing data in the database.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

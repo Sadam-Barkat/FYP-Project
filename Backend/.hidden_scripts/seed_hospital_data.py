@@ -227,8 +227,9 @@ async def seed_login_users(session: AsyncSession) -> None:
     Seed minimal login users required for the app:
     - Exactly one admin
     - Lab + reception accounts (stored as nurse role; frontend routes by email)
+    - Finance account
     """
-    print("🔐 Seeding login users (admin, lab, reception)...")
+    print("🔐 Seeding login users (admin, lab, reception, finance)...")
 
     users = [
         # (email, role, first, last)
@@ -237,6 +238,7 @@ async def seed_login_users(session: AsyncSession) -> None:
         # The frontend routes by email for these two accounts.
         ("lab@hospital.com", "nurse", "Laboratorian", "User"),
         ("reception@hospital.com", "nurse", "Receptionist", "User"),
+        ("finance@hospital.com", "finance", "Finance", "User"),
     ]
 
     for email, role, first, last in users:
@@ -297,8 +299,26 @@ async def seed_login_users(session: AsyncSession) -> None:
             "u": NOW,
         },
     )
+    await session.execute(
+        text(
+            "INSERT INTO staff (name, role, department, shift_start, shift_end, age, phone, address, created_at, updated_at) "
+            "VALUES (:n, :r, :d, :ss, :se, :a, :p, :addr, :c, :u)"
+        ),
+        {
+            "n": "Finance Staff",
+            "r": "Finance",
+            "d": "Administration",
+            "ss": "08:00",
+            "se": "16:00",
+            "a": 35,
+            "p": "03009876543",
+            "addr": "Finance Dept",
+            "c": NOW,
+            "u": NOW,
+        },
+    )
     await session.commit()
-    print("✅ Staff profiles created for lab + reception.")
+    print("✅ Staff profiles created for lab + reception + finance.")
 
 async def seed_departments(session: AsyncSession) -> List[int]:
     print("🏥 Seeding departments...")

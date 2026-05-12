@@ -516,17 +516,23 @@ function formatKpiDisplay(
   if (!data) return "—";
   const raw = data[valueKey];
   if (raw === null || raw === undefined) return "—";
-  if (kind === "currency") {
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return "—";
-    return `$${n.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    })}`;
-  }
   const n = Number(raw);
   if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString();
+
+  let formatted = "";
+  if (n >= 1_000_000) {
+    formatted = (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  } else if (n >= 1_000) {
+    formatted = (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  } else {
+    if (kind === "currency") {
+      formatted = n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    } else {
+      formatted = n.toLocaleString();
+    }
+  }
+
+  return kind === "currency" ? `$${formatted}` : formatted;
 }
 
 function trendTextClass(trend: string | null | undefined): string {
