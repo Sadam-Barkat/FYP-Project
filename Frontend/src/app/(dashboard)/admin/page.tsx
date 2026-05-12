@@ -180,11 +180,14 @@ function patientIntelRosterTablePayload(
       return n >= 5 || lab === "high" || lab === "critical";
     });
   } else if (filter === "ml_deterioration_24h") {
+    const fullHigh =
+      intel.ml_forecast_high_risk_24h && intel.ml_forecast_high_risk_24h.length > 0
+        ? intel.ml_forecast_high_risk_24h
+        : (intel.ml_forecast ?? []).filter((p) =>
+            ["high", "critical"].includes(String(p.risk_label ?? "").toLowerCase()),
+          );
     const ids = new Set(
-      (intel.ml_forecast ?? [])
-        .filter((p) => ["high", "critical"].includes(String(p.risk_label ?? "").toLowerCase()))
-        .map((p) => Number(p.patient_id))
-        .filter((id) => Number.isFinite(id) && id > 0),
+      fullHigh.map((p) => Number(p.patient_id)).filter((id) => Number.isFinite(id) && id > 0),
     );
     rows = roster.filter((r) => ids.has(Number(r.patient_id)));
   }
@@ -830,6 +833,14 @@ export type PatientIntelResponse = {
     risk_label: string;
   }>;
   ml_high_risk_24h_count?: number;
+  /** All inpatients at/above ML "high" threshold (matches `ml_high_risk_24h_count`). */
+  ml_forecast_high_risk_24h?: Array<{
+    patient_id: number;
+    name: string;
+    risk_prob: number;
+    risk_pct: number;
+    risk_label: string;
+  }>;
   ml_risk_summary?: Array<{
     patient_id: number;
     name: string;
