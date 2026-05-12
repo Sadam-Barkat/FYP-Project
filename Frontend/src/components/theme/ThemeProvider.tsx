@@ -66,6 +66,7 @@ export function useTheme() {
 }
 
 function subscribeHtmlClass(callback: () => void) {
+  if (typeof document === "undefined") return () => {};
   const el = document.documentElement;
   const obs = new MutationObserver(() => callback());
   obs.observe(el, { attributes: true, attributeFilter: ["class"] });
@@ -82,6 +83,7 @@ function getHtmlHasDarkClass(): boolean {
  * (React theme state may lag one frame behind localStorage / blocking script).
  */
 export function useHtmlDarkClass(): boolean {
-  return useSyncExternalStore(subscribeHtmlClass, getHtmlHasDarkClass, () => true);
+  // getServerSnapshot must match getSnapshot when `document` is undefined (SSR), or hydration/tooltip chrome can stay wrong.
+  return useSyncExternalStore(subscribeHtmlClass, getHtmlHasDarkClass, getHtmlHasDarkClass);
 }
 
