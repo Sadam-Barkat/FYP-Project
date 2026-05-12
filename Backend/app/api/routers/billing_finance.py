@@ -47,9 +47,9 @@ async def compute_billing_finance_overview(
 ) -> Dict[str, Any]:
     """
     Core metrics for Billing & Finance (used by HTTP route and PDF export).
-    Today's revenue uses payment transactions (transactions.amount_paid) on the
-    selected calendar day in APP_TIMEZONE — not Billing.date, which often reflects
-    admission/charge dates from seeded data.
+    Today's revenue is **collected** revenue only: sum of ``Transaction.amount_paid``
+    on the selected calendar day in APP_TIMEZONE. Pending billings do not count
+    until payment is recorded (mark paid or charge created with mark_paid_now).
     """
     now = utc_naive_now()
     tz = get_app_timezone()
@@ -322,20 +322,32 @@ async def create_billing_charge(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_finance_or_admin),
 ) -> Dict[str, Any]:
-    """Finance-only: add a pending charge line (revenue dashboards update only after mark-paid)."""
+    """Finance-only: add a billing line. Pending until paid unless mark_paid_now (creates payment transaction)."""
     p = await db.execute(select(Patient.id).where(Patient.id == body.patient_id))
     if p.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Patient not found")
 
+    now_ts = datetime.utcnow()
+    paid_now = bool(body.mark_paid_now)
     row = Billing(
         patient_id=body.patient_id,
         amount=float(body.amount),
         description=body.description.strip(),
-        status=BillingStatus.pending,
-        date=datetime.utcnow(),
+        status=BillingStatus.paid if paid_now else BillingStatus.pending,
+        date=now_ts,
     )
     db.add(row)
     await db.flush()
+
+    if paid_now:
+        db.add(
+            Transaction(
+                billing_id=row.id,
+                payment_method=(body.payment_method or "cash").strip() or "cash",
+                amount_paid=float(row.amount),
+                transaction_date=now_ts,
+            )
+        )
 
     if body.signal_ids:
         await db.execute(

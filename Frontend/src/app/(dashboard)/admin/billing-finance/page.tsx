@@ -50,6 +50,7 @@ export default function BillingFinancePage() {
   const [chargeDescription, setChargeDescription] = useState("");
   const [chargeSignalIds, setChargeSignalIds] = useState<number[]>([]);
   const [chargeSubmitting, setChargeSubmitting] = useState(false);
+  const [recordPaidNow, setRecordPaidNow] = useState(true);
   const [markingPaidId, setMarkingPaidId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [userDisplayName, setUserDisplayName] = useState<string>("");
@@ -177,6 +178,8 @@ export default function BillingFinancePage() {
           amount: amt,
           description: chargeDescription.trim(),
           signal_ids: chargeSignalIds.length ? chargeSignalIds : null,
+          mark_paid_now: recordPaidNow,
+          payment_method: paymentMethod.trim() || "cash",
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -307,7 +310,13 @@ export default function BillingFinancePage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 dark:bg-gray-800 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Add charge (pending until paid)</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Add charge</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            Dashboard revenue for <strong className="font-medium text-gray-700 dark:text-gray-300">today</strong> only includes{" "}
+            <strong className="font-medium text-gray-700 dark:text-gray-300">paid</strong> amounts (payment transactions). If the patient has already paid, keep{" "}
+            <span className="font-medium">Payment received</span> checked so the charge is stored as paid and shows on the dashboard; uncheck to save as pending and use{" "}
+            <span className="font-medium">Mark paid</span> in the table below when money arrives.
+          </p>
           <form onSubmit={submitCharge} className="space-y-3 text-sm">
             <div ref={searchWrapRef} className="relative">
               <label className="block text-gray-600 dark:text-gray-400 mb-1">Patient (search by name)</label>
@@ -394,12 +403,36 @@ export default function BillingFinancePage() {
                 required
               />
             </div>
+            <label className="flex items-start gap-2.5 cursor-pointer rounded-md border border-gray-100 bg-gray-50/80 px-3 py-2.5 dark:border-gray-600 dark:bg-gray-900/50">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                checked={recordPaidNow}
+                onChange={(e) => setRecordPaidNow(e.target.checked)}
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-200 leading-snug">
+                <span className="font-medium text-gray-900 dark:text-gray-100">Payment received</span> — save as{" "}
+                <span className="font-medium">paid</span> now (creates the payment record for dashboard revenue).
+              </span>
+            </label>
+            {recordPaidNow ? (
+              <div>
+                <label className="block text-gray-600 dark:text-gray-400 mb-1">Payment method (this charge)</label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-200 rounded-md px-3 py-2 dark:bg-gray-900 dark:border-gray-600"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  placeholder="cash / card / bank_transfer …"
+                />
+              </div>
+            ) : null}
             <button
               type="submit"
               disabled={chargeSubmitting || !selectedPatient}
               className="w-full bg-btn-primary text-white py-2 rounded-md font-medium shadow-btn hover:shadow-glow-blue hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-60"
             >
-              {chargeSubmitting ? "Saving…" : "Create pending charge"}
+              {chargeSubmitting ? "Saving…" : recordPaidNow ? "Create charge (paid)" : "Create pending charge"}
             </button>
           </form>
         </div>
