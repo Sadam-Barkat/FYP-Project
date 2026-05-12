@@ -934,6 +934,9 @@ export default function AdminDashboard() {
   const [bedsData, setBedsData] = useState<any>(null);
   const [bedsLoading, setBedsLoading] = useState(true);
   const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
+  const [expandedBedsCard, setExpandedBedsCard] = useState<
+    "capacity" | "occupied" | "free" | "emergency" | null
+  >(null);
   const bedForecastChartRef = useRef<HTMLDivElement | null>(null);
 
   const [staffData, setStaffData] = useState<any>(null);
@@ -2752,11 +2755,16 @@ export default function AdminDashboard() {
           ) : null}
 
           {bedsData ? (
+            <>
             <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-visible">
-              {/* ── COLUMN 1: 4 KPI Stats ── */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+              {/* ── COLUMN 1: 4 KPI Stats (above chart hit-area — middle column uses negative chart margin) ── */}
+              <div className="relative z-[60] isolate min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* Stat 1: Total Capacity */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <button
+                  type="button"
+                  className="relative group flex w-full min-h-0 flex-col justify-center border-0 bg-transparent px-3 py-1.5 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-blue/35"
+                  onClick={() => setExpandedBedsCard("capacity")}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Total Capacity
                   </p>
@@ -2788,10 +2796,14 @@ export default function AdminDashboard() {
                       Available: {bedsData.available_beds ?? 0}
                     </p>
                   </div>
-                </div>
+                </button>
 
                 {/* Stat 2: Occupied Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <button
+                  type="button"
+                  className="relative group flex w-full min-h-0 flex-col justify-center border-0 bg-transparent px-3 py-1.5 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-blue/35"
+                  onClick={() => setExpandedBedsCard("occupied")}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Occupied
                   </p>
@@ -2828,10 +2840,14 @@ export default function AdminDashboard() {
                         </p>
                       ))}
                   </div>
-                </div>
+                </button>
 
                 {/* Stat 3: Free Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <button
+                  type="button"
+                  className="relative group flex w-full min-h-0 flex-col justify-center border-0 bg-transparent px-3 py-1.5 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-blue/35"
+                  onClick={() => setExpandedBedsCard("free")}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Free Beds
                   </p>
@@ -2873,10 +2889,14 @@ export default function AdminDashboard() {
                       based on admission trend
                     </p>
                   </div>
-                </div>
+                </button>
 
                 {/* Stat 4: Emergency Cases */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <button
+                  type="button"
+                  className="relative group flex w-full min-h-0 flex-col justify-center border-0 bg-transparent px-3 py-1.5 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-blue/35"
+                  onClick={() => setExpandedBedsCard("emergency")}
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="text-kpi-red text-[10px]">🚨</span>
                     <p className="text-kpi-red text-[9px] font-semibold uppercase tracking-wider">
@@ -2911,11 +2931,11 @@ export default function AdminDashboard() {
                       Needs immediate bed planning
                     </p>
                   </div>
-                </div>
+                </button>
               </div>
 
               {/* ── COLUMN 2: Department Occupancy + Trend Chart ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden relative z-50">
+              <div className="flex flex-col px-4 py-3 overflow-hidden relative z-10 min-h-0">
                 <p className="text-kpi-blue text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
                   🏥 Forecasted Admissions (ML · Next 7 Days)
                   <span className="relative flex h-1.5 w-1.5">
@@ -3177,6 +3197,73 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
+
+            {bedsData && typeof document !== "undefined"
+              ? createPortal(
+                  (() => {
+                    const fc = (bedsData.ml_next_7_days_forecast ?? []) as any[];
+                    const cap = Number(bedsData.total_capacity ?? 0);
+                    const occ = Number(bedsData.occupied_beds ?? 0);
+                    const free = Number(bedsData.available_beds ?? 0);
+                    const emerg = Number(bedsData.emergency_cases ?? 0);
+                    const occHist = fc.map((d) => Number(d.estimated_occupied_beds ?? 0));
+                    const freeHist = fc.map((d) =>
+                      Math.max(0, cap - Number(d.estimated_occupied_beds ?? 0))
+                    );
+                    const histOk = (h: number[]) => h.length >= 4;
+                    return (
+                      <>
+                        <PatientStatModal
+                          open={expandedBedsCard === "capacity"}
+                          onClose={() => setExpandedBedsCard(null)}
+                          title="Total Capacity"
+                          unit=""
+                          accentHex="#3b82f6"
+                          pack={derivePrediction(cap, undefined, undefined)}
+                          helperText="Licensed bed inventory for the facility. Compare census and ML admission outlook; sustained compression signals surge beds, cohorting, or diversion discussions."
+                        />
+                        <PatientStatModal
+                          open={expandedBedsCard === "occupied"}
+                          onClose={() => setExpandedBedsCard(null)}
+                          title="Occupied Beds"
+                          unit=""
+                          accentHex="#ef4444"
+                          pack={derivePrediction(
+                            occ,
+                            histOk(occHist) ? occHist : undefined,
+                            undefined
+                          )}
+                          helperText="Currently filled beds. When trending up with ML admissions, begin earlier discharge planning and theater or ICU coordination to decompress wards."
+                        />
+                        <PatientStatModal
+                          open={expandedBedsCard === "free"}
+                          onClose={() => setExpandedBedsCard(null)}
+                          title="Free Beds"
+                          unit=""
+                          accentHex="#22c55e"
+                          pack={derivePrediction(
+                            free,
+                            histOk(freeHist) ? freeHist : undefined,
+                            undefined
+                          )}
+                          helperText="Assignable slack capacity. A shrinking cushion with rising ED volume should trigger escalation per your surge and transfer policies."
+                        />
+                        <PatientStatModal
+                          open={expandedBedsCard === "emergency"}
+                          onClose={() => setExpandedBedsCard(null)}
+                          title="Emergency Cases"
+                          unit=""
+                          accentHex="#dc2626"
+                          pack={derivePrediction(emerg, undefined, undefined)}
+                          helperText="Emergency census snapshot. Pair spikes with critical-condition counts and free-bed trajectory to prioritize intake and specialty callbacks."
+                        />
+                      </>
+                    );
+                  })(),
+                  document.body
+                )
+              : null}
+            </>
           ) : null}
         </div>
       </div>
