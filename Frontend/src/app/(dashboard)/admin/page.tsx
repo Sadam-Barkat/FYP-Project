@@ -33,14 +33,14 @@ const cardBase =
 /** Hover panels: branch on <html class="dark"> so chrome matches Tailwind + blocking script. */
 function patientIntelHoverPanelCls(htmlIsDark: boolean): string {
   if (!htmlIsDark) {
-    return "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
+    return "rounded-xl border border-slate-200 !bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
   }
   return "rounded-xl border border-white/10 bg-[#0d1424] p-2.5 shadow-panel";
 }
 
 function pharmacyIntelStatHoverPanelCls(htmlIsDark: boolean): string {
   if (!htmlIsDark) {
-    return "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.1)]";
+    return "rounded-xl border border-slate-200 !bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.1)]";
   }
   return "rounded-xl border border-white/15 bg-[#0d1424] p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.7)]";
 }
@@ -1227,7 +1227,7 @@ export default function AdminDashboard() {
                   className={
                     htmlIsDark
                       ? "-mt-px w-full rounded-2xl border border-base-border bg-base-card px-3 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
-                      : "-mt-px w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)]"
+                      : "-mt-px w-full rounded-2xl border border-slate-200 !bg-white px-3 py-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)]"
                   }
                 >
                   <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-text-secondary">
@@ -1876,7 +1876,7 @@ export default function AdminDashboard() {
                       className={
                         htmlIsDark
                           ? "pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-200 group-hover/info:opacity-100"
-                          : "pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-200 group-hover/info:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-200 group-hover/info:opacity-100"
                       }
                     >
                       Predicted out-of-stock risk per medicine in the next 7 days.
@@ -2412,7 +2412,7 @@ export default function AdminDashboard() {
                               className={
                                 htmlIsDark
                                   ? "rounded-xl border border-white/10 bg-[#0d1424] px-2.5 py-2 shadow-panel"
-                                  : "rounded-xl border border-slate-200 bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]"
+                                  : "rounded-xl border border-slate-200 !bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]"
                               }
                             >
                               <p className="text-[10px] text-tx-muted uppercase font-semibold">
@@ -2855,7 +2855,7 @@ export default function AdminDashboard() {
                               className={
                                 htmlIsDark
                                   ? "rounded-xl border border-white/10 bg-[#0d1424] px-3 py-2 shadow-panel transition-all duration-150 ease-out"
-                                  : "rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.1)] transition-all duration-150 ease-out"
+                                  : "rounded-xl border border-slate-200 !bg-white px-3 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.1)] transition-all duration-150 ease-out"
                               }
                               style={{
                                 position: "fixed",
@@ -3252,7 +3252,7 @@ export default function AdminDashboard() {
                       className={
                         htmlIsDark
                           ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[210px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffmlinfo:opacity-100"
-                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[210px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffmlinfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[210px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffmlinfo:opacity-100"
                       }
                     >
                       Seven-day attendance trend (present, absent, on leave). Hover bars for counts per day.
@@ -3295,7 +3295,7 @@ export default function AdminDashboard() {
                           if (!active || !payload?.length) return null;
                           const panel = htmlIsDark
                             ? "rounded-lg border border-white/10 bg-[#0d1424] px-2.5 py-2 shadow-panel"
-                            : "rounded-lg border border-slate-200 bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
+                            : "rounded-lg border border-slate-200 !bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
                           const titleCls = htmlIsDark
                             ? "text-[10px] font-semibold uppercase text-tx-muted"
                             : "text-[10px] font-semibold uppercase text-slate-500";
@@ -3347,7 +3347,7 @@ export default function AdminDashboard() {
                       className={
                         htmlIsDark
                           ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[200px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffliveinfo:opacity-100"
-                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[200px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffliveinfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[200px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffliveinfo:opacity-100"
                       }
                     >
                       Snapshot of roster status (present, absent, leave) for quick scanning.
@@ -3436,7 +3436,7 @@ export default function AdminDashboard() {
                       className={
                         htmlIsDark
                           ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[220px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffsuginfo:opacity-100"
-                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[220px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffsuginfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1 w-[220px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/staffsuginfo:opacity-100"
                       }
                     >
                       Guidance from today&apos;s absence rate vs on-duty and on-leave counts. Risk bands: Low &lt;8%, Moderate 8–14%, High 15–24%, Critical ≥25%.
