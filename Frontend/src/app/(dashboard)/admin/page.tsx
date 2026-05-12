@@ -143,6 +143,7 @@ function PatientStatModal({
   unit,
   accentHex,
   pack,
+  helperText,
 }: {
   open: boolean;
   onClose: () => void;
@@ -150,8 +151,12 @@ function PatientStatModal({
   unit: string;
   accentHex: string;
   pack: PredictionPack;
+  /** Overrides pack.explanation in the decision insight panel (Pharmacy-style richer copy). */
+  helperText?: string;
 }) {
   if (!open) return null;
+
+  const decisionInsight = helperText ?? pack.explanation;
 
   const combined = [
     ...pack.trend.map((v, i) => ({
@@ -305,7 +310,7 @@ function PatientStatModal({
             <p className="text-[10px] font-bold uppercase tracking-widest text-kpi-orange">
               Decision insight
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-tx-primary">{pack.explanation}</p>
+            <p className="mt-2 text-sm leading-relaxed text-tx-primary">{decisionInsight}</p>
           </div>
         </div>
       </div>
@@ -338,10 +343,8 @@ function PharmacyStatModal({
       title={title}
       unit={unit}
       accentHex={accentHex}
-      pack={{
-        ...pack,
-        explanation: helperText || pack.explanation,
-      }}
+      pack={pack}
+      helperText={helperText}
     />
   );
 }
@@ -907,7 +910,7 @@ export default function AdminDashboard() {
   const [intelLastFetch, setIntelLastFetch] = useState<Date | null>(null);
   const [intelClock, setIntelClock] = useState(0);
   const [expandedIntelCard, setExpandedIntelCard] = useState<
-    "patients" | "vitals" | "critical" | null
+    "patients" | "vitals" | "critical" | "at_risk" | null
   >(null);
 
   const [pharmacyData, setPharmacyData] = useState<PharmacyIntelResponse | null>(
@@ -1288,7 +1291,10 @@ export default function AdminDashboard() {
               {/* LEFT: KPI STACK */}
               <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* TOTAL PATIENTS */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  onClick={() => setExpandedIntelCard("patients")}
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1330,7 +1336,10 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* VITALS HEALTH */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  onClick={() => setExpandedIntelCard("vitals")}
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1369,7 +1378,10 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* CRITICAL VITALS */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  onClick={() => setExpandedIntelCard("critical")}
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1421,7 +1433,10 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* AT RISK */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  onClick={() => setExpandedIntelCard("at_risk")}
+                >
                   <div
                     className={`absolute left-full bottom-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1576,6 +1591,7 @@ export default function AdminDashboard() {
                 unit=""
                 accentHex="#3b82f6"
                 pack={derivePrediction(intelData.total_patients, undefined, undefined)}
+                helperText="Tracks active census; increases usually reflect admissions and transfers in, decreases reflect discharges and transfers out. Use with bed capacity when the trend rises."
               />
               <PatientStatModal
                 open={expandedIntelCard === "vitals"}
@@ -1588,6 +1604,7 @@ export default function AdminDashboard() {
                   undefined,
                   undefined
                 )}
+                helperText="Share of patients whose latest vitals are in a healthy range. Drops may signal higher acuity, workload, or documentation gaps—validate with ward audits."
               />
               <PatientStatModal
                 open={expandedIntelCard === "critical"}
@@ -1601,6 +1618,19 @@ export default function AdminDashboard() {
                   parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction))
                     .summary || undefined
                 )}
+                helperText={
+                  parseAiForecast(coerceAiPredictionToText(intelData.ai_prediction)).summary ||
+                  "Share of patients in critical vitals ranges. When this rises, tighten monitoring, escalate per protocol, and review high-acuity cohorts."
+                }
+              />
+              <PatientStatModal
+                open={expandedIntelCard === "at_risk"}
+                onClose={() => setExpandedIntelCard(null)}
+                title="At Risk"
+                unit=""
+                accentHex="#eab308"
+                pack={derivePrediction(intelData.at_risk_count, undefined, undefined)}
+                helperText="ML-weighted at-risk count and 24h deterioration outlook. Prioritize proactive rounding, nurse-led checks, and rapid-response readiness when elevated."
               />
             </>
           ) : null}
