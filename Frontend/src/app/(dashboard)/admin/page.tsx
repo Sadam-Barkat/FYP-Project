@@ -1291,7 +1291,7 @@ const KPI_CARD_DEFS = [
     iconWrap:
       "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-red-600 dark:bg-kpi-red/20 dark:border-kpi-red/30 dark:text-kpi-red",
     kind: "int" as const,
-    chart: "bar" as const,
+    chart: "area" as const,
     stroke: "#ef4444",
     gradId: "red",
   },
@@ -1593,50 +1593,31 @@ export default function AdminDashboard() {
               </div>
               </div>
 
-              <div
-                className={`absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none ${
-                  k.label === "Critical Patients" ? "pb-[3px]" : ""
-                }`}
-              >
+              <div className="absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none">
                 <ResponsiveContainer width="100%" height="100%">
-                  {k.chart === "bar" ? (
-                    <BarChart
-                      data={sparkData}
-                      margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
-                      barSize={6}
-                    >
-                      <Bar
-                        dataKey="v"
-                        fill="#ef4444"
-                        radius={[2, 2, 0, 0]}
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  ) : (
-                    <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient
-                          id={`grad-${k.gradId}`}
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop offset="5%" stopColor={k.stroke} stopOpacity={0.25} />
-                          <stop offset="95%" stopColor={k.stroke} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <Area
-                        type="monotone"
-                        dataKey="v"
-                        stroke={k.stroke}
-                        strokeWidth={1.5}
-                        fill={`url(#grad-${k.gradId})`}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                    </AreaChart>
-                  )}
+                  <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient
+                        id={`grad-${k.gradId}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop offset="5%" stopColor={k.stroke} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={k.stroke} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area
+                      type="monotone"
+                      dataKey="v"
+                      stroke={k.stroke}
+                      strokeWidth={1.5}
+                      fill={`url(#grad-${k.gradId})`}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
 
