@@ -3208,7 +3208,26 @@ export default function AdminDashboard() {
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
-                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 8, fill: "#64748b" }} 
+                        axisLine={false} 
+                        tickLine={false} 
+                        interval={0}
+                        minTickGap={0}
+                        tickMargin={8}
+                        angle={-35}
+                        textAnchor="end"
+                        height={28}
+                        tickFormatter={(v) => {
+                          try {
+                            const s = String(v || "");
+                            return s.length >= 10 ? s.slice(5) : (s || "—");
+                          } catch {
+                            return v as any;
+                          }
+                        }}
+                      />
                       <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
                       <RechartsTooltip 
                         contentStyle={{ backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "10px" }}
