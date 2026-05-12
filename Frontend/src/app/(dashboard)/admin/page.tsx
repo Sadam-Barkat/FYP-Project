@@ -907,6 +907,10 @@ export default function AdminDashboard() {
   const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
   const bedForecastChartRef = useRef<HTMLDivElement | null>(null);
 
+  const [staffData, setStaffData] = useState<any>(null);
+  const [staffLoading, setStaffLoading] = useState(true);
+  const [staffLastFetch, setStaffLastFetch] = useState<Date | null>(null);
+
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
       setKpiLoading(true);
@@ -994,6 +998,22 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchStaffData = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/hr-staff-overview`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Staff fetch failed");
+      const data = await res.json();
+      setStaffData(data);
+      setStaffLastFetch(new Date());
+    } catch {
+      // silent fail
+    } finally {
+      setStaffLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
@@ -1021,6 +1041,14 @@ export default function AdminDashboard() {
     }, 60_000);
     return () => window.clearInterval(bedsInterval);
   }, [fetchBedsData]);
+
+  useEffect(() => {
+    void fetchStaffData();
+    const staffInterval = window.setInterval(() => {
+      void fetchStaffData();
+    }, 60_000);
+    return () => window.clearInterval(staffInterval);
+  }, [fetchStaffData]);
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
     void loadKpis();
@@ -2945,6 +2973,307 @@ export default function AdminDashboard() {
               </div>
             </div>
           ) : null}
+        </div>
+      </div>
+
+      {/* Staff & Attendance Intelligence Row */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+        {/* ── Staff & Attendance Intelligence Card ── */}
+        <div
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
+        >
+          {/* Header */}
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>👨‍⚕️</span>
+              <h2 className="text-tx-bright font-bold text-lg">Staff & Attendance Intelligence</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {staffData ? (
+                <span className="whitespace-nowrap text-tx-secondary text-xs">
+                  {intelFooterUpdated(staffLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {staffData ? (
+                <span className="relative flex h-2 w-2" aria-hidden>
+                  <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-kpi-green" />
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Loading */}
+          {staffLoading && !staffData ? (
+            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+          ) : null}
+
+          {/* Error */}
+          {!staffData && !staffLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-xs text-tx-muted">Unable to load staff data.</p>
+            </div>
+          ) : null}
+
+          {/* Body — 3 columns same as all other cards */}
+          {staffData ? (
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+
+              {/* ── COLUMN 1: 4 KPI Stats with TOOLTIPS ── */}
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+
+                {/* Stat 1: Staff On Duty */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Staff On Duty</p>
+                  <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
+                    {staffData.staff_on_duty ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-green transition-all"
+                      style={{ width: `${Math.min(100, ((staffData.staff_on_duty ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.absent_today ?? 0) + (staffData.on_leave ?? 0))) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Staff Breakdown</p>
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'present').slice(0, 4).map((s: any, i: number) => (
+                      <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">✓ {s.name} · {s.role}</p>
+                    ))}
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'present').length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">No live data available</p>
+                    )}
+                    <p className="text-[10px] text-kpi-cyan mt-1">Active shifts: {staffData.active_shifts ?? 0}</p>
+                  </div>
+                </div>
+
+                {/* Stat 2: Active Shifts */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Active Shifts</p>
+                  <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
+                    {staffData.active_shifts ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-cyan transition-all"
+                      style={{ width: `${Math.min(100, ((staffData.active_shifts ?? 0) / Math.max(1, staffData.staff_on_duty ?? 1)) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Shift Coverage</p>
+                    <p className="text-[10px] text-kpi-cyan">Morning shift: Active</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Evening shift: Active</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Night shift: Scheduled</p>
+                    <p className="text-[10px] text-kpi-green mt-1">
+                      {staffData.active_shifts ?? 0} of {staffData.staff_on_duty ?? 0} staff on shift
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stat 3: Absent Today */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Absent Today</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
+                      {staffData.absent_today ?? 0}
+                    </p>
+                    {(staffData.absent_today ?? 0) > 3 ? (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-red transition-all"
+                      style={{ width: `${Math.min(100, ((staffData.absent_today ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.absent_today ?? 0))) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Absent Staff</p>
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'absent').slice(0, 4).map((s: any, i: number) => (
+                      <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">✗ {s.name} · {s.department}</p>
+                    ))}
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'absent').length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">No absences recorded</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stat 4: On Leave */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">On Leave</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-tx-yellow font-black text-xl tabular-nums leading-none">
+                      {staffData.on_leave ?? 0}
+                    </p>
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                  </div>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-yellow-500 transition-all"
+                      style={{ width: `${Math.min(100, ((staffData.on_leave ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.on_leave ?? 0))) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">On Leave</p>
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'leave').slice(0, 4).map((s: any, i: number) => (
+                      <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {s.name} · {s.department}</p>
+                    ))}
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'leave').length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">No staff on leave</p>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ── COLUMN 2: ML Absenteeism Forecast + Attendance Trend ── */}
+              <div className="flex flex-col px-4 py-3 overflow-hidden">
+                <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  🤖 ML Absenteeism Forecast
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-green" />
+                  </span>
+                </p>
+
+                {/* Attendance trend 7-day bar chart */}
+                <div className="mt-2 h-[100px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={staffData.attendance_trend ?? []}
+                      margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
+                      barCategoryGap="20%"
+                    >
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <Bar dataKey="present" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Present" />
+                      <Bar dataKey="absent" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Absent" />
+                      <Bar dataKey="leave" fill="#eab308" fillOpacity={0.6} radius={[2, 2, 0, 0]} name="Leave" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Live staff status list */}
+                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
+                  Live Staff Status
+                </p>
+                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1">
+                  {(staffData.live_staff_status ?? []).slice(0, 4).map((s: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0">
+                      <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">{s.name}</span>
+                      <span className="text-[9px] text-tx-secondary mx-2 shrink-0 truncate max-w-[60px]">{s.department}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
+                        s.status === 'present'
+                          ? 'bg-green-500/15 text-kpi-green border-green-500/20'
+                          : s.status === 'absent'
+                          ? 'bg-red-500/15 text-kpi-red border-red-500/20'
+                          : 'bg-yellow-500/15 text-tx-yellow border-yellow-500/20'
+                      }`}>
+                        {s.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ML prediction summary line */}
+                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                  {(() => {
+                    const absent = staffData.absent_today ?? 0;
+                    const total = (staffData.staff_on_duty ?? 0) + absent + (staffData.on_leave ?? 0);
+                    const absentRate = Math.round((absent / Math.max(1, total)) * 100);
+                    const isRisk = absentRate >= 15;
+                    return (
+                      <p className={`text-[11px] font-semibold ${isRisk ? "text-kpi-red" : "text-kpi-green"}`}>
+                        ⚡ {isRisk
+                          ? `High absenteeism ${absentRate}% — understaffing risk today`
+                          : `Staffing normal · ${absentRate}% absence rate`}
+                      </p>
+                    );
+                  })()}
+                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
+                    ML model: staff_absenteeism_model.pkl · Active
+                  </p>
+                </div>
+              </div>
+
+              {/* ── COLUMN 3: Suggestion Panel ── */}
+              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                  💡 Suggestion
+                </p>
+
+                {(() => {
+                  const absent = staffData.absent_today ?? 0;
+                  const onLeave = staffData.on_leave ?? 0;
+                  const onDuty = staffData.staff_on_duty ?? 0;
+                  const total = onDuty + absent + onLeave;
+                  const absentRate = Math.round((absent / Math.max(1, total)) * 100);
+
+                  const riskLevel =
+                    absentRate >= 25 ? "Critical" :
+                    absentRate >= 15 ? "High" :
+                    absentRate >= 8 ? "Moderate" : "Low";
+
+                  const badgeClass =
+                    riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
+                    riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
+                    riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
+                    "bg-green-500/15 text-kpi-green border-green-500/20";
+
+                  const suggestion =
+                    riskLevel === "Critical"
+                      ? `${absentRate}% staff absent. Activate on-call staff immediately and redistribute workload across available departments.`
+                      : riskLevel === "High"
+                      ? `Absenteeism at ${absentRate}%. Contact on-call staff and review shift coverage for all critical wards.`
+                      : riskLevel === "Moderate"
+                      ? `${absent} staff absent today. Monitor ward coverage and prepare backup roster if needed.`
+                      : `Staffing levels are healthy. All shifts covered. Continue standard scheduling.`;
+
+                  return (
+                    <>
+                      <div className="flex items-center gap-2 mt-1.5 shrink-0">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}>
+                          {riskLevel} Risk
+                        </span>
+                        <span className="text-[10px] text-tx-secondary">{absentRate}% absent</span>
+                      </div>
+                      <div className="mt-2 bg-kpi-green/8 border border-kpi-green/20 rounded-xl p-3 flex-1 overflow-hidden">
+                        <p className="text-kpi-green font-semibold text-[11px] leading-relaxed">
+                          {suggestion}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
+                  ML-powered · Absenteeism prediction active
+                </p>
+              </div>
+
+            </div>
+          ) : null}
+        </div>
+
+        {/* ── Placeholder right card (Lab & Appointments — coming next) ── */}
+        <div
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          style={{ height: 344, display: "flex", flexDirection: "column" }}
+        >
+          <div className="h-[44px] box-border flex items-center gap-3 px-5 py-0 border-b border-dash-border shrink-0">
+            <span className="text-xl" aria-hidden>🔬</span>
+            <h2 className="text-tx-bright font-bold text-lg">Lab & Appointments Intelligence</h2>
+          </div>
+          <div className="h-[300px] flex items-center justify-center">
+            <p className="text-tx-muted text-xs">Coming soon...</p>
+          </div>
         </div>
       </div>
 

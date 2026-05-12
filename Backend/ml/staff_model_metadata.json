@@ -1,0 +1,85 @@
+{
+  "absenteeism_model": {
+    "name": "staff_absenteeism_model",
+    "version": "1.0",
+    "trained_at": "2026-05-12T06:17:26.305340",
+    "algorithm": "RandomForestClassifier",
+    "features": [
+      "day_of_week",
+      "month",
+      "day_of_month",
+      "is_friday",
+      "is_monday",
+      "is_weekend_adjacent",
+      "role_encoded",
+      "age",
+      "prev_status_encoded",
+      "absences_last_7days",
+      "absences_last_30days"
+    ],
+    "accuracy": 0.7403,
+    "roc_auc": 0.4909,
+    "training_samples": 2461
+  },
+  "understaffing_model": {
+    "name": "staff_understaffing_model",
+    "version": "1.0",
+    "trained_at": "2026-05-12T06:17:26.316781",
+    "algorithm": "GradientBoostingClassifier",
+    "features": [
+      "absence_lag1",
+      "absence_lag7",
+      "absence_rolling7",
+      "absence_rate_lag1",
+      "day_of_week",
+      "month",
+      "day_of_month"
+    ],
+    "accuracy": 0.6286,
+    "training_samples": 139
+  },
+  "next_7_days_forecast": [
+    {
+      "date": "2026-05-13",
+      "understaffing_risk": false,
+      "risk_probability": 0.383,
+      "day_name": "Wednesday"
+    },
+    {
+      "date": "2026-05-14",
+      "understaffing_risk": false,
+      "risk_probability": 0.234,
+      "day_name": "Thursday"
+    },
+    {
+      "date": "2026-05-15",
+      "understaffing_risk": false,
+      "risk_probability": 0.139,
+      "day_name": "Friday"
+    },
+    {
+      "date": "2026-05-16",
+      "understaffing_risk": true,
+      "risk_probability": 0.526,
+      "day_name": "Saturday"
+    },
+    {
+      "date": "2026-05-17",
+      "understaffing_risk": true,
+      "risk_probability": 0.578,
+      "day_name": "Sunday"
+    },
+    {
+      "date": "2026-05-18",
+      "understaffing_risk": true,
+      "risk_probability": 0.779,
+      "day_name": "Monday"
+    },
+    {
+      "date": "2026-05-19",
+      "understaffing_risk": false,
+      "risk_probability": 0.09,
+      "day_name": "Tuesday"
+    }
+  ]
+}
