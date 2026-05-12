@@ -248,6 +248,7 @@ async def get_patient_intelligence(
     adm_rows = adm_res.all()
     patient_ids = [int(row.Patient.id) for row in adm_rows]
     total_patients = len(patient_ids)
+    active_inpatient_roster: List[Dict[str, Any]] = []
 
     week_ago = datetime.utcnow() - timedelta(days=7)
     prev_week_res = await db.execute(
@@ -339,6 +340,33 @@ async def get_patient_intelligence(
             }
         )
 
+        active_inpatient_roster.append(
+            {
+                "patient_id": pid,
+                "name": name,
+                "age": int(patient.age) if patient.age is not None else None,
+                "gender": patient.gender,
+                "blood_group": patient.blood_group,
+                "contact": patient.contact or "",
+                "address": (patient.address or "")[:200],
+                "admission_date": admission.admission_date.isoformat()
+                if admission.admission_date
+                else None,
+                "reason_for_admission": (admission.reason_for_admission or "")[:200],
+                "bed_id": admission.bed_id,
+                "news2_score": sc,
+                "heart_rate": v.heart_rate if v else None,
+                "spo2": v.spo2 if v else None,
+                "temperature": float(v.temperature) if v and v.temperature is not None else None,
+                "blood_pressure_sys": v.blood_pressure_sys if v else None,
+                "blood_pressure_dia": v.blood_pressure_dia if v else None,
+                "respiratory_rate": v.respiratory_rate if v else None,
+                "ml_risk_label": rr.risk_label,
+                "ml_risk_pct": rr.risk_pct,
+                "has_abnormal_vital": pid in abnormal_patient_ids,
+            }
+        )
+
     vitals_health_percentage = (
         int(round(100 * normal_checks / total_checks)) if total_checks else 0
     )
@@ -401,4 +429,5 @@ async def get_patient_intelligence(
         "ml_forecast": ml_forecast,
         "ml_high_risk_24h_count": ml_high_risk_24h_count,
         "ai_prediction": ai_prediction,
+        "active_inpatient_roster": active_inpatient_roster,
     }

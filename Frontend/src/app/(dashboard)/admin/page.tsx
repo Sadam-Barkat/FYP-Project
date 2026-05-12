@@ -26,7 +26,7 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import { useHtmlDarkClass } from "@/components/theme/ThemeProvider";
-import type { DetailListItem, DetailModalPayload } from "@/components/dashboard/DashboardDetailModal";
+import type { DetailListItem, DetailModalPayload, DetailTablePayload } from "@/components/dashboard/DashboardDetailModal";
 import { useDashboardDetailModal } from "@/contexts/DashboardDetailModalContext";
 
 const cardBase =
@@ -95,36 +95,114 @@ function rosterRowToDetailItem(p: {
   };
 }
 
-function staffForecastDayModalPayload(day: Record<string, unknown>): DetailModalPayload {
-  const iso = String(day.date ?? "");
-  const shortLabel = iso.length >= 10 ? iso.slice(5) : iso;
-  const absent = (
-    Array.isArray(day.absent_staff) ? day.absent_staff : []
-  ) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
-  const leave = (
-    Array.isArray(day.leave_staff) ? day.leave_staff : []
-  ) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
-  const ac = countKindBreakdown(absent);
-  const lc = countKindBreakdown(leave);
+function pharmacyDemandForecastModalPayload(pharmacyData: Record<string, unknown>): DetailModalPayload {
+  const fc = Array.isArray(pharmacyData.demand_forecast)
+    ? (pharmacyData.demand_forecast as Record<string, unknown>[])
+    : [];
+  const rows = fc.slice(0, 7).map((row) => ({
+    date: String(row.date ?? ""),
+    predicted_prescriptions: Number(row.predicted_prescriptions ?? 0),
+  }));
   return {
-    title: "Staff absenteeism forecast",
-    subtitle: `${shortLabel} · ${iso}`,
-    blocks: [
-      {
-        sections: [
-          {
-            title: `Absent (${absent.length}) — doctors ${ac.doctors}, nurses ${ac.nurses}, other ${ac.other}`,
-            accent: "red" as const,
-            items: absent.map(rosterRowToDetailItem),
-          },
-          {
-            title: `On leave (${leave.length}) — doctors ${lc.doctors}, nurses ${lc.nurses}, other ${lc.other}`,
-            accent: "yellow" as const,
-            items: leave.map(rosterRowToDetailItem),
-          },
-        ],
-      },
-    ],
+    title: "Prescription forecast (next 7 days)",
+    subtitle: "Daily predicted volume",
+    table: {
+      caption: "Forecast by date",
+      columns: [
+        { key: "date", label: "Date" },
+        { key: "predicted_prescriptions", label: "Pred. Rx" },
+      ],
+      rows,
+    },
+    blocks: [],
+  };
+}
+
+const INPATIENT_TABLE_COLS = [
+  { key: "patient_id", label: "ID" },
+  { key: "name", label: "Patient" },
+  { key: "age", label: "Age" },
+  { key: "gender", label: "Gender" },
+  { key: "blood_group", label: "Blood" },
+  { key: "admission_date", label: "Admitted" },
+  { key: "bed_id", label: "Bed" },
+  { key: "reason_for_admission", label: "Reason" },
+  { key: "contact", label: "Contact" },
+  { key: "address", label: "Address" },
+  { key: "news2_score", label: "NEWS2" },
+  { key: "heart_rate", label: "HR" },
+  { key: "spo2", label: "SpO2" },
+  { key: "temperature", label: "Temp°C" },
+  { key: "blood_pressure_sys", label: "BP sys" },
+  { key: "blood_pressure_dia", label: "BP dia" },
+  { key: "respiratory_rate", label: "RR" },
+  { key: "ml_risk_label", label: "ML risk" },
+  { key: "ml_risk_pct", label: "ML %" },
+  { key: "has_abnormal_vital", label: "Abnl vitals" },
+] as const;
+
+function patientIntelRosterTablePayload(
+  intel: PatientIntelResponse,
+  filter: "all" | "healthy" | "critical_vitals" | "at_risk" | "ml_deterioration_24h",
+  title: string,
+): DetailModalPayload {
+  const roster = intel.active_inpatient_roster ?? [];
+  let rows: ActiveInpatientRosterRow[] = roster;
+  if (filter === "healthy") {
+    rows = roster.filter((r) => r.heart_rate != null && !r.has_abnormal_vital);
+  } else if (filter === "critical_vitals") {
+    rows = roster.filter((r) => r.has_abnormal_vital);
+  } else if (filter === "at_risk") {
+    rows = roster.filter((r) => {
+      const n = Number(r.news2_score ?? 0);
+      const lab = String(r.ml_risk_label ?? "").toLowerCase();
+      return n >= 5 || lab === "high" || lab === "critical";
+    });
+  } else if (filter === "ml_deterioration_24h") {
+    const ids = new Set(
+      (intel.ml_forecast ?? [])
+        .filter((p) => ["high", "critical"].includes(String(p.risk_label ?? "").toLowerCase()))
+        .map((p) => Number(p.patient_id))
+        .filter((id) => Number.isFinite(id) && id > 0),
+    );
+    rows = roster.filter((r) => ids.has(Number(r.patient_id)));
+  }
+  const mapped = rows.map((r) => ({
+    ...r,
+    has_abnormal_vital: r.has_abnormal_vital,
+  })) as unknown as Record<string, string | number | boolean | null | undefined>[];
+
+  const subtitle =
+    roster.length === 0
+      ? "Refresh patient intelligence after deploy — roster payload missing."
+      : `${mapped.length} row(s) · filter: ${filter.replace(/_/g, " ")}`;
+
+  return {
+    title,
+    subtitle,
+    table: {
+      caption: "Active inpatients (undischarged)",
+      columns: INPATIENT_TABLE_COLS.map((c) => ({ key: c.key, label: c.label })),
+      rows: mapped,
+    },
+    blocks: [],
+  };
+}
+
+function patientIntelSingleRowTable(intel: PatientIntelResponse, patientId: number): DetailModalPayload {
+  const roster = intel.active_inpatient_roster ?? [];
+  const row = roster.find((r) => r.patient_id === patientId);
+  const mapped = row
+    ? ([row] as unknown as Record<string, string | number | boolean | null | undefined>[])
+    : [];
+  return {
+    title: "Patient detail",
+    subtitle: row ? row.name : `ID ${patientId} not in current inpatient roster`,
+    table: {
+      columns: INPATIENT_TABLE_COLS.map((c) => ({ key: c.key, label: c.label })),
+      rows: mapped,
+    },
+    blocks: [],
   };
 }
 
@@ -143,56 +221,61 @@ function staffForecastFullModalPayload(staffData: Record<string, unknown>): Deta
     ta += Number(r.absent ?? 0);
     tl += Number(r.leave ?? 0);
   }
-  const blocks =
-    details.length > 0
-      ? details.map((d) => {
-          const iso = String(d.date ?? "");
-          const shortLabel = iso.length >= 10 ? iso.slice(5) : iso;
-          const absent = (Array.isArray(d.absent_staff)
-            ? d.absent_staff
-            : []) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
-          const leave = (Array.isArray(d.leave_staff)
-            ? d.leave_staff
-            : []) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
-          const ac = countKindBreakdown(absent);
-          const lc = countKindBreakdown(leave);
-          return {
-            heading: `${shortLabel} · ${iso}`,
-            sections: [
-              {
-                title: `Absent (${absent.length}) — doctors ${ac.doctors}, nurses ${ac.nurses}, other ${ac.other}`,
-                accent: "red" as const,
-                items: absent.map(rosterRowToDetailItem),
-              },
-              {
-                title: `On leave (${leave.length}) — doctors ${lc.doctors}, nurses ${lc.nurses}, other ${lc.other}`,
-                accent: "yellow" as const,
-                items: leave.map(rosterRowToDetailItem),
-              },
-            ],
-          };
-        })
-      : [
-          {
-            sections: [
-              {
-                title: "No roster",
-                accent: "neutral" as const,
-                items: [
-                  {
-                    primary: "Add staff or seed attendance to see predicted names.",
-                    secondary: "",
-                  },
-                ],
-              },
-            ],
-          },
-        ];
-
+  const rows: Record<string, string | number | boolean | null | undefined>[] = [];
+  for (const d of details) {
+    const iso = String(d.date ?? "");
+    const shortLabel = iso.length >= 10 ? iso.slice(5) : iso;
+    const absent = (Array.isArray(d.absent_staff) ? d.absent_staff : []) as Array<{
+      kind?: string;
+      name?: string;
+      role?: string;
+      department?: string;
+    }>;
+    const leave = (Array.isArray(d.leave_staff) ? d.leave_staff : []) as Array<{
+      kind?: string;
+      name?: string;
+      role?: string;
+      department?: string;
+    }>;
+    for (const s of absent) {
+      rows.push({
+        forecast_date: shortLabel,
+        full_date: iso,
+        status: "Absent",
+        name: s.name ?? "",
+        role: s.role ?? "",
+        department: s.department ?? "",
+        kind: s.kind ?? "",
+      });
+    }
+    for (const s of leave) {
+      rows.push({
+        forecast_date: shortLabel,
+        full_date: iso,
+        status: "On leave",
+        name: s.name ?? "",
+        role: s.role ?? "",
+        department: s.department ?? "",
+        kind: s.kind ?? "",
+      });
+    }
+  }
   return {
-    title: "Next 7 days forecast — full breakdown",
-    subtitle: `Totals across chart: ${tp} present · ${ta} absent · ${tl} on leave`,
-    blocks,
+    title: "Next 7 days forecast — roster",
+    subtitle: `Chart totals: ${tp} present · ${ta} absent · ${tl} on leave · ${rows.length} named slots`,
+    table: {
+      columns: [
+        { key: "full_date", label: "ISO date" },
+        { key: "forecast_date", label: "MM-DD" },
+        { key: "status", label: "Status" },
+        { key: "kind", label: "Kind" },
+        { key: "name", label: "Name" },
+        { key: "role", label: "Role" },
+        { key: "department", label: "Dept" },
+      ],
+      rows,
+    },
+    blocks: [],
   };
 }
 
@@ -200,57 +283,74 @@ function bedsAdmissionsForecastModalPayload(bedsData: Record<string, unknown>): 
   const fc = Array.isArray(bedsData.ml_next_7_days_forecast)
     ? (bedsData.ml_next_7_days_forecast as Record<string, unknown>[])
     : [];
+  const rows = fc.map((row) => ({
+    date: String(row.date ?? ""),
+    predicted_admissions: Number(row.predicted_admissions ?? 0).toFixed(2),
+    shortage_probability: `${Math.round(Number(row.shortage_probability ?? 0) * 100)}%`,
+    estimated_occupancy_pct: Number(row.estimated_occupancy_pct ?? 0).toFixed(1),
+    estimated_occupied_beds: Math.round(Number(row.estimated_occupied_beds ?? 0)),
+  }));
   return {
     title: "Forecasted admissions (ML)",
-    subtitle: "Per-day detail · Bed & Ward intelligence",
-    blocks: fc.map((row, idx) => {
-      const d = String(row.date ?? `#${idx + 1}`);
-      const dl = d.length >= 10 ? d.slice(5) : d;
-      return {
-        heading: `${dl} · ${d}`,
-        sections: [
-          {
-            title: "Day breakdown",
-            accent: "blue",
-            items: [
-              {
-                primary: `${Number(row.predicted_admissions ?? 0).toFixed(2)} predicted admissions`,
-                secondary: "",
-              },
-              {
-                primary: "Shortage probability",
-                secondary: `${Math.round(Number(row.shortage_probability ?? 0) * 100)}%`,
-              },
-              {
-                primary: "Est. occupancy / beds",
-                secondary: `${Number(row.estimated_occupancy_pct ?? 0).toFixed(1)}% · ~${Math.round(
-                  Number(row.estimated_occupied_beds ?? 0),
-                )} beds`,
-              },
-            ],
-          },
-        ],
-      };
-    }),
+    subtitle: "Per-day model outputs",
+    table: {
+      columns: [
+        { key: "date", label: "Date" },
+        { key: "predicted_admissions", label: "Pred. admissions" },
+        { key: "shortage_probability", label: "Shortage prob." },
+        { key: "estimated_occupancy_pct", label: "Est. occ. %" },
+        { key: "estimated_occupied_beds", label: "Est. beds" },
+      ],
+      rows,
+    },
+    blocks: [],
   };
 }
 
-function financeRecentInvoicesItems(
-  financeData: Record<string, unknown>,
-  cap = 30,
-): DetailListItem[] {
+function financeInvoiceTable(financeData: Record<string, unknown>): DetailTablePayload {
   const inv = Array.isArray(financeData.recent_invoices)
     ? (financeData.recent_invoices as Record<string, unknown>[])
     : [];
-  return inv.slice(0, cap).map((x) => ({
-    primary: String(x.description ?? x.patient_name ?? x.id ?? "Invoice"),
-    secondary: [
-      typeof x.amount === "number" ? `₨${x.amount}` : String(x.amount ?? ""),
-      String(x.status ?? ""),
-    ]
-      .filter(Boolean)
-      .join(" · "),
+  const rows = inv.map((x) => ({
+    invoice_id: String(x.invoice_id ?? x.id ?? ""),
+    patient: String(x.patient ?? x.patient_name ?? ""),
+    date: String(x.date ?? ""),
+    amount: Number(x.amount ?? 0),
+    status: String(x.status ?? ""),
+    description: String(x.description ?? ""),
   }));
+  return {
+    caption: "Recent invoices (rolling window)",
+    columns: [
+      { key: "invoice_id", label: "Invoice" },
+      { key: "patient", label: "Patient" },
+      { key: "date", label: "When" },
+      { key: "amount", label: "Amount" },
+      { key: "status", label: "Status" },
+      { key: "description", label: "Notes" },
+    ],
+    rows,
+  };
+}
+
+function financeTrendTable(financeData: Record<string, unknown>): DetailTablePayload {
+  const trend = Array.isArray(financeData.revenue_vs_expenses)
+    ? (financeData.revenue_vs_expenses as Record<string, unknown>[])
+    : [];
+  const rows = trend.map((row) => ({
+    day: String(row.day ?? ""),
+    revenue: Number(row.revenue ?? 0),
+    expenses: Number(row.expenses ?? 0),
+  }));
+  return {
+    caption: "Revenue vs expenses (last 7 slices)",
+    columns: [
+      { key: "day", label: "Day" },
+      { key: "revenue", label: "Revenue" },
+      { key: "expenses", label: "Expenses" },
+    ],
+    rows,
+  };
 }
 
 function financeSnapshotModalPayload(
@@ -260,202 +360,41 @@ function financeSnapshotModalPayload(
   const revenue = Number(financeData?.todays_revenue ?? 0);
   const outstanding = Number(financeData?.outstanding_balance ?? 0);
   const expenses = Number(financeData?.todays_expenses ?? 0);
-  const items = financeRecentInvoicesItems(financeData, 35);
-  const trend = (
-    Array.isArray(financeData.revenue_vs_expenses)
-      ? (financeData.revenue_vs_expenses as Record<string, unknown>[])
-      : []
-  ).slice(-10);
-
-  if (focus === "revenue") {
-    return {
-      title: "Today's revenue · detail",
-      subtitle: `Recorded revenue: ₨${revenue}`,
-      blocks: [
-        {
-          sections: [
-            {
-              title: "Recent invoices (latest first)",
-              accent: "green",
-              items: items.length ? items : [{ primary: "No recent invoices.", secondary: "" }],
-            },
-            {
-              title: "Revenue trend (last rows)",
-              accent: "neutral",
-              items:
-                trend.length > 0
-                  ? trend.map((row, i) => ({
-                      primary: `Slice ${i + 1}`,
-                      secondary: `Revenue ₨${Number(row.revenue ?? 0)} · Expenses ₨${Number(row.expenses ?? 0)}`,
-                    }))
-                  : [{ primary: "No trend samples.", secondary: "" }],
-            },
-          ],
-        },
-      ],
-    };
-  }
-
-  if (focus === "outstanding") {
-    return {
-      title: "Outstanding balance · detail",
-      subtitle: `Total outstanding: ₨${outstanding}`,
-      blocks: [
-        {
-          sections: [
-            {
-              title: "Recent invoices affecting balance",
-              accent: "orange",
-              items: items.length ? items : [{ primary: "No invoices loaded.", secondary: "" }],
-            },
-          ],
-        },
-      ],
-    };
-  }
+  const net = revenue - expenses;
 
   if (focus === "expenses") {
     return {
-      title: "Expenses snapshot",
-      subtitle: `Today's expenses: ₨${expenses}`,
-      blocks: [
-        {
-          sections: [
-            {
-              title: "Revenue vs expenses trend rows",
-              accent: "red",
-              items:
-                trend.length > 0
-                  ? trend.map((row, i) => ({
-                      primary: `Row ${i + 1}`,
-                      secondary: `Expenses ₨${Number(row.expenses ?? 0)} · Revenue ₨${Number(
-                        row.revenue ?? 0,
-                      )}`,
-                    }))
-                  : [{ primary: "No trend samples.", secondary: "" }],
-            },
-          ],
-        },
-      ],
+      title: "Expenses · trend detail",
+      subtitle: `Today's expenses snapshot: ₨${expenses}`,
+      tables: [financeTrendTable(financeData)],
+      blocks: [],
     };
   }
 
-  if (focus === "net") {
-    const net = revenue - expenses;
+  const invTable = financeInvoiceTable(financeData);
+  const trendTable = financeTrendTable(financeData);
+
+  if (focus === "revenue") {
     return {
-      title: "Net profit · detail",
-      subtitle: `Rev ₨${revenue} · Exp ₨${expenses} · Net ₨${net}`,
-      blocks: [
-        {
-          sections: [
-            {
-              title: "Recent invoices (context)",
-              accent: "green",
-              items: items.length ? items : [{ primary: "No invoices returned.", secondary: "" }],
-            },
-            {
-              title: "Rolling revenue vs expense rows",
-              accent: "neutral",
-              items:
-                trend.length > 0
-                  ? trend.map((row, i) => ({
-                      primary: `Slice ${i + 1}`,
-                      secondary: `Net hint ₨${Number(row.revenue ?? 0) - Number(row.expenses ?? 0)}`,
-                    }))
-                  : [{ primary: "No trend samples.", secondary: "" }],
-            },
-          ],
-        },
-      ],
+      title: "Today's revenue · billing lines",
+      subtitle: `Recorded revenue: ₨${revenue}`,
+      tables: [invTable, trendTable],
+      blocks: [],
     };
   }
-
+  if (focus === "outstanding") {
+    return {
+      title: "Outstanding balance · invoices",
+      subtitle: `Outstanding: ₨${outstanding}`,
+      tables: [invTable],
+      blocks: [],
+    };
+  }
   return {
-    title: "Recent billing activity",
-    subtitle: `${items.length} latest invoices sampled`,
-    blocks: [
-      {
-        sections: [
-          {
-            title: "Invoice list",
-            accent: "blue",
-            items: items.length ? items : [{ primary: "No invoices returned.", secondary: "" }],
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function pharmacyDemandForecastModalPayload(pharmacyData: Record<string, unknown>): DetailModalPayload {
-  const fc = Array.isArray(pharmacyData.demand_forecast)
-    ? (pharmacyData.demand_forecast as Record<string, unknown>[])
-    : [];
-  return {
-    title: "Prescription forecast (next 7 days)",
-    subtitle: "Each day from Pharmacy intelligence",
-    blocks: fc.slice(0, 7).map((row, i) => {
-      const iso = String(row.date ?? `#${i + 1}`);
-      const dl = iso.length >= 10 ? iso.slice(5) : iso;
-      return {
-        heading: `${dl}`,
-        sections: [
-          {
-            title: `${Number(row.predicted_prescriptions ?? 0)} prescriptions`,
-            accent: "blue",
-            items: [{ primary: "Full date", secondary: iso }],
-          },
-        ],
-      };
-    }),
-  };
-}
-
-function patientIntelTotalsModalPayload(intelData: Record<string, unknown>): DetailModalPayload {
-  const forecasts = Array.isArray(intelData.ml_forecast)
-    ? (intelData.ml_forecast as Record<string, unknown>[]).slice(0, 24)
-    : [];
-  const topCritical = forecasts.filter((row) =>
-    ["high", "critical"].includes(String(row.risk_label ?? "").toLowerCase()),
-  );
-  return {
-    title: "Patient intelligence · KPI detail",
-    subtitle: "Deep view of KPI numbers plus sampled ML rows",
-    blocks: [
-      {
-        sections: [
-          {
-            title: "Volumes & vitals KPIs",
-            accent: "blue",
-            items: [
-              {
-                primary: `Total patients · ${intelData.total_patients ?? "—"}`,
-                secondary: `Prev week ${intelData.previous_week_patients ?? "—"} · change ${intelData.change_from_last_week ?? "—"}`,
-              },
-              {
-                primary: `Healthy vitals · ${intelData.vitals_health_percentage ?? "—"}%`,
-                secondary: `Critical share · ${intelData.critical_vitals_percentage ?? "—"}%`,
-              },
-              {
-                primary: `At-risk cohort`,
-                secondary: `${intelData.at_risk_count ?? "—"} patients flagged`,
-              },
-            ],
-          },
-          {
-            title: topCritical.length ? "High/critical ML patients" : "ML forecasts (preview)",
-            accent: "red",
-            items:
-              forecasts.length > 0
-                ? forecasts.map((row, i) => ({
-                    primary: String(row.name ?? `Patient row ${i + 1}`),
-                    secondary: `${row.risk_label ?? "risk"} · ${String(row.risk_pct ?? "")}%`,
-                  }))
-                : [{ primary: "ML forecast endpoint returned no rows.", secondary: "" }],
-          },
-        ],
-      },
-    ],
+    title: "Net profit · context",
+    subtitle: `Rev ₨${revenue} · Exp ₨${expenses} · Net ₨${net}`,
+    tables: [invTable, trendTable],
+    blocks: [],
   };
 }
 
@@ -473,12 +412,28 @@ function liveStaffStatusModalPayload(
   const d = countKindBreakdown(
     rows.map((r) => ({ ...r, kind: classify(String(r.role ?? "")) })),
   );
-  const items = rows.map((r) => rosterRowToDetailItem({ ...r, kind: classify(String(r.role ?? "")) }));
-
+  const tableRows = rows.map((r) => ({
+    name: r.name ?? "",
+    role: r.role ?? "",
+    department: r.department ?? "",
+    status: r.status ?? "",
+    kind: classify(String(r.role ?? "")),
+  }));
   return {
     title,
     subtitle: `${subtitle} · doctors ${d.doctors}, nurses ${d.nurses}, other ${d.other}`,
-    blocks: [{ sections: [{ title: `Roster (${rows.length})`, accent: "green", items }] }],
+    table: {
+      caption: `Roster (${rows.length})`,
+      columns: [
+        { key: "name", label: "Name" },
+        { key: "kind", label: "Kind" },
+        { key: "role", label: "Role" },
+        { key: "department", label: "Dept" },
+        { key: "status", label: "Status" },
+      ],
+      rows: tableRows,
+    },
+    blocks: [],
   };
 }
 
@@ -743,39 +698,6 @@ function PatientStatModal({
   );
 }
 
-function PharmacyStatModal({
-  open,
-  onClose,
-  title,
-  unit,
-  accentHex,
-  pack,
-  helperText,
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  unit: string;
-  accentHex: string;
-  pack: PredictionPack;
-  helperText: string;
-}) {
-  if (!open) return null;
-  return (
-    <PatientStatModal
-      open={open}
-      onClose={onClose}
-      title={title}
-      unit={unit}
-      accentHex={accentHex}
-      pack={{
-        ...pack,
-        explanation: helperText || pack.explanation,
-      }}
-    />
-  );
-}
-
 export type TotalPatientsBreakdown = {
   in_hospital?: number | null;
   /** Same census definition as in_hospital, for previous calendar day (trend baseline). */
@@ -844,6 +766,29 @@ export type HospitalOverviewKpis = {
   revenue_today_breakdown?: RevenueTodayBreakdown | null;
 };
 
+export type ActiveInpatientRosterRow = {
+  patient_id: number;
+  name: string;
+  age: number | null;
+  gender: string;
+  blood_group?: string | null;
+  contact: string;
+  address: string;
+  admission_date: string | null;
+  reason_for_admission: string;
+  bed_id: number;
+  news2_score: number;
+  heart_rate: number | null;
+  spo2: number | null;
+  temperature: number | null;
+  blood_pressure_sys: number | null;
+  blood_pressure_dia: number | null;
+  respiratory_rate: number | null;
+  ml_risk_label: string;
+  ml_risk_pct: number;
+  has_abnormal_vital: boolean;
+};
+
 export type PatientIntelResponse = {
   total_patients: number;
   previous_week_patients: number;
@@ -852,6 +797,7 @@ export type PatientIntelResponse = {
   critical_vitals_percentage: number;
   at_risk_count: number;
   top_risk_patients: string;
+  active_inpatient_roster?: ActiveInpatientRosterRow[];
   ml_forecast?: Array<{
     patient_id: number;
     name: string;
@@ -912,6 +858,105 @@ export type PharmacyIntelResponse = {
   generated_by?: string;
   ml_available?: boolean;
 };
+
+function pharmacyMedicineNameTable(title: string, names: string[], emptySubtitle: string): DetailModalPayload {
+  const list = names ?? [];
+  return {
+    title,
+    subtitle: list.length === 0 ? emptySubtitle : `${list.length} item(s)`,
+    table: {
+      columns: [
+        { key: "n", label: "#" },
+        { key: "medicine", label: "Medicine" },
+      ],
+      rows: list.map((medicine, i) => ({ n: i + 1, medicine })),
+    },
+    blocks: [],
+  };
+}
+
+function pharmacyInventorySnapshotTable(pharmacyData: PharmacyIntelResponse): DetailModalPayload {
+  const rows: Record<string, string>[] = [];
+  (pharmacyData.out_of_stock_medicines ?? []).forEach((medicine) => rows.push({ category: "Out of stock", medicine }));
+  (pharmacyData.low_stock_medicines ?? []).forEach((medicine) => rows.push({ category: "Low stock", medicine }));
+  (pharmacyData.expiring_soon_medicines ?? []).forEach((medicine) => rows.push({ category: "Expiring soon", medicine }));
+  (pharmacyData.expired_medicines ?? []).forEach((medicine) => rows.push({ category: "Expired", medicine }));
+  return {
+    title: "Inventory snapshot (named items)",
+    subtitle:
+      rows.length === 0
+        ? `No named breakdown in payload · catalogue total ${pharmacyData.total_medicines}`
+        : `${rows.length} named row(s) · catalogue total ${pharmacyData.total_medicines}`,
+    table: {
+      caption: "Items returned by the intelligence API",
+      columns: [
+        { key: "category", label: "Category" },
+        { key: "medicine", label: "Medicine" },
+      ],
+      rows,
+    },
+    blocks: [],
+  };
+}
+
+function pharmacyMlAtRiskTable(pharmacyData: PharmacyIntelResponse): DetailModalPayload {
+  const atRisk = pharmacyData.ml_at_risk_medicines ?? [];
+  if (atRisk.length > 0) {
+    return {
+      title: "ML at-risk medicines (7 days)",
+      subtitle: `${atRisk.length} item(s)`,
+      table: {
+        columns: [
+          { key: "n", label: "#" },
+          { key: "medicine_name", label: "Medicine" },
+          { key: "quantity", label: "Qty" },
+          { key: "days_of_stock", label: "Days stock" },
+          { key: "stockout_pct", label: "Stockout %" },
+        ],
+        rows: atRisk.map((m, i) => ({
+          n: i + 1,
+          medicine_name: m.medicine_name,
+          quantity: m.quantity,
+          days_of_stock: m.days_of_stock,
+          stockout_pct: Math.round((m.stockout_probability ?? 0) * 100),
+        })),
+      },
+      blocks: [],
+    };
+  }
+  const reorder = pharmacyData.medicines_to_reorder ?? [];
+  return {
+    title: "Reorder list (no ML rows)",
+    subtitle: `${reorder.length} item(s)`,
+    table: {
+      columns: [
+        { key: "n", label: "#" },
+        { key: "medicine", label: "Medicine" },
+      ],
+      rows: reorder.map((medicine, i) => ({ n: i + 1, medicine })),
+    },
+    blocks: [],
+  };
+}
+
+function pharmacyMlAtRiskSingleRow(row: PharmacyMLAtRisk): DetailModalPayload {
+  return {
+    title: row.medicine_name,
+    subtitle: "ML 7-day stockout model",
+    table: {
+      columns: [
+        { key: "field", label: "Field" },
+        { key: "value", label: "Value" },
+      ],
+      rows: [
+        { field: "Quantity", value: String(row.quantity) },
+        { field: "Days of stock", value: String(row.days_of_stock) },
+        { field: "Stockout probability", value: `${Math.round((row.stockout_probability ?? 0) * 100)}%` },
+      ],
+    },
+    blocks: [],
+  };
+}
 
 type PharmacyStatHover = "oos" | "low" | "soon" | "expired" | null;
 
@@ -1287,11 +1332,11 @@ const KPI_CARD_DEFS = [
     trendKey: "critical_patients_trend" as const,
     icon: AlertTriangle,
     accent:
-      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-red-500 before:pointer-events-none dark:bg-kpi-red dark:shadow-kpi-red dark:hover:shadow-kpi-red-hover",
+      "before:content-[''] before:absolute before:left-0 before:top-0 before:h-[3px] before:w-full before:bg-red-500 before:pointer-events-none after:content-[''] after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[3px] after:bg-red-500 after:pointer-events-none dark:bg-kpi-red dark:shadow-kpi-red dark:hover:shadow-kpi-red-hover",
     iconWrap:
       "w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-red-600 dark:bg-kpi-red/20 dark:border-kpi-red/30 dark:text-kpi-red",
     kind: "int" as const,
-    chart: "area" as const,
+    chart: "bar" as const,
     stroke: "#ef4444",
     gradId: "red",
   },
@@ -1348,9 +1393,6 @@ export default function AdminDashboard() {
   const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
   const [pharmacyStatHover, setPharmacyStatHover] =
     useState<PharmacyStatHover>(null);
-  const [expandedPharmacyCard, setExpandedPharmacyCard] = useState<
-    "total" | "oos" | "low" | "soon" | "expired" | null
-  >(null);
 
   const [financeData, setFinanceData] = useState<any>(null);
   const [financeLoading, setFinanceLoading] = useState(true);
@@ -1593,31 +1635,50 @@ export default function AdminDashboard() {
               </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none">
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-[44%] pointer-events-none ${
+                  k.label === "Critical Patients" ? "pb-[3px]" : ""
+                }`}
+              >
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient
-                        id={`grad-${k.gradId}`}
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="5%" stopColor={k.stroke} stopOpacity={0.25} />
-                        <stop offset="95%" stopColor={k.stroke} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="v"
-                      stroke={k.stroke}
-                      strokeWidth={1.5}
-                      fill={`url(#grad-${k.gradId})`}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  </AreaChart>
+                  {k.chart === "bar" ? (
+                    <BarChart
+                      data={sparkData}
+                      margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
+                      barSize={6}
+                    >
+                      <Bar
+                        dataKey="v"
+                        fill="#ef4444"
+                        radius={[2, 2, 0, 0]}
+                        isAnimationActive={false}
+                      />
+                    </BarChart>
+                  ) : (
+                    <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient
+                          id={`grad-${k.gradId}`}
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop offset="5%" stopColor={k.stroke} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={k.stroke} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area
+                        type="monotone"
+                        dataKey="v"
+                        stroke={k.stroke}
+                        strokeWidth={1.5}
+                        fill={`url(#grad-${k.gradId})`}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  )}
                 </ResponsiveContainer>
               </div>
 
@@ -1704,7 +1765,9 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                    openDetail(
+                      patientIntelRosterTablePayload(intelData, "all", "All inpatients — full roster"),
+                    )
                   }
                 >
                   <div
@@ -1752,7 +1815,13 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                    openDetail(
+                      patientIntelRosterTablePayload(
+                        intelData,
+                        "healthy",
+                        "Vitals healthy — inpatient roster",
+                      ),
+                    )
                   }
                 >
                   <div
@@ -1797,7 +1866,13 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                    openDetail(
+                      patientIntelRosterTablePayload(
+                        intelData,
+                        "critical_vitals",
+                        "Critical / abnormal vitals — inpatient roster",
+                      ),
+                    )
                   }
                 >
                   <div
@@ -1855,7 +1930,13 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                    openDetail(
+                      patientIntelRosterTablePayload(
+                        intelData,
+                        "at_risk",
+                        "At risk (NEWS2 / ML) — inpatient roster",
+                      ),
+                    )
                   }
                 >
                   <div
@@ -1921,8 +2002,21 @@ export default function AdminDashboard() {
                       const label = pt.risk_label || "Low";
                       const color = colorFor(label);
                       const badgeClass = badgeFor(label);
+                      const pid = Number(pt.patient_id);
+                      const rowOpen = Number.isFinite(pid) && pid > 0;
                       return (
-                        <div key={`${pt.patient_id || name}-${i}`} className="flex items-center gap-2 py-0.5 border-b border-dash-border/40 last:border-0">
+                        <div
+                          key={`${pt.patient_id || name}-${i}`}
+                          className={`flex items-center gap-2 py-0.5 border-b border-dash-border/40 last:border-0 ${
+                            rowOpen ? insightOpenCls : ""
+                          }`}
+                          role={rowOpen ? "button" : undefined}
+                          onClick={
+                            rowOpen
+                              ? () => openDetail(patientIntelSingleRowTable(intelData, pid))
+                              : undefined
+                          }
+                        >
                           <span className="text-[10px] text-tx-muted w-3 shrink-0">{i + 1}</span>
                           <span className="text-[11px] text-tx-primary truncate flex-1 min-w-0">{name}</span>
                           <div className="w-16 h-1.5 rounded-full bg-dash-border overflow-hidden shrink-0">
@@ -1941,7 +2035,13 @@ export default function AdminDashboard() {
                   role="presentation"
                   title="Risk detail"
                   onClick={() =>
-                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                    openDetail(
+                      patientIntelRosterTablePayload(
+                        intelData,
+                        "ml_deterioration_24h",
+                        "ML high/critical (24h) — matching inpatients",
+                      ),
+                    )
                   }
                 >
                   {(() => {
@@ -2096,7 +2196,7 @@ export default function AdminDashboard() {
                 {/* Stat 1: Total Medicines — tooltip opens downward */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedPharmacyCard("total")}
+                  onClick={() => openDetail(pharmacyInventorySnapshotTable(pharmacyData))}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
                   <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
@@ -2159,7 +2259,15 @@ export default function AdminDashboard() {
                 {/* Stat 2: Out of Stock — tooltip opens downward */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
-                  onClick={() => setExpandedPharmacyCard("oos")}
+                  onClick={() =>
+                    openDetail(
+                      pharmacyMedicineNameTable(
+                        "Out of stock",
+                        pharmacyData.out_of_stock_medicines ?? [],
+                        "No out-of-stock medicines",
+                      ),
+                    )
+                  }
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Out of Stock</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -2203,7 +2311,15 @@ export default function AdminDashboard() {
                 {/* Stat 3: Low Stock — tooltip opens upward */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedPharmacyCard("low")}
+                  onClick={() =>
+                    openDetail(
+                      pharmacyMedicineNameTable(
+                        "Low stock",
+                        pharmacyData.low_stock_medicines ?? [],
+                        "No low-stock medicines",
+                      ),
+                    )
+                  }
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Low Stock</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -2244,7 +2360,15 @@ export default function AdminDashboard() {
                 {/* Stat 4: Expiring Soon — tooltip opens upward to prevent bottom overflow */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => setExpandedPharmacyCard("soon")}
+                  onClick={() =>
+                    openDetail(
+                      pharmacyMedicineNameTable(
+                        "Expiring soon (30d)",
+                        pharmacyData.expiring_soon_medicines ?? [],
+                        "No medicines expiring in the next 30 days",
+                      ),
+                    )
+                  }
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Expiring Soon</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -2340,7 +2464,12 @@ export default function AdminDashboard() {
                           pct >= 80 ? "critical" :
                           pct >= 50 ? "high risk" : "moderate";
                         return (
-                          <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
+                          <div
+                            key={i}
+                            className={`flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0 ${insightOpenCls}`}
+                            role="presentation"
+                            onClick={() => openDetail(pharmacyMlAtRiskSingleRow(m))}
+                          >
                             <p className="text-[10px] text-tx-secondary truncate flex-1">{m.medicine_name}</p>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="text-[10px] text-tx-muted tabular-nums">{pct}%</span>
@@ -2352,7 +2481,14 @@ export default function AdminDashboard() {
                         );
                       })
                     : (pharmacyData.medicines_to_reorder ?? []).map((name, i) => (
-                        <div key={i} className="flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0">
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between gap-2 py-[3px] border-b border-white/[0.04] last:border-0 ${insightOpenCls}`}
+                          role="presentation"
+                          onClick={() =>
+                            openDetail(pharmacyMedicineNameTable("Reorder item", [name], "—"))
+                          }
+                        >
                           <p className="text-[10px] text-tx-secondary truncate flex-1">{name}</p>
                           <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border bg-red-500/20 text-kpi-red border-red-500/30 shrink-0">
                             reorder
@@ -2363,7 +2499,12 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Predicted totals footer */}
-                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                <div
+                  className={`mt-auto pt-2 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Full ML / reorder table"
+                  onClick={() => openDetail(pharmacyMlAtRiskTable(pharmacyData))}
+                >
                   {(() => {
                     const atRisk   = pharmacyData.ml_at_risk_medicines ?? [];
                     const reorder  = pharmacyData.medicines_to_reorder ?? [];
@@ -2484,57 +2625,6 @@ export default function AdminDashboard() {
               </div>
 
             </div>
-          ) : null}
-
-          {/* Keep ALL 5 PharmacyStatModal components */}
-          {pharmacyData ? (
-            <>
-              <PharmacyStatModal
-                open={expandedPharmacyCard === "total"}
-                onClose={() => setExpandedPharmacyCard(null)}
-                title="Total medicines"
-                unit=""
-                accentHex="#06b6d4"
-                pack={derivePrediction(pharmacyData.total_medicines, undefined, undefined)}
-                helperText="Tracks catalog size changes; increases usually reflect new supply entries, decreases may indicate retirements or formulary changes."
-              />
-              <PharmacyStatModal
-                open={expandedPharmacyCard === "oos"}
-                onClose={() => setExpandedPharmacyCard(null)}
-                title="Out of stock"
-                unit=""
-                accentHex="#ef4444"
-                pack={derivePrediction(pharmacyData.out_of_stock_count, undefined, undefined)}
-                helperText="Escalate immediate procurement for the highest-impact items. Prioritize by clinical criticality and expected consumption."
-              />
-              <PharmacyStatModal
-                open={expandedPharmacyCard === "low"}
-                onClose={() => setExpandedPharmacyCard(null)}
-                title="Low stock"
-                unit=""
-                accentHex="#f97316"
-                pack={derivePrediction(pharmacyData.low_stock_count, undefined, undefined)}
-                helperText="Convert low-stock items into reorder batches. Bundle vendors and align with delivery lead-times to prevent near-term stockouts."
-              />
-              <PharmacyStatModal
-                open={expandedPharmacyCard === "soon"}
-                onClose={() => setExpandedPharmacyCard(null)}
-                title="Expiring soon (30d)"
-                unit=""
-                accentHex="#eab308"
-                pack={derivePrediction(pharmacyData.expiring_soon_count, undefined, undefined)}
-                helperText="Use FEFO allocation and redistribute inventory to high-usage wards. Consider substitutions if demand is lower than expiring supply."
-              />
-              <PharmacyStatModal
-                open={expandedPharmacyCard === "expired"}
-                onClose={() => setExpandedPharmacyCard(null)}
-                title="Expired"
-                unit=""
-                accentHex="#ef4444"
-                pack={derivePrediction(pharmacyData.expired_count, undefined, undefined)}
-                helperText="Quarantine and document expired items; investigate recurring expiry categories and adjust min/max levels to reduce waste."
-              />
-            </>
           ) : null}
         </div>
         {/* ── Finance & Billing Intelligence Card ── */}
@@ -3877,30 +3967,6 @@ export default function AdminDashboard() {
                       <Bar dataKey="leave" fill="#eab308" fillOpacity={0.6} radius={[2, 2, 0, 0]} name="Leave" />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-
-                <div className="mt-1 flex flex-wrap items-center gap-1 shrink-0">
-                  <span className="sr-only">Open daily forecast detail</span>
-                  {(Array.isArray(staffData.attendance_forecast_details)
-                    ? staffData.attendance_forecast_details
-                    : []
-                  ).map((det: Record<string, unknown>, idx: number) => {
-                    const iso = String(det.date ?? idx);
-                    const short = iso.length >= 10 ? iso.slice(5) : `D${idx + 1}`;
-                    return (
-                      <button
-                        key={`${iso}-${idx}`}
-                        type="button"
-                        className={`rounded-md border border-dash-border px-2 py-0.5 text-[9px] font-semibold tabular-nums text-tx-secondary hover:text-kpi-green ${insightOpenCls}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDetail(staffForecastDayModalPayload(det));
-                        }}
-                      >
-                        {short}
-                      </button>
-                    );
-                  })}
                 </div>
 
                 {/* Live staff status list */}

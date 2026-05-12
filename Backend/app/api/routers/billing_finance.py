@@ -107,7 +107,7 @@ async def compute_billing_finance_overview(
             )
         )
         .order_by(Billing.date.desc())
-        .limit(5)
+        .limit(45)
     )
 
     recent_invoices: List[Dict[str, Any]] = []

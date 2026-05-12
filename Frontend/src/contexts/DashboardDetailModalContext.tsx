@@ -9,6 +9,7 @@ import { useHtmlDarkClass } from "@/components/theme/ThemeProvider";
 
 type Ctx = {
   openDetail: (payload: DetailModalPayload) => void;
+  openDetailAsync: (loader: () => Promise<DetailModalPayload>) => Promise<void>;
   closeDetail: () => void;
 };
 
@@ -24,12 +25,31 @@ export function DashboardDetailModalProvider({ children }: { children: React.Rea
     setOpen(true);
   }, []);
 
+  const openDetailAsync = useCallback(async (loader: () => Promise<DetailModalPayload>) => {
+    setOpen(true);
+    setPayload({ title: "Loading", loading: true, blocks: [] });
+    try {
+      const p = await loader();
+      setPayload({ ...p, loading: false });
+    } catch {
+      setPayload({
+        title: "Unable to load",
+        subtitle: "Check your connection and try again.",
+        loading: false,
+        blocks: [],
+      });
+    }
+  }, []);
+
   const closeDetail = useCallback(() => {
     setOpen(false);
     setPayload(null);
   }, []);
 
-  const value = useMemo(() => ({ openDetail, closeDetail }), [openDetail, closeDetail]);
+  const value = useMemo(
+    () => ({ openDetail, openDetailAsync, closeDetail }),
+    [openDetail, openDetailAsync, closeDetail],
+  );
 
   return (
     <DashboardDetailModalContext.Provider value={value}>
