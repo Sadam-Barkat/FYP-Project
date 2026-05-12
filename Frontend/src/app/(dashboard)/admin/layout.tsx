@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { DashboardDetailModalProvider } from "@/contexts/DashboardDetailModalContext";
 
 const BILLING_ONLY_PREFIX = "/admin/billing-finance";
 
@@ -21,5 +22,5 @@ export default function AdminSectionLayout({ children }: { children: React.React
     router.replace(BILLING_ONLY_PREFIX);
   }, [pathname, router]);
 
-  return <>{children}</>;
+  return <DashboardDetailModalProvider>{children}</DashboardDetailModalProvider>;
 }

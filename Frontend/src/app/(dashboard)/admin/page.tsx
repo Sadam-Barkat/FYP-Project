@@ -26,11 +26,16 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import { useHtmlDarkClass } from "@/components/theme/ThemeProvider";
+import type { DetailListItem, DetailModalPayload } from "@/components/dashboard/DashboardDetailModal";
+import { useDashboardDetailModal } from "@/contexts/DashboardDetailModalContext";
 
 const cardBase =
   "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default p-4 pb-[48%] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 dark:bg-transparent dark:border-0 dark:shadow-none dark:hover:-translate-y-1";
 
-/** Hover panels: branch on <html class="dark"> so chrome matches Tailwind + blocking script. */
+/** Hover panels branch on `<html class="dark">`; `insightOpenCls` hints click-to-expand details across cards. */
+const insightOpenCls =
+  "cursor-pointer select-none rounded-md transition-colors hover:bg-slate-100/90 dark:hover:bg-white/[0.045] active:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-blue/35";
+
 function patientIntelHoverPanelCls(htmlIsDark: boolean): string {
   if (!htmlIsDark) {
     return "rounded-xl border border-slate-200 !bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
@@ -50,6 +55,431 @@ function makeSparkData(value: number) {
   return Array.from({ length: 14 }, (_, i) => ({
     v: Math.round(v * (0.82 + Math.sin(i * 0.75 + (v % 3)) * 0.16)),
   }));
+}
+
+// ── Detail modal payloads (billing / beds / staff forecast / pharmacy) ────
+
+function staffKindLabel(kind: string | undefined): string {
+  if (kind === "doctor") return "Doctor";
+  if (kind === "nurse") return "Nurse";
+  return "Staff";
+}
+
+function countKindBreakdown(rows: Array<{ kind?: string } | undefined | null>): {
+  doctors: number;
+  nurses: number;
+  other: number;
+} {
+  let doctors = 0;
+  let nurses = 0;
+  let other = 0;
+  for (const r of rows ?? []) {
+    if (!r) continue;
+    if (r.kind === "doctor") doctors++;
+    else if (r.kind === "nurse") nurses++;
+    else other++;
+  }
+  return { doctors, nurses, other };
+}
+
+function rosterRowToDetailItem(p: {
+  name?: string;
+  role?: string;
+  department?: string;
+  kind?: string;
+}): DetailListItem {
+  return {
+    primary: String(p?.name ?? "—"),
+    secondary: [p?.role, p?.department].filter(Boolean).join(" · ") || undefined,
+    badge: staffKindLabel(p?.kind),
+  };
+}
+
+function staffForecastDayModalPayload(day: Record<string, unknown>): DetailModalPayload {
+  const iso = String(day.date ?? "");
+  const shortLabel = iso.length >= 10 ? iso.slice(5) : iso;
+  const absent = (
+    Array.isArray(day.absent_staff) ? day.absent_staff : []
+  ) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
+  const leave = (
+    Array.isArray(day.leave_staff) ? day.leave_staff : []
+  ) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
+  const ac = countKindBreakdown(absent);
+  const lc = countKindBreakdown(leave);
+  return {
+    title: "Staff absenteeism forecast",
+    subtitle: `${shortLabel} · ${iso}`,
+    blocks: [
+      {
+        sections: [
+          {
+            title: `Absent (${absent.length}) — doctors ${ac.doctors}, nurses ${ac.nurses}, other ${ac.other}`,
+            accent: "red",
+            items: absent.map(rosterRowToDetailItem),
+          },
+          {
+            title: `On leave (${leave.length}) — doctors ${lc.doctors}, nurses ${lc.nurses}, other ${lc.other}`,
+            accent: "yellow",
+            items: leave.map(rosterRowToDetailItem),
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function staffForecastFullModalPayload(staffData: Record<string, unknown>): DetailModalPayload {
+  const details = Array.isArray(staffData.attendance_forecast_details)
+    ? (staffData.attendance_forecast_details as Record<string, unknown>[])
+    : [];
+  const trend = Array.isArray(staffData.attendance_trend)
+    ? (staffData.attendance_trend as { present?: number; absent?: number; leave?: number }[])
+    : [];
+  let tp = 0;
+  let ta = 0;
+  let tl = 0;
+  for (const r of trend) {
+    tp += Number(r.present ?? 0);
+    ta += Number(r.absent ?? 0);
+    tl += Number(r.leave ?? 0);
+  }
+  const blocks =
+    details.length > 0
+      ? details.map((d) => {
+          const iso = String(d.date ?? "");
+          const shortLabel = iso.length >= 10 ? iso.slice(5) : iso;
+          const absent = (Array.isArray(d.absent_staff)
+            ? d.absent_staff
+            : []) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
+          const leave = (Array.isArray(d.leave_staff)
+            ? d.leave_staff
+            : []) as Array<{ kind?: string; name?: string; role?: string; department?: string }>;
+          const ac = countKindBreakdown(absent);
+          const lc = countKindBreakdown(leave);
+          return {
+            heading: `${shortLabel} · ${iso}`,
+            sections: [
+              {
+                title: `Absent (${absent.length}) — doctors ${ac.doctors}, nurses ${ac.nurses}, other ${ac.other}`,
+                accent: "red" as const,
+                items: absent.map(rosterRowToDetailItem),
+              },
+              {
+                title: `On leave (${leave.length}) — doctors ${lc.doctors}, nurses ${lc.nurses}, other ${lc.other}`,
+                accent: "yellow" as const,
+                items: leave.map(rosterRowToDetailItem),
+              },
+            ],
+          };
+        })
+      : [
+          {
+            sections: [
+              {
+                title: "No roster",
+                accent: "neutral",
+                items: [
+                  {
+                    primary: "Add staff or seed attendance to see predicted names.",
+                    secondary: "",
+                  },
+                ],
+              },
+            ],
+          },
+        ];
+
+  return {
+    title: "Next 7 days forecast — full breakdown",
+    subtitle: `Totals across chart: ${tp} present · ${ta} absent · ${tl} on leave`,
+    blocks,
+  };
+}
+
+function bedsAdmissionsForecastModalPayload(bedsData: Record<string, unknown>): DetailModalPayload {
+  const fc = Array.isArray(bedsData.ml_next_7_days_forecast)
+    ? (bedsData.ml_next_7_days_forecast as Record<string, unknown>[])
+    : [];
+  return {
+    title: "Forecasted admissions (ML)",
+    subtitle: "Per-day detail · Bed & Ward intelligence",
+    blocks: fc.map((row, idx) => {
+      const d = String(row.date ?? `#${idx + 1}`);
+      const dl = d.length >= 10 ? d.slice(5) : d;
+      return {
+        heading: `${dl} · ${d}`,
+        sections: [
+          {
+            title: "Day breakdown",
+            accent: "blue",
+            items: [
+              {
+                primary: `${Number(row.predicted_admissions ?? 0).toFixed(2)} predicted admissions`,
+                secondary: "",
+              },
+              {
+                primary: "Shortage probability",
+                secondary: `${Math.round(Number(row.shortage_probability ?? 0) * 100)}%`,
+              },
+              {
+                primary: "Est. occupancy / beds",
+                secondary: `${Number(row.estimated_occupancy_pct ?? 0).toFixed(1)}% · ~${Math.round(
+                  Number(row.estimated_occupied_beds ?? 0),
+                )} beds`,
+              },
+            ],
+          },
+        ],
+      };
+    }),
+  };
+}
+
+function financeRecentInvoicesItems(
+  financeData: Record<string, unknown>,
+  cap = 30,
+): DetailListItem[] {
+  const inv = Array.isArray(financeData.recent_invoices)
+    ? (financeData.recent_invoices as Record<string, unknown>[])
+    : [];
+  return inv.slice(0, cap).map((x) => ({
+    primary: String(x.description ?? x.patient_name ?? x.id ?? "Invoice"),
+    secondary: [
+      typeof x.amount === "number" ? `₨${x.amount}` : String(x.amount ?? ""),
+      String(x.status ?? ""),
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  }));
+}
+
+function financeSnapshotModalPayload(
+  financeData: Record<string, unknown>,
+  focus: "revenue" | "outstanding" | "expenses" | "net",
+): DetailModalPayload {
+  const revenue = Number(financeData?.todays_revenue ?? 0);
+  const outstanding = Number(financeData?.outstanding_balance ?? 0);
+  const expenses = Number(financeData?.todays_expenses ?? 0);
+  const items = financeRecentInvoicesItems(financeData, 35);
+  const trend = (
+    Array.isArray(financeData.revenue_vs_expenses)
+      ? (financeData.revenue_vs_expenses as Record<string, unknown>[])
+      : []
+  ).slice(-10);
+
+  if (focus === "revenue") {
+    return {
+      title: "Today's revenue · detail",
+      subtitle: `Recorded revenue: ₨${revenue}`,
+      blocks: [
+        {
+          sections: [
+            {
+              title: "Recent invoices (latest first)",
+              accent: "green",
+              items: items.length ? items : [{ primary: "No recent invoices.", secondary: "" }],
+            },
+            {
+              title: "Revenue trend (last rows)",
+              accent: "neutral",
+              items:
+                trend.length > 0
+                  ? trend.map((row, i) => ({
+                      primary: `Slice ${i + 1}`,
+                      secondary: `Revenue ₨${Number(row.revenue ?? 0)} · Expenses ₨${Number(row.expenses ?? 0)}`,
+                    }))
+                  : [{ primary: "No trend samples.", secondary: "" }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (focus === "outstanding") {
+    return {
+      title: "Outstanding balance · detail",
+      subtitle: `Total outstanding: ₨${outstanding}`,
+      blocks: [
+        {
+          sections: [
+            {
+              title: "Recent invoices affecting balance",
+              accent: "orange",
+              items: items.length ? items : [{ primary: "No invoices loaded.", secondary: "" }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (focus === "expenses") {
+    return {
+      title: "Expenses snapshot",
+      subtitle: `Today's expenses: ₨${expenses}`,
+      blocks: [
+        {
+          sections: [
+            {
+              title: "Revenue vs expenses trend rows",
+              accent: "red",
+              items:
+                trend.length > 0
+                  ? trend.map((row, i) => ({
+                      primary: `Row ${i + 1}`,
+                      secondary: `Expenses ₨${Number(row.expenses ?? 0)} · Revenue ₨${Number(
+                        row.revenue ?? 0,
+                      )}`,
+                    }))
+                  : [{ primary: "No trend samples.", secondary: "" }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (focus === "net") {
+    const net = revenue - expenses;
+    return {
+      title: "Net profit · detail",
+      subtitle: `Rev ₨${revenue} · Exp ₨${expenses} · Net ₨${net}`,
+      blocks: [
+        {
+          sections: [
+            {
+              title: "Recent invoices (context)",
+              accent: "green",
+              items: items.length ? items : [{ primary: "No invoices returned.", secondary: "" }],
+            },
+            {
+              title: "Rolling revenue vs expense rows",
+              accent: "neutral",
+              items:
+                trend.length > 0
+                  ? trend.map((row, i) => ({
+                      primary: `Slice ${i + 1}`,
+                      secondary: `Net hint ₨${Number(row.revenue ?? 0) - Number(row.expenses ?? 0)}`,
+                    }))
+                  : [{ primary: "No trend samples.", secondary: "" }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  return {
+    title: "Recent billing activity",
+    subtitle: `${items.length} latest invoices sampled`,
+    blocks: [
+      {
+        sections: [
+          {
+            title: "Invoice list",
+            accent: "blue",
+            items: items.length ? items : [{ primary: "No invoices returned.", secondary: "" }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function pharmacyDemandForecastModalPayload(pharmacyData: Record<string, unknown>): DetailModalPayload {
+  const fc = Array.isArray(pharmacyData.demand_forecast)
+    ? (pharmacyData.demand_forecast as Record<string, unknown>[])
+    : [];
+  return {
+    title: "Prescription forecast (next 7 days)",
+    subtitle: "Each day from Pharmacy intelligence",
+    blocks: fc.slice(0, 7).map((row, i) => {
+      const iso = String(row.date ?? `#${i + 1}`);
+      const dl = iso.length >= 10 ? iso.slice(5) : iso;
+      return {
+        heading: `${dl}`,
+        sections: [
+          {
+            title: `${Number(row.predicted_prescriptions ?? 0)} prescriptions`,
+            accent: "blue",
+            items: [{ primary: "Full date", secondary: iso }],
+          },
+        ],
+      };
+    }),
+  };
+}
+
+function patientIntelTotalsModalPayload(intelData: Record<string, unknown>): DetailModalPayload {
+  const forecasts = Array.isArray(intelData.ml_forecast)
+    ? (intelData.ml_forecast as Record<string, unknown>[]).slice(0, 24)
+    : [];
+  const topCritical = forecasts.filter((row) =>
+    ["high", "critical"].includes(String(row.risk_label ?? "").toLowerCase()),
+  );
+  return {
+    title: "Patient intelligence · KPI detail",
+    subtitle: "Deep view of KPI numbers plus sampled ML rows",
+    blocks: [
+      {
+        sections: [
+          {
+            title: "Volumes & vitals KPIs",
+            accent: "blue",
+            items: [
+              {
+                primary: `Total patients · ${intelData.total_patients ?? "—"}`,
+                secondary: `Prev week ${intelData.previous_week_patients ?? "—"} · change ${intelData.change_from_last_week ?? "—"}`,
+              },
+              {
+                primary: `Healthy vitals · ${intelData.vitals_health_percentage ?? "—"}%`,
+                secondary: `Critical share · ${intelData.critical_vitals_percentage ?? "—"}%`,
+              },
+              {
+                primary: `At-risk cohort`,
+                secondary: `${intelData.at_risk_count ?? "—"} patients flagged`,
+              },
+            ],
+          },
+          {
+            title: topCritical.length ? "High/critical ML patients" : "ML forecasts (preview)",
+            accent: "red",
+            items:
+              forecasts.length > 0
+                ? forecasts.map((row, i) => ({
+                    primary: String(row.name ?? `Patient row ${i + 1}`),
+                    secondary: `${row.risk_label ?? "risk"} · ${String(row.risk_pct ?? "")}%`,
+                  }))
+                : [{ primary: "ML forecast endpoint returned no rows.", secondary: "" }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function liveStaffStatusModalPayload(
+  title: string,
+  subtitle: string,
+  rows: Array<{ name?: string; role?: string; department?: string; status?: string }>,
+): DetailModalPayload {
+  const classify = (role: string) => {
+    const r = (role ?? "").toLowerCase();
+    if (r.includes("doctor") || r.includes("dr.")) return "doctor";
+    if (r.includes("nurse")) return "nurse";
+    return "other";
+  };
+  const d = countKindBreakdown(
+    rows.map((r) => ({ ...r, kind: classify(String(r.role ?? "")) })),
+  );
+  const items = rows.map((r) => rosterRowToDetailItem({ ...r, kind: classify(String(r.role ?? "")) }));
+
+  return {
+    title,
+    subtitle: `${subtitle} · doctors ${d.doctors}, nurses ${d.nurses}, other ${d.other}`,
+    blocks: [{ sections: [{ title: `Roster (${rows.length})`, accent: "green", items }] }],
+  };
 }
 
 // ── Patient Intelligence: prediction derivation (pure, no new fetch) ──────
@@ -897,6 +1327,7 @@ const KPI_CARD_DEFS = [
 
 export default function AdminDashboard() {
   const htmlIsDark = useHtmlDarkClass();
+  const { openDetail } = useDashboardDetailModal();
   const [kpiData, setKpiData] = useState<HospitalOverviewKpis | null>(null);
   const [kpiLoading, setKpiLoading] = useState(true);
   const [kpiHover, setKpiHover] = useState<string | null>(null);
@@ -1288,7 +1719,13 @@ export default function AdminDashboard() {
               {/* LEFT: KPI STACK */}
               <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* TOTAL PATIENTS */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={() =>
+                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                  }
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1330,7 +1767,13 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* VITALS HEALTH */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={() =>
+                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                  }
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1369,7 +1812,13 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* CRITICAL VITALS */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={() =>
+                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                  }
+                >
                   <div
                     className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1421,7 +1870,13 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* AT RISK */}
-                <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={() =>
+                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                  }
+                >
                   <div
                     className={`absolute left-full bottom-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
@@ -1500,7 +1955,14 @@ export default function AdminDashboard() {
                     });
                   })()}
                 </div>
-                <div className="mt-1 pt-1.5 border-t border-dash-border shrink-0">
+                <div
+                  className={`mt-1 pt-1.5 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Risk detail"
+                  onClick={() =>
+                    openDetail(patientIntelTotalsModalPayload(intelData as unknown as Record<string, unknown>))
+                  }
+                >
                   {(() => {
                     const highRisk =
                       typeof intelData.ml_high_risk_24h_count === "number"
@@ -2012,7 +2474,14 @@ export default function AdminDashboard() {
 
                 {/* Predicted totals summary — matches Finance "PREDICTED NEXT 7 DAYS TOTALS" */}
                 {(pharmacyData.demand_forecast ?? []).length > 0 ? (
-                  <div className="mt-2 pt-1.5 border-t border-dash-border shrink-0">
+                  <div
+                    className={`mt-2 pt-1.5 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                    role="presentation"
+                    title="Forecast detail"
+                    onClick={() =>
+                      openDetail(pharmacyDemandForecastModalPayload(pharmacyData as unknown as Record<string, unknown>))
+                    }
+                  >
                     {(() => {
                       const total = (pharmacyData.demand_forecast ?? []).reduce((s, f) => s + f.predicted_prescriptions, 0);
                       const avg   = total / Math.max((pharmacyData.demand_forecast ?? []).length, 1);
@@ -2149,7 +2618,15 @@ export default function AdminDashboard() {
                   return (
                     <>
                       {/* Stat 1: Today's Revenue */}
-                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                      <div
+                        className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                        role="presentation"
+                        onClick={() =>
+                          openDetail(
+                            financeSnapshotModalPayload(financeData as Record<string, unknown>, "revenue"),
+                          )
+                        }
+                      >
                         <div
                           className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                         >
@@ -2218,7 +2695,18 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Stat 2: Outstanding Balance */}
-                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                      <div
+                        className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                        role="presentation"
+                        onClick={() =>
+                          openDetail(
+                            financeSnapshotModalPayload(
+                              financeData as Record<string, unknown>,
+                              "outstanding",
+                            ),
+                          )
+                        }
+                      >
                         <div
                           className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                         >
@@ -2295,7 +2783,15 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Stat 3: Net Profit */}
-                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                      <div
+                        className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                        role="presentation"
+                        onClick={() =>
+                          openDetail(
+                            financeSnapshotModalPayload(financeData as Record<string, unknown>, "net"),
+                          )
+                        }
+                      >
                         <div
                           className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                         >
@@ -2332,7 +2828,18 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Stat 4: Today's Expenses */}
-                      <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
+                      <div
+                        className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                        role="presentation"
+                        onClick={() =>
+                          openDetail(
+                            financeSnapshotModalPayload(
+                              financeData as Record<string, unknown>,
+                              "expenses",
+                            ),
+                          )
+                        }
+                      >
                         <div
                           className={`absolute left-full bottom-0 z-50 ml-2 w-56 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                         >
@@ -2971,7 +3478,14 @@ export default function AdminDashboard() {
                     })}
                 </div>
 
-                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                <div
+                  className={`mt-auto pt-2 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Admission forecast detail"
+                  onClick={() =>
+                    bedsData && openDetail(bedsAdmissionsForecastModalPayload(bedsData as Record<string, unknown>))
+                  }
+                >
                   {(() => {
                     const ml = bedsData.ml_shortage_risk ?? {};
                     const totalAdmissions =
@@ -3107,7 +3621,20 @@ export default function AdminDashboard() {
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
 
                 {/* Stat 1: Staff On Duty */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(
+                      liveStaffStatusModalPayload(
+                        "Staff on duty · detail",
+                        "Present today · names + roles",
+                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty"),
+                      ),
+                    );
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Staff On Duty</p>
                   <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                     {staffData.staff_on_duty ?? 0}
@@ -3123,10 +3650,10 @@ export default function AdminDashboard() {
                     className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Staff Breakdown</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'present').slice(0, 4).map((s: any, i: number) => (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty").slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">✓ {s.name} · {s.role}</p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'present').length === 0 && (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty").length === 0 && (
                       <p className="text-[10px] text-tx-secondary">No live data available</p>
                     )}
                     <p className="text-[10px] text-kpi-cyan mt-1">Active shifts: {staffData.active_shifts ?? 0}</p>
@@ -3134,7 +3661,20 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 2: Active Shifts */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(
+                      liveStaffStatusModalPayload(
+                        "Active shifts · roster",
+                        `${staffData.active_shifts ?? 0} records vs ${staffData.staff_on_duty ?? 0} on duty`,
+                        staffData.live_staff_status ?? [],
+                      ),
+                    );
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Active Shifts</p>
                   <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
                     {staffData.active_shifts ?? 0}
@@ -3160,7 +3700,20 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 3: Absent Today */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(
+                      liveStaffStatusModalPayload(
+                        "Absent today · detail",
+                        "Counted from today's attendance marks",
+                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent"),
+                      ),
+                    );
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Absent Today</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
@@ -3184,17 +3737,30 @@ export default function AdminDashboard() {
                     className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Absent Staff</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'absent').slice(0, 4).map((s: any, i: number) => (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent").slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">✗ {s.name} · {s.department}</p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'absent').length === 0 && (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent").length === 0 && (
                       <p className="text-[10px] text-tx-secondary">No absences recorded</p>
                     )}
                   </div>
                 </div>
 
                 {/* Stat 4: On Leave */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(
+                      liveStaffStatusModalPayload(
+                        "On leave today · detail",
+                        "Today's leave marks",
+                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave"),
+                      ),
+                    );
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">On Leave</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-tx-yellow font-black text-xl tabular-nums leading-none">
@@ -3213,10 +3779,10 @@ export default function AdminDashboard() {
                     className={`absolute left-full bottom-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
                   >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">On Leave</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'leave').slice(0, 4).map((s: any, i: number) => (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave").slice(0, 4).map((s: any, i: number) => (
                       <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {s.name} · {s.department}</p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === 'leave').length === 0 && (
+                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave").length === 0 && (
                       <p className="text-[10px] text-tx-secondary">No staff on leave</p>
                     )}
                   </div>
@@ -3226,7 +3792,15 @@ export default function AdminDashboard() {
 
               {/* ── COLUMN 2: ML Absenteeism Forecast + Attendance Trend ── */}
               <div className="flex min-h-0 flex-col px-4 py-3 overflow-hidden">
-                <div className="flex items-center gap-1.5 shrink-0 mb-0.5">
+                <div
+                  className={`flex items-center gap-1.5 shrink-0 mb-0.5 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Open full breakdown"
+                  onClick={() =>
+                    staffData &&
+                    openDetail(staffForecastFullModalPayload(staffData as Record<string, unknown>))
+                  }
+                >
                   <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                     🤖 Absenteeism Forecast (ML · Next 7 Days)
                     <span className="relative flex h-1.5 w-1.5">
@@ -3324,6 +3898,30 @@ export default function AdminDashboard() {
                   </ResponsiveContainer>
                 </div>
 
+                <div className="mt-1 flex flex-wrap items-center gap-1 shrink-0">
+                  <span className="sr-only">Open daily forecast detail</span>
+                  {(Array.isArray(staffData.attendance_forecast_details)
+                    ? staffData.attendance_forecast_details
+                    : []
+                  ).map((det: Record<string, unknown>, idx: number) => {
+                    const iso = String(det.date ?? idx);
+                    const short = iso.length >= 10 ? iso.slice(5) : `D${idx + 1}`;
+                    return (
+                      <button
+                        key={`${iso}-${idx}`}
+                        type="button"
+                        className={`rounded-md border border-dash-border px-2 py-0.5 text-[9px] font-semibold tabular-nums text-tx-secondary hover:text-kpi-green ${insightOpenCls}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(staffForecastDayModalPayload(det));
+                        }}
+                      >
+                        {short}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {/* Live staff status list */}
                 <div className="mt-2 flex items-center gap-1.5 shrink-0">
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
@@ -3354,17 +3952,33 @@ export default function AdminDashboard() {
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+                <div
+                  className={`mt-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] ${insightOpenCls}`}
+                  role="presentation"
+                  title="Tap to expand full roster"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(
+                      liveStaffStatusModalPayload(
+                        "Live staff status · full roster",
+                        "Today's attendance snapshot",
+                        staffData.live_staff_status ?? [],
+                      ),
+                    );
+                  }}
+                >
                   {(staffData.live_staff_status ?? []).map((s: any, i: number) => (
                     <div key={`${s.name ?? "staff"}-${i}`} className="flex items-center justify-between py-0.5 border-b border-dash-border/40 last:border-0 shrink-0">
                       <span className="text-[10px] text-tx-primary truncate flex-1 min-w-0">{s.name}</span>
                       <span className="text-[9px] text-tx-secondary mx-2 shrink-0 truncate max-w-[60px]">{s.department}</span>
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${
-                        s.status === 'present'
+                        s.status === "On Duty"
                           ? 'bg-green-500/15 text-kpi-green border-green-500/20'
-                          : s.status === 'absent'
+                          : s.status === "Absent"
                           ? 'bg-red-500/15 text-kpi-red border-red-500/20'
-                          : 'bg-yellow-500/15 text-tx-yellow border-yellow-500/20'
+                          : s.status === "On Leave"
+                          ? 'bg-yellow-500/15 text-tx-yellow border-yellow-500/20'
+                          : 'bg-white/10 text-tx-muted border-dash-border'
                       }`}>
                         {s.status}
                       </span>
@@ -3372,8 +3986,16 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                {/* 7-day forecast totals (sum of bar chart values) */}
-                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                {/* 7-day forecast totals (sum of bar chart values) — click for names */}
+                <div
+                  className={`mt-auto pt-2 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Tap for absent / leave names · all 7 days"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(staffForecastFullModalPayload(staffData));
+                  }}
+                >
                   {(() => {
                     const trend = staffData.attendance_trend ?? [];
                     let sumPresent = 0;
