@@ -176,23 +176,44 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
                         available_beds.append(adm[2])
                         discharged_today += 1
 
-            # E. VITALS FOR ACTIVE ADMISSIONS
+            # E. VITALS & ALERTS FOR ACTIVE ADMISSIONS
             if do_vit:
                 for adm in active_admissions:
                     # Add 1-2 vitals for active patients
                     for v in range(random.randint(1, 2)):
-                        hr = random.randint(60, 125)
-                        spo2 = random.randint(89, 100)
-                        temp = round(random.uniform(36.5, 39.5), 1)
-                        cond = "critical" if hr > 115 or spo2 < 92 else "moderate" if hr > 100 or spo2 < 95 else "stable"
+                        hr = random.randint(55, 135)
+                        spo2 = random.randint(85, 100)
+                        temp = round(random.uniform(36.0, 40.5), 1)
+                        
+                        cond = "stable"
+                        if hr > 125 or spo2 < 88 or temp > 40.0:
+                            cond = "emergency"
+                        elif hr > 115 or spo2 < 92 or temp > 39.0:
+                            cond = "critical"
+                        elif hr > 100 or spo2 < 95 or temp > 38.0:
+                            cond = "under_observation"
+                        
+                        vital_time = target_datetime + timedelta(hours=v*2)
                         await conn.execute(text(
                             "INSERT INTO vitals (patient_id, recorded_by, recorded_at, heart_rate, blood_pressure_sys, blood_pressure_dia, spo2, temperature, respiratory_rate, condition_level, created_at, updated_at) "
                             "VALUES (:pid, :rb, :ra, :hr, :sys, :dia, :spo2, :temp, :rr, :cl, :c, :u)"
                         ), {
-                            "pid": adm[1], "rb": random.choice(nurses) if nurses else 1, "ra": target_datetime + timedelta(hours=v*2),
+                            "pid": adm[1], "rb": random.choice(nurses) if nurses else 1, "ra": vital_time,
                             "hr": hr, "sys": random.randint(100, 150), "dia": random.randint(60, 90),
                             "spo2": spo2, "temp": temp, "rr": random.randint(14, 24), "cl": cond, "c": now, "u": now
                         })
+                        
+                        # Generate corresponding alerts for severe conditions
+                        if cond == "emergency":
+                            await conn.execute(text(
+                                "INSERT INTO alerts (patient_id, type, severity, message, is_resolved, created_at, updated_at) "
+                                "VALUES (:pid, 'vitals_warning', 'critical', :msg, false, :c, :u)"
+                            ), {"pid": adm[1], "msg": "Patient in emergency condition. Immediate intervention required.", "c": vital_time, "u": now})
+                        elif cond == "critical":
+                            await conn.execute(text(
+                                "INSERT INTO alerts (patient_id, type, severity, message, is_resolved, created_at, updated_at) "
+                                "VALUES (:pid, 'vitals_warning', 'high', :msg, false, :c, :u)"
+                            ), {"pid": adm[1], "msg": "Critical vitals detected. Close monitoring required.", "c": vital_time, "u": now})
 
             # F. FINANCE (Billings & Transactions) - tied to new patients + some random existing ones
             patients_res = await conn.execute(text("SELECT id FROM patients"))

@@ -666,10 +666,12 @@ async def seed_admissions_and_related(
                 rr = random.randint(12, 28)
 
                 # Determine condition
-                if hr > 120 or spo2 < 90 or sys_bp > 160 or temp > 39.5:
+                if hr > 125 or spo2 < 88 or temp > 40.0:
+                    condition = "emergency"
+                elif hr > 115 or spo2 < 92 or sys_bp > 160 or temp > 39.5:
                     condition = "critical"
-                elif hr > 100 or spo2 < 95 or sys_bp > 140 or temp > 38.5:
-                    condition = "moderate"
+                elif hr > 100 or spo2 < 95 or sys_bp > 140 or temp > 38.0:
+                    condition = "under_observation"
                 else:
                     condition = "stable"
 
@@ -687,6 +689,18 @@ async def seed_admissions_and_related(
                     "cl": condition, "c": vital_dt, "u": NOW
                 })
                 vitals_count += 1
+                
+                # Generate corresponding alerts for severe conditions
+                if condition == "emergency":
+                    await session.execute(text(
+                        "INSERT INTO alerts (patient_id, type, severity, message, is_resolved, created_at, updated_at) "
+                        "VALUES (:pid, 'vitals_warning', 'critical', :msg, false, :c, :u)"
+                    ), {"pid": patient_id, "msg": "Patient in emergency condition. Immediate intervention required.", "c": vital_dt, "u": NOW})
+                elif condition == "critical":
+                    await session.execute(text(
+                        "INSERT INTO alerts (patient_id, type, severity, message, is_resolved, created_at, updated_at) "
+                        "VALUES (:pid, 'vitals_warning', 'high', :msg, false, :c, :u)"
+                    ), {"pid": patient_id, "msg": "Critical vitals detected. Close monitoring required.", "c": vital_dt, "u": NOW})
 
             # Billing
             amount = round(random.uniform(2000, 50000), 2)
