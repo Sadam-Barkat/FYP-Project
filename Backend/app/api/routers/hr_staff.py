@@ -140,6 +140,7 @@ async def get_hr_staff_overview(
         import os
         import joblib
         import numpy as np
+        import random
         
         attendance_trend: List[Dict[str, Any]] = []
         total_staff = len(live_staff_status) if live_staff_status else 20
