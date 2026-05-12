@@ -1290,9 +1290,30 @@ function PatientsTab() {
 
 function DataEntryTab() {
   const [daysBack, setDaysBack] = useState<number>(0);
+  const [dataTypes, setDataTypes] = useState<string[]>(["all"]);
   const [dailyLoading, setDailyLoading] = useState(false);
   const [overallLoading, setOverallLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const toggleDataType = (type: string) => {
+    if (type === "all") {
+      setDataTypes(["all"]);
+      return;
+    }
+    
+    let newTypes = dataTypes.filter(t => t !== "all");
+    if (newTypes.includes(type)) {
+      newTypes = newTypes.filter(t => t !== type);
+    } else {
+      newTypes.push(type);
+    }
+    
+    if (newTypes.length === 0) {
+      newTypes = ["all"];
+    }
+    
+    setDataTypes(newTypes);
+  };
 
   const handleSeedDaily = async () => {
     try {
@@ -1304,7 +1325,7 @@ function DataEntryTab() {
           "Content-Type": "application/json",
           ...getAuthHeaders(),
         },
-        body: JSON.stringify({ days_back: daysBack }),
+        body: JSON.stringify({ days_back: daysBack, data_types: dataTypes }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Failed to generate daily data");
@@ -1361,28 +1382,60 @@ function DataEntryTab() {
           </div>
         </div>
         
-        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Days Back (0 = Today Only)
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="30"
-              value={daysBack}
-              onChange={(e) => setDaysBack(parseInt(e.target.value) || 0)}
-              className="w-full bg-base-surface border border-base-border text-text-primary rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-blue/50"
-              placeholder="e.g. 0, 1, 6"
-            />
+        <div className="mt-6 flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Days Back (0 = Today Only)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="30"
+                value={daysBack}
+                onChange={(e) => setDaysBack(parseInt(e.target.value) || 0)}
+                className="w-full bg-base-surface border border-base-border text-text-primary rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-blue/50"
+                placeholder="e.g. 0, 1, 6"
+              />
+            </div>
+            <button
+              onClick={handleSeedDaily}
+              disabled={dailyLoading || overallLoading}
+              className="w-full sm:w-auto px-6 py-2.5 bg-brand-blue text-white font-medium rounded-xl hover:bg-brand-indigo transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+            >
+              {dailyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generate"}
+            </button>
           </div>
-          <button
-            onClick={handleSeedDaily}
-            disabled={dailyLoading || overallLoading}
-            className="w-full sm:w-auto px-6 py-2.5 bg-brand-blue text-white font-medium rounded-xl hover:bg-brand-indigo transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
-          >
-            {dailyLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Generate"}
-          </button>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+              Data Types to Generate
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: "all", label: "All Data" },
+                { id: "attendance", label: "Attendance & Shifts" },
+                { id: "patients", label: "Patients & Beds" },
+                { id: "vitals", label: "Vitals (Condition)" },
+                { id: "finance", label: "Finance & Billing" },
+                { id: "pharmacy", label: "Pharmacy (Low Stock)" },
+                { id: "labs", label: "Lab Results" },
+              ].map((dt) => (
+                <button
+                  key={dt.id}
+                  onClick={() => toggleDataType(dt.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+                    dataTypes.includes(dt.id)
+                      ? "bg-brand-blue/10 text-brand-blue border-brand-blue/30"
+                      : "bg-transparent text-text-secondary border-base-border hover:bg-base-surface"
+                  }`}
+                >
+                  {dataTypes.includes(dt.id) && <CheckCircle className="inline-block w-3.5 h-3.5 mr-1.5 -mt-0.5" />}
+                  {dt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ router = APIRouter(prefix="/api/data-entry", tags=["Data Entry"])
 
 class SeedDailyRequest(BaseModel):
     days_back: int = 0
+    data_types: list[str] = ["all"]
 
 async def run_script(script_path: str, *args):
     """Helper to run python script as a subprocess"""
@@ -37,7 +38,8 @@ async def run_script(script_path: str, *args):
 @router.post("/seed-daily")
 async def seed_daily(req: SeedDailyRequest):
     script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".hidden_scripts", "seed_daily_data.py")
-    output = await run_script(script_path, "--days-back", str(req.days_back))
+    types_arg = ",".join(req.data_types) if req.data_types else "all"
+    output = await run_script(script_path, "--days-back", str(req.days_back), "--data-types", types_arg)
     return {"status": "success", "message": "Daily data generated successfully.", "output": output}
 
 @router.post("/seed-overall")
