@@ -277,6 +277,8 @@ async def seed_daily_data(days_back: int, data_types: list[str]):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed daily hospital data.")
     parser.add_argument("--days-back", type=int, default=0, help="Number of past days to seed (default 0 = today only).")
+    parser.add_argument("--data-types", type=str, default="all", help="Comma separated list of data types to generate (e.g. 'attendance,finance').")
     args = parser.parse_args()
     
-    asyncio.run(seed_daily_data(args.days_back))
+    types_list = [t.strip() for t in args.data_types.split(",")]
+    asyncio.run(seed_daily_data(args.days_back, types_list))
