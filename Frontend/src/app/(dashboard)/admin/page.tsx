@@ -3228,7 +3228,7 @@ export default function AdminDashboard() {
               <div className="flex flex-col px-4 py-3 overflow-hidden">
                 <div className="flex items-center gap-1.5 shrink-0 mb-0.5">
                   <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    🤖 ML Absenteeism Forecast
+                    🤖 Absenteeism Forecast (ML · Next 7 Days)
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-green opacity-70" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-green" />
