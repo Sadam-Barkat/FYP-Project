@@ -168,9 +168,48 @@ function patientIntelRosterTablePayload(
   title: string,
 ): DetailModalPayload {
   const roster = intel.active_inpatient_roster ?? [];
+  const rosterHasLatestVitals = (r: ActiveInpatientRosterRow) =>
+    r.heart_rate != null ||
+    r.spo2 != null ||
+    r.temperature != null ||
+    r.blood_pressure_sys != null ||
+    r.respiratory_rate != null;
+
   let rows: ActiveInpatientRosterRow[] = roster;
+  let healthySubtitleExtra = "";
   if (filter === "healthy") {
-    rows = roster.filter((r) => r.heart_rate != null && !r.has_abnormal_vital);
+    const hasPerPatientTotals = roster.some((r) => (r.vital_field_total_count ?? 0) > 0);
+    if (hasPerPatientTotals) {
+      const withChecks = roster.filter((r) => (r.vital_field_total_count ?? 0) > 0);
+      const fullyInRange = withChecks.filter((r) => !r.has_abnormal_vital);
+      if (fullyInRange.length > 0) {
+        rows = fullyInRange;
+      } else {
+        rows = [...withChecks].sort((a, b) => {
+          const ta = Math.max(1, a.vital_field_total_count ?? 1);
+          const tb = Math.max(1, b.vital_field_total_count ?? 1);
+          const ra = (a.vital_field_normal_count ?? 0) / ta;
+          const rb = (b.vital_field_normal_count ?? 0) / tb;
+          return rb - ra;
+        });
+        healthySubtitleExtra =
+          " — no one has every recorded vital in range; sorted by share of readings in range";
+      }
+    } else {
+      rows = roster.filter((r) => rosterHasLatestVitals(r) && !r.has_abnormal_vital);
+    }
+    // Ward % mixes all readings; strict rows can still be empty. Never show an empty roster here.
+    if (rows.length === 0 && roster.length > 0) {
+      const vitalScore = (r: ActiveInpatientRosterRow) => {
+        const t = r.vital_field_total_count ?? 0;
+        if (t > 0) return (r.vital_field_normal_count ?? 0) / t;
+        if (rosterHasLatestVitals(r)) return r.has_abnormal_vital ? 0 : 1;
+        return -1;
+      };
+      rows = [...roster].sort((a, b) => vitalScore(b) - vitalScore(a));
+      healthySubtitleExtra =
+        " — sorted by each patient's latest vitals in range (same basis as the ward %)";
+    }
   } else if (filter === "critical_vitals") {
     rows = roster.filter((r) => r.has_abnormal_vital);
   } else if (filter === "at_risk") {
@@ -199,7 +238,7 @@ function patientIntelRosterTablePayload(
   const subtitle =
     roster.length === 0
       ? "No inpatient roster in this response — try refreshing."
-      : `${mapped.length} inpatient${mapped.length === 1 ? "" : "s"}`;
+      : `${mapped.length} inpatient${mapped.length === 1 ? "" : "s"}${filter === "healthy" ? healthySubtitleExtra : ""}`;
 
   return {
     title,
@@ -814,6 +853,9 @@ export type ActiveInpatientRosterRow = {
   ml_risk_label: string;
   ml_risk_pct: number;
   has_abnormal_vital: boolean;
+  /** Non-null latest vitals counted vs in-range (same basis as ward vitals health %). */
+  vital_field_normal_count?: number;
+  vital_field_total_count?: number;
 };
 
 export type PatientIntelResponse = {
@@ -1854,7 +1896,7 @@ export default function AdminDashboard() {
                       patientIntelRosterTablePayload(
                         intelData,
                         "healthy",
-                        "Vitals healthy — inpatient roster",
+                        "Vitals health — inpatients",
                       ),
                     )
                   }

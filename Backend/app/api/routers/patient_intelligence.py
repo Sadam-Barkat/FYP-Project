@@ -284,6 +284,8 @@ async def get_patient_intelligence(
         v = latest_by_pid.get(pid)
         name = (patient.name or "").strip() or f"Patient #{pid}"
 
+        patient_vital_normal = 0
+        patient_vital_total = 0
         if v:
             field_vals = [
                 (v.heart_rate, _hr_normal),
@@ -295,8 +297,10 @@ async def get_patient_intelligence(
             for val, ok_fn in field_vals:
                 if val is None:
                     continue
+                patient_vital_total += 1
                 total_checks += 1
                 if ok_fn(val):
+                    patient_vital_normal += 1
                     normal_checks += 1
                 else:
                     abnormal_patient_ids.add(pid)
@@ -364,6 +368,8 @@ async def get_patient_intelligence(
                 "ml_risk_label": rr.risk_label,
                 "ml_risk_pct": rr.risk_pct,
                 "has_abnormal_vital": pid in abnormal_patient_ids,
+                "vital_field_normal_count": patient_vital_normal,
+                "vital_field_total_count": patient_vital_total,
             }
         )
 
