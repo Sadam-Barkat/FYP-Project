@@ -179,7 +179,7 @@ function PatientStatModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/35 backdrop-blur-[10px] dark:bg-[rgba(5,7,15,0.82)]"
+      className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/35 backdrop-blur-[10px] dark:bg-[rgba(5,7,15,0.82)]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -2163,7 +2163,7 @@ export default function AdminDashboard() {
             <>
             <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
               {/* ── COLUMN 1: 4 KPI Stats ── */}
-              <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
+              <div className="relative z-20 min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {(() => {
                   const revenue = Number(financeData?.todays_revenue ?? 0);
                   const outstanding = Number(financeData?.outstanding_balance ?? 0);
@@ -2183,8 +2183,9 @@ export default function AdminDashboard() {
                   return (
                     <>
                       {/* Stat 1: Today's Revenue */}
-                      <div
-                        className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      <button
+                        type="button"
+                        className="relative group min-h-0 flex w-full flex-col justify-center border-0 bg-transparent px-3 py-1 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-cyan/35"
                         onClick={() => setExpandedFinanceCard("revenue")}
                       >
                         <div
@@ -2209,7 +2210,7 @@ export default function AdminDashboard() {
                         <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                           {safeK(revenue)}
                         </p>
-                        <div className="mt-1 h-5 -mx-1">
+                        <div className="mt-1 h-5 -mx-1 [&_.recharts-responsive-container]:pointer-events-none [&_.recharts-wrapper]:pointer-events-none">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={(financeData.revenue_vs_expenses ?? []).map(
@@ -2252,11 +2253,12 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Stat 2: Outstanding Balance */}
-                      <div
-                        className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      <button
+                        type="button"
+                        className="relative group min-h-0 flex w-full flex-col justify-center border-0 bg-transparent px-3 py-1 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-cyan/35"
                         onClick={() => setExpandedFinanceCard("outstanding")}
                       >
                         <div
@@ -2289,7 +2291,7 @@ export default function AdminDashboard() {
                             }}
                           />
                         </div>
-                        <div className="mt-1 h-5 -mx-1">
+                        <div className="mt-1 h-5 -mx-1 [&_.recharts-responsive-container]:pointer-events-none [&_.recharts-wrapper]:pointer-events-none">
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                               data={(financeData.revenue_vs_expenses ?? []).map(
@@ -2332,11 +2334,12 @@ export default function AdminDashboard() {
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Stat 3: Net Profit */}
-                      <div
-                        className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      <button
+                        type="button"
+                        className="relative group min-h-0 flex w-full flex-col justify-center border-0 bg-transparent px-3 py-1 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-cyan/35"
                         onClick={() => setExpandedFinanceCard("profit")}
                       >
                         <div
@@ -2372,11 +2375,12 @@ export default function AdminDashboard() {
                             }}
                           />
                         </div>
-                      </div>
+                      </button>
 
                       {/* Stat 4: Today's Expenses */}
-                      <div
-                        className="relative group min-h-0 flex flex-col justify-center px-3 py-1 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      <button
+                        type="button"
+                        className="relative group min-h-0 flex w-full flex-col justify-center border-0 bg-transparent px-3 py-1 text-left font-inherit cursor-pointer hover:bg-slate-100/70 dark:hover:bg-white/[0.04] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-kpi-cyan/35"
                         onClick={() => setExpandedFinanceCard("expenses")}
                       >
                         <div
@@ -2415,7 +2419,7 @@ export default function AdminDashboard() {
                             }}
                           />
                         </div>
-                      </div>
+                      </button>
                     </>
                   );
                 })()}
@@ -2634,71 +2638,76 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {(() => {
-              const revenue = Number(financeData?.todays_revenue ?? 0);
-              const outstanding = Number(financeData?.outstanding_balance ?? 0);
-              const expenses = Number(financeData?.todays_expenses ?? 0);
-              const net = revenue - expenses;
-              const rve = (financeData?.revenue_vs_expenses ?? []) as any[];
-              const revHist = rve.map((d) => Number(d?.revenue ?? 0) / 1000);
-              const expHist = rve.map((d) => Number(d?.expenses ?? 0) / 1000);
-              const profitHist = rve.map(
-                (d) => (Number(d?.revenue ?? 0) - Number(d?.expenses ?? 0)) / 1000
-              );
-              const histOk = (h: number[]) => h.length >= 4;
-              return (
-                <>
-                  <PatientStatModal
-                    open={expandedFinanceCard === "revenue"}
-                    onClose={() => setExpandedFinanceCard(null)}
-                    title="Today's Revenue"
-                    unit="k"
-                    accentHex="#22c55e"
-                    pack={derivePrediction(
-                      revenue / 1000,
-                      histOk(revHist) ? revHist : undefined,
-                      undefined
-                    )}
-                    helperText="Recognized revenue for today in thousands of PKR (same scale as the card). Pair with outstanding AR and ML collection risk to judge true cash timing."
-                  />
-                  <PatientStatModal
-                    open={expandedFinanceCard === "outstanding"}
-                    onClose={() => setExpandedFinanceCard(null)}
-                    title="Outstanding Balance"
-                    unit="k"
-                    accentHex="#f97316"
-                    pack={derivePrediction(outstanding / 1000, undefined, undefined)}
-                    helperText="Unpaid balance on the books in thousands of PKR. Rising outstanding stretches DSO—increase follow-ups, payment plans, and large-invoice reviews."
-                  />
-                  <PatientStatModal
-                    open={expandedFinanceCard === "profit"}
-                    onClose={() => setExpandedFinanceCard(null)}
-                    title="Net Profit"
-                    unit="k"
-                    accentHex="#22c55e"
-                    pack={derivePrediction(
-                      net / 1000,
-                      histOk(profitHist) ? profitHist : undefined,
-                      undefined
-                    )}
-                    helperText="Today's net (revenue minus expenses) in thousands PKR. Persistent negative net signals cost pressure or revenue leakage worth a billing and ops review."
-                  />
-                  <PatientStatModal
-                    open={expandedFinanceCard === "expenses"}
-                    onClose={() => setExpandedFinanceCard(null)}
-                    title="Expenses"
-                    unit="k"
-                    accentHex="#ef4444"
-                    pack={derivePrediction(
-                      expenses / 1000,
-                      histOk(expHist) ? expHist : undefined,
-                      undefined
-                    )}
-                    helperText="Today's spend in thousands PKR. Compare to revenue trend; spikes may be timing (payroll, stock) or real cost pressure—watch the expense-to-revenue ratio."
-                  />
-                </>
-              );
-            })()}
+            {financeData && typeof document !== "undefined"
+              ? createPortal(
+                  (() => {
+                    const revenue = Number(financeData?.todays_revenue ?? 0);
+                    const outstanding = Number(financeData?.outstanding_balance ?? 0);
+                    const expenses = Number(financeData?.todays_expenses ?? 0);
+                    const net = revenue - expenses;
+                    const rve = (financeData?.revenue_vs_expenses ?? []) as any[];
+                    const revHist = rve.map((d) => Number(d?.revenue ?? 0) / 1000);
+                    const expHist = rve.map((d) => Number(d?.expenses ?? 0) / 1000);
+                    const profitHist = rve.map(
+                      (d) => (Number(d?.revenue ?? 0) - Number(d?.expenses ?? 0)) / 1000
+                    );
+                    const histOk = (h: number[]) => h.length >= 4;
+                    return (
+                      <>
+                        <PatientStatModal
+                          open={expandedFinanceCard === "revenue"}
+                          onClose={() => setExpandedFinanceCard(null)}
+                          title="Today's Revenue"
+                          unit="k"
+                          accentHex="#22c55e"
+                          pack={derivePrediction(
+                            revenue / 1000,
+                            histOk(revHist) ? revHist : undefined,
+                            undefined
+                          )}
+                          helperText="Recognized revenue for today in thousands of PKR (same scale as the card). Pair with outstanding AR and ML collection risk to judge true cash timing."
+                        />
+                        <PatientStatModal
+                          open={expandedFinanceCard === "outstanding"}
+                          onClose={() => setExpandedFinanceCard(null)}
+                          title="Outstanding Balance"
+                          unit="k"
+                          accentHex="#f97316"
+                          pack={derivePrediction(outstanding / 1000, undefined, undefined)}
+                          helperText="Unpaid balance on the books in thousands of PKR. Rising outstanding stretches DSO—increase follow-ups, payment plans, and large-invoice reviews."
+                        />
+                        <PatientStatModal
+                          open={expandedFinanceCard === "profit"}
+                          onClose={() => setExpandedFinanceCard(null)}
+                          title="Net Profit"
+                          unit="k"
+                          accentHex="#22c55e"
+                          pack={derivePrediction(
+                            net / 1000,
+                            histOk(profitHist) ? profitHist : undefined,
+                            undefined
+                          )}
+                          helperText="Today's net (revenue minus expenses) in thousands PKR. Persistent negative net signals cost pressure or revenue leakage worth a billing and ops review."
+                        />
+                        <PatientStatModal
+                          open={expandedFinanceCard === "expenses"}
+                          onClose={() => setExpandedFinanceCard(null)}
+                          title="Expenses"
+                          unit="k"
+                          accentHex="#ef4444"
+                          pack={derivePrediction(
+                            expenses / 1000,
+                            histOk(expHist) ? expHist : undefined,
+                            undefined
+                          )}
+                          helperText="Today's spend in thousands PKR. Compare to revenue trend; spikes may be timing (payroll, stock) or real cost pressure—watch the expense-to-revenue ratio."
+                        />
+                      </>
+                    );
+                  })(),
+                  document.body
+                )
+              : null}
             </>
           ) : null}
         </div>
