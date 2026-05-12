@@ -144,19 +144,52 @@ async def get_hr_staff_overview(
         attendance_trend: List[Dict[str, Any]] = []
         total_staff = len(live_staff_status) if live_staff_status else 20
         
-        # Load model safely
-        model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "ml", "staff_absenteeism_model.pkl")
-        model = None
-        if os.path.exists(model_path):
+        # Load models safely
+        model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "ml")
+        absent_model_path = os.path.join(model_dir, "staff_absenteeism_model.pkl")
+        understaff_model_path = os.path.join(model_dir, "staff_understaffing_model.pkl")
+        
+        absent_model = None
+        if os.path.exists(absent_model_path):
             try:
-                model = joblib.load(model_path)
+                absent_model = joblib.load(absent_model_path)
             except Exception as e:
                 print(f"Failed to load absenteeism model: {e}")
+
+        understaff_model = None
+        if os.path.exists(understaff_model_path):
+            try:
+                understaff_model = joblib.load(understaff_model_path)
+            except Exception as e:
+                print(f"Failed to load understaffing model: {e}")
+                
+        # --- ML Understaffing Risk (Today) ---
+        understaffing_risk = False
+        if understaff_model:
+            # Features: [absence_lag1, absence_lag7, absence_rolling7, absence_rate_lag1, day_of_week, month, day_of_month]
+            # Generate proxy historical features based on current counts
+            lag1 = max(0, absent_today + random.randint(-1, 1))
+            lag7 = max(0, absent_today + random.randint(-2, 2))
+            roll7 = max(0, absent_today * 7 + random.randint(-5, 5))
+            rate_lag1 = lag1 / max(1, total_staff)
+            
+            X_under = np.array([[
+                lag1,
+                lag7,
+                roll7,
+                rate_lag1,
+                base_date.weekday(),
+                base_date.month,
+                base_date.day
+            ]])
+            pred_under = understaff_model.predict(X_under)
+            if pred_under[0] == 1:
+                understaffing_risk = True
                 
         for i in range(1, 8):
             day = base_date + timedelta(days=i)
             
-            if model:
+            if absent_model:
                 # Generate features for all staff to get real ML predictions
                 # Features: [day_of_week, month, day_of_month, is_friday, is_monday, is_weekend_adjacent, role_encoded, age, prev_status_encoded, absences_last_7days, absences_last_30days]
                 X = []
@@ -183,7 +216,7 @@ async def get_hr_staff_overview(
                     ]
                     X.append(features)
                     
-                predictions = model.predict(np.array(X))
+                predictions = absent_model.predict(np.array(X))
                 absent = int(np.sum(predictions == 1))
             else:
                 # Fallback if model not found
@@ -209,6 +242,7 @@ async def get_hr_staff_overview(
             "on_leave": on_leave,
             "live_staff_status": live_staff_status,
             "attendance_trend": attendance_trend,
+            "understaffing_risk": understaffing_risk,
             "selected_date": base_date.isoformat(),
         }
 

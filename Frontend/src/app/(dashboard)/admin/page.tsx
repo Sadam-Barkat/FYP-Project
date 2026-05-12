@@ -3249,7 +3249,7 @@ export default function AdminDashboard() {
                     const absent = staffData.absent_today ?? 0;
                     const total = (staffData.staff_on_duty ?? 0) + absent + (staffData.on_leave ?? 0);
                     const absentRate = Math.round((absent / Math.max(1, total)) * 100);
-                    const isRisk = absentRate >= 15;
+                    const isRisk = staffData.understaffing_risk ?? (absentRate >= 15);
                     return (
                       <p className={`text-[11px] font-semibold ${isRisk ? "text-kpi-red" : "text-kpi-green"}`}>
                         ⚡ {isRisk
