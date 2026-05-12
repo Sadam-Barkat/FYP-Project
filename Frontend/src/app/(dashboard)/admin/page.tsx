@@ -29,6 +29,13 @@ import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 const cardBase =
   "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default p-4 pb-[48%] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 dark:bg-transparent dark:border-0 dark:shadow-none dark:hover:-translate-y-1";
 
+/** Hover breakdown panels — explicit light + dark (matches KPI card tooltips). */
+const patientIntelHoverPanel =
+  "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-base-card dark:shadow-panel";
+
+const pharmacyIntelStatHoverPanel =
+  "rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.1)] dark:border-white/15 dark:bg-base-card dark:shadow-[0_8px_32px_rgba(0,0,0,0.7)]";
+
 function makeSparkData(value: number) {
   const v = Number.isFinite(value) ? value : 0;
   return Array.from({ length: 14 }, (_, i) => ({
@@ -1199,11 +1206,11 @@ export default function AdminDashboard() {
                 aria-hidden={!showTip}
               >
                 <div
-                  className="h-0 w-0 border-x-[6px] border-b-[8px] border-x-transparent border-b-base-border"
+                  className="h-0 w-0 border-x-[6px] border-b-[8px] border-x-transparent border-b-slate-200 dark:border-b-base-border"
                   aria-hidden
                 />
-                <div className="-mt-px w-full rounded-2xl border border-base-border bg-base-card px-3 py-2.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
-                  <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                <div className="-mt-px w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.08)] dark:border-base-border dark:bg-base-card dark:shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                  <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-text-secondary">
                     {tipTitle}
                   </p>
                   <div className="space-y-1.5">
@@ -1212,8 +1219,10 @@ export default function AdminDashboard() {
                         key={row.label}
                         className="flex justify-between gap-2 text-xs leading-snug"
                       >
-                        <span className="text-text-secondary">{row.label}</span>
-                        <span className="shrink-0 pl-1 text-right font-semibold text-text-primary">
+                        <span className="text-slate-600 dark:text-text-secondary">
+                          {row.label}
+                        </span>
+                        <span className="shrink-0 pl-1 text-right font-semibold text-slate-900 dark:text-text-primary">
                           {row.value}
                         </span>
                       </div>
@@ -1260,7 +1269,9 @@ export default function AdminDashboard() {
               <div className="min-h-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* TOTAL PATIENTS */}
                 <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Total patients</p>
                     <p className="text-[10px] text-tx-secondary">Previous week: {intelData.previous_week_patients ?? 0}</p>
                     <p className="text-[10px] text-tx-secondary mt-0.5">Change: {intelData.change_from_last_week ?? 0}</p>
@@ -1300,7 +1311,9 @@ export default function AdminDashboard() {
 
                 {/* VITALS HEALTH */}
                 <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Vitals status</p>
                     <p className="text-[10px] text-kpi-green">✓ Healthy: {intelData.vitals_health_percentage}%</p>
                     <p className="text-[10px] text-kpi-red mt-0.5">✗ Critical: {intelData.critical_vitals_percentage}%</p>
@@ -1337,7 +1350,9 @@ export default function AdminDashboard() {
 
                 {/* CRITICAL VITALS */}
                 <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full top-0 z-50 ml-2 w-56 ${patientIntelHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Top critical (ML)</p>
                     {(() => {
                       const top = (intelData.ml_forecast || [])
@@ -1387,7 +1402,9 @@ export default function AdminDashboard() {
 
                 {/* AT RISK */}
                 <div className="relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors">
-                  <div className="absolute left-full bottom-0 z-50 ml-2 w-56 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute left-full bottom-0 z-50 ml-2 w-56 ${patientIntelHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">At risk (ML)</p>
                     <p className="text-[10px] text-tx-secondary">
                       High/Critical in 24h: {intelData.ml_high_risk_24h_count ?? 0}
@@ -1648,7 +1665,9 @@ export default function AdminDashboard() {
                     );
                   })()}
                   {/* Tooltip — opens DOWNWARD inside column 1 width, overlays stats below */}
-                  <div className="absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto ${pharmacyIntelStatHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-muted uppercase font-bold tracking-wider mb-1.5">Stock Overview</p>
                     {(() => {
                       const total = Math.max(1, pharmacyData.total_medicines);
@@ -1659,12 +1678,12 @@ export default function AdminDashboard() {
                       const safe = Math.max(0, total - oos - low - soon - expired);
                       return (
                         <>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-green">✓ Safe</span><span className="text-kpi-green font-bold">{safe}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-orange">⚠ Low</span><span className="text-kpi-orange font-bold">{low}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-tx-yellow">⏳ Expiring</span><span className="text-tx-yellow font-bold">{soon}</span></div>
-                          <div className="flex justify-between text-[10px] py-0.5 border-b border-white/5"><span className="text-kpi-red">✗ OOS</span><span className="text-kpi-red font-bold">{oos}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-slate-100 dark:border-white/5"><span className="text-kpi-green">✓ Safe</span><span className="text-kpi-green font-bold">{safe}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-slate-100 dark:border-white/5"><span className="text-kpi-orange">⚠ Low</span><span className="text-kpi-orange font-bold">{low}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-slate-100 dark:border-white/5"><span className="text-tx-yellow">⏳ Expiring</span><span className="text-tx-yellow font-bold">{soon}</span></div>
+                          <div className="flex justify-between text-[10px] py-0.5 border-b border-slate-100 dark:border-white/5"><span className="text-kpi-red">✗ OOS</span><span className="text-kpi-red font-bold">{oos}</span></div>
                           <div className="flex justify-between text-[10px] py-0.5"><span className="text-tx-muted">💀 Expired</span><span className="text-tx-muted font-bold">{expired}</span></div>
-                          <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between text-[10px]">
+                          <div className="mt-1.5 flex justify-between border-t border-slate-200 pt-1.5 text-[10px] dark:border-white/10">
                             <span className="text-tx-muted">Health Rate</span>
                             <span className={`font-bold ${safe / total >= 0.7 ? "text-kpi-green" : safe / total >= 0.4 ? "text-kpi-orange" : "text-kpi-red"}`}>{Math.round((safe / total) * 100)}%</span>
                           </div>
@@ -1696,12 +1715,14 @@ export default function AdminDashboard() {
                     </p>
                   ) : null}
                   {/* Tooltip — opens DOWNWARD inside column 1 */}
-                  <div className="absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto ${pharmacyIntelStatHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-kpi-red uppercase font-bold tracking-wider mb-1.5">Out of Stock — {pharmacyData.out_of_stock_count ?? 0}</p>
                     {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 5).map((m, i) => (
-                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-slate-100 dark:border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-kpi-red shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
@@ -1735,12 +1756,14 @@ export default function AdminDashboard() {
                     </p>
                   ) : null}
                   {/* Tooltip — opens UPWARD inside column 1 */}
-                  <div className="absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto ${pharmacyIntelStatHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-kpi-orange uppercase font-bold tracking-wider mb-1.5">Low Stock — {pharmacyData.low_stock_count ?? 0}</p>
                     {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.low_stock_medicines ?? []).slice(0, 5).map((m, i) => (
-                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-slate-100 dark:border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-kpi-orange shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
@@ -1774,12 +1797,14 @@ export default function AdminDashboard() {
                     </p>
                   ) : null}
                   {/* Tooltip — opens UPWARD inside column 1, anchored above stat to never get cut at bottom */}
-                  <div className="absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto rounded-xl bg-[#0c1120] border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div
+                    className={`absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto ${pharmacyIntelStatHoverPanel} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                  >
                     <p className="text-[10px] text-tx-yellow uppercase font-bold tracking-wider mb-1.5">Expiring 30d — {pharmacyData.expiring_soon_count ?? 0}</p>
                     {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 5).map((m, i) => (
-                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-white/5 last:border-0">
+                          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-slate-100 dark:border-white/5 last:border-0">
                             <span className="w-1 h-1 rounded-full bg-yellow-500 shrink-0" />
                             <p className="text-[10px] text-tx-secondary truncate">{m}</p>
                           </div>
@@ -1791,7 +1816,7 @@ export default function AdminDashboard() {
                     ) : (
                       <p className="text-[10px] text-kpi-green">✓ None expiring soon</p>
                     )}
-                    <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-between text-[9px]">
+                    <div className="mt-1.5 flex justify-between border-t border-slate-200 pt-1.5 text-[9px] dark:border-white/10">
                       <span className="text-tx-muted">Already expired:</span>
                       <span className="text-tx-secondary font-bold">{pharmacyData.expired_count ?? 0}</span>
                     </div>
@@ -1828,7 +1853,7 @@ export default function AdminDashboard() {
                     </svg>
                     <span
                       role="tooltip"
-                      className="pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md bg-gray-900 border border-white/10 text-white text-[10px] leading-snug px-2 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 group-hover/info:opacity-100 transition-opacity duration-150 delay-200"
+                      className="pointer-events-none absolute top-full left-0 mt-1.5 z-[9999] w-[200px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-200 group-hover/info:opacity-100 dark:border-white/10 dark:bg-gray-900 dark:text-white dark:shadow-[0_8px_32px_rgba(0,0,0,0.7)]"
                     >
                       Predicted out-of-stock risk per medicine in the next 7 days.
                     </span>
