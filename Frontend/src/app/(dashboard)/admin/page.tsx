@@ -2520,7 +2520,7 @@ export default function AdminDashboard() {
                 })()}
 
                 <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  Finance intelligence · Real-time updates
+                  {/* Footer removed per request */}
                 </p>
               </div>
             </div>
@@ -2974,7 +2974,7 @@ export default function AdminDashboard() {
                 })()}
 
                 <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  ML-powered · Bed surge + shortage models
+                  {/* Footer removed per request */}
                 </p>
               </div>
             </div>
@@ -3203,9 +3203,9 @@ export default function AdminDashboard() {
                       </p>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    ML model: staff_absenteeism_model.pkl · Active
-                  </p>
+                <p className="text-[9px] text-tx-muted mt-0.5 italic">
+                  {/* ML model info removed per request */}
+                </p>
                 </div>
               </div>
 
@@ -3260,7 +3260,7 @@ export default function AdminDashboard() {
                 })()}
 
                 <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  ML-powered · Absenteeism prediction active
+                  {/* ML text removed per request */}
                 </p>
               </div>
 
