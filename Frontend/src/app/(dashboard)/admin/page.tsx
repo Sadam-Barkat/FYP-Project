@@ -3394,8 +3394,7 @@ export default function AdminDashboard() {
                     }
                     return (
                       <p className="text-[11px] font-semibold leading-snug text-tx-primary">
-                        <span className="text-kpi-green">Next 7 days</span>
-                        <span className="text-tx-muted font-normal"> (ML forecast totals)</span>
+                        <span className="text-kpi-green">Next 7 days forecast</span>
                         {": "}
                         <span className="text-kpi-green tabular-nums">{sumPresent}</span>
                         {" present · "}
