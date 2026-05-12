@@ -3161,6 +3161,10 @@ export default function AdminDashboard() {
                     >
                       <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "10px" }}
+                        itemStyle={{ color: "#f8fafc" }}
+                      />
                       <Bar dataKey="present" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Present" />
                       <Bar dataKey="absent" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Absent" />
                       <Bar dataKey="leave" fill="#eab308" fillOpacity={0.6} radius={[2, 2, 0, 0]} name="Leave" />
