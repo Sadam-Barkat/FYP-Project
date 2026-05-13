@@ -3,7 +3,7 @@ uvicorn[standard]==0.34.0
 sqlalchemy[asyncio]==2.0.28
 asyncpg==0.29.0
 greenlet==3.0.3
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 pydantic==2.12.2
 pydantic-settings==2.7.1
 alembic==1.13.1

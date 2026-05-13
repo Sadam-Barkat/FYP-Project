@@ -24,6 +24,28 @@ SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int((os.getenv("SMTP_PORT") or "587"))
 EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Real-Time-inteligence-dashboard")
 
+def build_password_reset_url_for_email(email: str) -> tuple[str, str]:
+    """
+    Create a password-reset JWT and the corresponding frontend reset URL.
+    Useful for local/demo environments where SMTP isn't configured.
+    Returns (token, reset_url).
+    """
+    expires = timedelta(hours=1)
+    token = create_access_token(
+        data={
+            "sub": (email or "").strip().lower(),
+            "purpose": "password_reset",
+        },
+        expires_delta=expires,
+    )
+    base = (FRONTEND_BASE_URL or "").strip().rstrip("/")
+    if not base or "localhost" in base or base.startswith("http://127.0.0.1"):
+        base = DEFAULT_FRONTEND_BASE_URL
+    if base.endswith("/api"):
+        base = base[:-4]
+    reset_url = f"{base}/reset-password?token={token}"
+    return token, reset_url
+
 
 def _build_password_reset_html(reset_url: str) -> str:
     """Professional HTML email template for password reset."""
@@ -107,20 +129,7 @@ async def send_password_reset_email(email: str) -> str:
     Create a password-reset JWT and send the reset email. Returns the token (for testing).
     Token expires in 1 hour.
     """
-    expires = timedelta(hours=1)
-    token = create_access_token(
-        data={
-            "sub": email.strip().lower(),
-            "purpose": "password_reset",
-        },
-        expires_delta=expires,
-    )
-    base = (FRONTEND_BASE_URL or "").strip().rstrip("/")
-    if not base or "localhost" in base or base.startswith("http://127.0.0.1"):
-        base = DEFAULT_FRONTEND_BASE_URL
-    if base.endswith("/api"):
-        base = base[:-4]
-    reset_url = f"{base}/reset-password?token={token}"
+    token, reset_url = build_password_reset_url_for_email(email)
     html = _build_password_reset_html(reset_url)
     subject = "Reset your password – Real Time Intelligent Dashboard"
     await _send_smtp_email(to_email=email.strip(), subject=subject, html=html)

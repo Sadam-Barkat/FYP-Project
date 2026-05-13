@@ -8,7 +8,13 @@ from app.database import get_db
 from app.models.user import User, UserRole
 from app.core.security import verify_password, get_password_hash, create_access_token, SECRET_KEY, ALGORITHM
 from app.schemas.user import UserLogin, TokenResponse, ForgotPasswordRequest, ResetPasswordRequest
-from app.utils.password_reset_email import send_password_reset_email, validate_password_reset_token
+import os
+
+from app.utils.password_reset_email import (
+    send_password_reset_email,
+    validate_password_reset_token,
+    build_password_reset_url_for_email,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -69,12 +75,27 @@ async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depend
     query = select(User).where(func.lower(User.email) == body.email.strip().lower())
     result = await db.execute(query)
     user = result.scalar_one_or_none()
+    debug_return_link = (os.getenv("PASSWORD_RESET_DEBUG") or "").strip().lower() in ("1", "true", "yes")
+    smtp_ok = bool((os.getenv("SMTP_EMAIL") or "").strip()) and bool((os.getenv("SMTP_PASSWORD") or "").strip())
+
+    reset_url: str | None = None
     if user:
         try:
-            await send_password_reset_email(body.email)
+            if smtp_ok and not debug_return_link:
+                await send_password_reset_email(body.email)
+            else:
+                # Local/demo mode: no SMTP configured (or explicitly debugging). Provide the reset link.
+                _, reset_url = build_password_reset_url_for_email(body.email)
         except Exception:
-            pass  # Don't reveal failure; still return generic message
-    return {"message": "If an account exists with this email, you will receive a link to reset your password. Please check your inbox."}
+            # Don't reveal failure; still return generic message (optionally with debug link).
+            pass
+
+    payload = {
+        "message": "If an account exists with this email, you will receive a link to reset your password. Please check your inbox."
+    }
+    if reset_url:
+        payload["reset_url"] = reset_url
+    return payload
 
 
 @router.post("/reset-password")
