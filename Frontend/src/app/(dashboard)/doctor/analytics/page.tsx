@@ -121,7 +121,7 @@ export default function DoctorAnalyticsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-2xl border border-brand-blue/20 bg-card-blue shadow-card-blue p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1">
           <div className="flex items-center justify-between text-white/70 mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider">Total Treated</span>

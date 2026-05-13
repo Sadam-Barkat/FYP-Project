@@ -648,7 +648,7 @@ function PatientStatModal({
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 xs:grid-cols-3">
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/[0.06] dark:bg-dash-elevated dark:shadow-none">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-tx-muted">
                 Current

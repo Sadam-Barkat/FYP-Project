@@ -138,7 +138,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex justify-center gap-6 mt-3">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-3 px-1">
           <div className="flex items-center gap-1.5">
             <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[8px] border-b-yellow-400"></div>
             <span className="text-[12px] text-gray-600 dark:text-gray-400">Predicted Admissions</span>
@@ -153,7 +153,7 @@ export default function ForecastIntelligenceCard({ className = "" }: { className
       <hr className="border-gray-100 dark:border-gray-800 mb-4" />
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-1 gap-4 mb-5 sm:grid-cols-3">
         <div>
           <p className="text-[13px] font-medium text-gray-800 dark:text-gray-200 mb-1">Capacity Risk</p>
           <div className="flex items-baseline gap-1.5">

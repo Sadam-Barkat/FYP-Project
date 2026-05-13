@@ -51,14 +51,28 @@ interface AssignedPatient {
   age: number;
 }
 
+function parsePatientList(data: unknown): AssignedPatient[] {
+  if (Array.isArray(data)) return data as AssignedPatient[];
+  if (
+    data &&
+    typeof data === "object" &&
+    Array.isArray((data as { patients?: unknown }).patients)
+  ) {
+    return (data as { patients: AssignedPatient[] }).patients;
+  }
+  return [];
+}
+
 export default function DoctorDashboardPage() {
   const [patients, setPatients] = useState<AssignedPatient[]>([]);
   const [latestCondition, setLatestCondition] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const userDisplayName = useDoctorDisplayName();
 
   const fetchPatients = useCallback(async () => {
+    setFetchError(null);
     try {
       const res = await fetch(`${API_BASE}/api/doctor/patients`, {
         headers: getAuthHeaders(),
@@ -68,7 +82,7 @@ export default function DoctorDashboardPage() {
         throw new Error("Failed to load assigned patients.");
       }
       const data = await res.json();
-      const list = Array.isArray(data) ? data : [];
+      const list = parsePatientList(data);
       setPatients(list);
       if (list.length === 0) {
         setLatestCondition({});
@@ -93,7 +107,10 @@ export default function DoctorDashboardPage() {
         })
       );
       setLatestCondition((prev) => ({ ...prev, ...conditionMap }));
-    } catch {
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Could not reach the server to load patients.";
+      setFetchError(msg);
       setPatients([]);
       setLatestCondition({});
     } finally {
@@ -180,7 +197,24 @@ export default function DoctorDashboardPage() {
         </div>
       )}
 
-      {!loading && patients.length === 0 && (
+      {!loading && fetchError && (
+        <div className="bg-status-danger/10 border border-status-danger/30 text-status-danger rounded-xl px-5 py-4 flex items-start gap-3">
+          <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+          <div className="text-left text-sm">
+            <p className="font-medium">Could not load your patient list</p>
+            <p className="opacity-90 mt-1">{fetchError}</p>
+            <p className="text-text-secondary mt-2 text-xs font-normal">
+              If you develop locally, set{" "}
+              <code className="rounded bg-base-muted px-1 py-0.5 text-text-primary">
+                NEXT_PUBLIC_API_URL
+              </code>{" "}
+              to the same API URL your login uses (see `.env` on the deployed site).
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !fetchError && patients.length === 0 && (
         <div className={`${panelCard} p-12 text-center text-slate-600 dark:text-tx-secondary`}>
           No patients assigned to you. The list updates when reception assigns new patients.
         </div>

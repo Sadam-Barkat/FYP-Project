@@ -109,7 +109,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
       </div>
 
       {/* Top Grid: Staff on Duty & Absent Staff */}
-      <div className="grid grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 gap-4 mb-5 sm:grid-cols-2">
         {/* Left: Staff on Duty */}
         <div className="flex flex-col">
           <p className="text-[14px] font-medium text-gray-800 dark:text-gray-200">Staff on Duty</p>
@@ -235,7 +235,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
 
       {/* Shift Breakdown */}
       <div className="mt-auto bg-base-card/40 dark:bg-base-card/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800">
-        <div className="grid grid-cols-2 gap-4 mb-3">
+        <div className="grid grid-cols-1 gap-4 mb-3 sm:grid-cols-2">
           {/* Day Shift */}
           <div>
             <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1">Day Shift <span className="text-gray-400 font-normal">(Current)</span></p>
@@ -249,7 +249,7 @@ export default function StaffIntelligenceCard({ className = "" }: { className?: 
           </div>
 
           {/* Night Shift */}
-          <div className="border-l border-gray-200 dark:border-gray-700 pl-4">
+          <div className="border-t border-gray-200 pt-4 sm:border-t-0 sm:border-l sm:border-gray-200 sm:pl-4 dark:border-gray-700 dark:sm:border-gray-700">
             <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1">Night Shift</p>
             <div className="flex items-baseline gap-1.5 mb-2">
               <p className="text-[20px] font-bold text-gray-900 dark:text-gray-100">{loading ? "..." : nightShiftEstimate}</p>

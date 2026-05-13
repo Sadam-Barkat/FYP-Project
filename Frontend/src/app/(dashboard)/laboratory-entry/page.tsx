@@ -1,7 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { TestTube2, ClipboardList, User, Clock, CheckCircle, ChevronDown, X } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
+import {
+  TestTube2,
+  ClipboardList,
+  User,
+  Clock,
+  CheckCircle,
+  ChevronDown,
+  X,
+  CalendarDays,
+  Beaker,
+  ListFilter,
+  Activity,
+  FileText,
+  RotateCcw,
+  FlaskConical,
+} from "lucide-react";
 import { CompactMetricCard, TooltipRow } from "@/components/dashboard/MetricHoverCard";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { formatLocalDateISO } from "@/lib/calendarDate";
@@ -32,7 +47,92 @@ interface LabEntry {
   collected_at: string;
 }
 
+function LabSection({
+  step,
+  title,
+  subtitle,
+  children,
+}: {
+  step: number;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="group/section rounded-2xl border border-base-border bg-base-card/85 p-5 shadow-[0_2px_24px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-[box-shadow,border-color] duration-300 hover:border-emerald-500/20 hover:shadow-[0_8px_40px_rgba(16,185,129,0.08)] sm:p-6 dark:border-white/[0.08] dark:bg-gradient-to-b dark:from-emerald-950/25 dark:to-transparent dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_4px_32px_rgba(0,0,0,0.35)] dark:hover:border-emerald-400/20 dark:hover:shadow-[0_12px_48px_rgba(16,185,129,0.12)]">
+      <div className="mb-5 flex flex-wrap items-start gap-4">
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-600 text-sm font-bold text-white shadow-lg shadow-emerald-900/30 ring-2 ring-white/25 ring-offset-2 ring-offset-base-card dark:ring-emerald-400/20 dark:ring-offset-[#0c1424]"
+          aria-hidden
+        >
+          {step}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-semibold tracking-tight text-text-bright sm:text-lg">{title}</h3>
+          {subtitle ? (
+            <p className="mt-1.5 text-xs leading-relaxed text-text-secondary sm:text-sm">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-secondary">
+      {children}
+      {required ? <span className="ml-0.5 text-emerald-600 dark:text-cyan-400">*</span> : null}
+    </label>
+  );
+}
+
+function InputShell({
+  icon: Icon,
+  children,
+  withChevron,
+}: {
+  icon: React.ComponentType<{ className?: string; size?: number }>;
+  children: React.ReactNode;
+  withChevron?: boolean;
+}) {
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-emerald-600/75 dark:text-cyan-400/85">
+        <Icon size={18} className="shrink-0" strokeWidth={2} />
+      </span>
+      {withChevron ? (
+        <ChevronDown
+          className="pointer-events-none absolute right-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-text-muted"
+          aria-hidden
+        />
+      ) : null}
+      <div
+        className={
+          withChevron
+            ? "[&_input]:pl-11 [&_select]:pl-11 [&_select]:pr-10 [&_textarea]:pl-11 [&_textarea]:pt-3.5 [&_input]:pr-4"
+            : "[&_input]:pl-11 [&_select]:pl-11 [&_textarea]:pl-11 [&_textarea]:pt-3.5 [&_input]:pr-4 [&_select]:pr-4"
+        }
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const inputClass =
+  "w-full rounded-xl border border-base-border bg-base-card py-3 text-sm text-text-primary placeholder:text-text-muted shadow-inner transition focus:border-emerald-500/90 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 dark:bg-dash-elevated dark:text-tx-bright dark:placeholder:text-tx-muted dark:focus:border-cyan-500/75 dark:focus:ring-cyan-500/20";
+
+/** Empty query: show all (handled by caller). Non-empty: only patients whose full name starts with the typed text (case-insensitive). */
+function patientNameStartsWithQuery(p: PatientOption, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return p.name.toLowerCase().trim().startsWith(q);
+}
+
 export default function LaboratoryEntryPage() {
+  const formId = useId();
   const today = formatLocalDateISO(new Date());
 
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -54,12 +154,6 @@ export default function LaboratoryEntryPage() {
   const [highlightedPatientIndex, setHighlightedPatientIndex] = useState(0);
 
   useEffect(() => {
-    if (!patientDropdownOpen) return;
-    // Start from current query; ensure highlight resets so keyboard works.
-    setHighlightedPatientIndex(0);
-  }, [patientDropdownOpen]);
-
-  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (patientDropdownRef.current && !patientDropdownRef.current.contains(e.target as Node)) {
         setPatientDropdownOpen(false);
@@ -69,16 +163,8 @@ export default function LaboratoryEntryPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredPatients = patients.filter((p) => {
-    const q = patientQuery.trim().toLowerCase();
-    if (!q) return true;
-    const idStr = String(p.id);
-    return (
-      idStr.includes(q) ||
-      p.name.toLowerCase().includes(q) ||
-      String(p.age).includes(q)
-    );
-  });
+  const qTrim = patientQuery.trim();
+  const filteredPatients = !qTrim ? patients : patients.filter((p) => patientNameStartsWithQuery(p, patientQuery));
 
   useEffect(() => {
     if (!patientDropdownOpen) return;
@@ -105,6 +191,13 @@ export default function LaboratoryEntryPage() {
   const [status, setStatus] = useState<LabStatus>("pending");
   const [resultSummary, setResultSummary] = useState<string>("");
 
+  const resetTestFields = () => {
+    setTestName("");
+    setResultSummary("");
+    setStatus("pending");
+    setError(null);
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -114,13 +207,15 @@ export default function LaboratoryEntryPage() {
         if (!res.ok) throw new Error("Failed to load patients");
         const data = await res.json();
         if (!cancelled) setPatients(Array.isArray(data) ? data : []);
-      } catch (e) {
+      } catch {
         if (!cancelled) setError("Failed to load patients. Is the backend running?");
       } finally {
         if (!cancelled) setLoadingPatients(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -136,13 +231,15 @@ export default function LaboratoryEntryPage() {
           setCategories(list);
           if (list.length > 0) setTestCategoryId((prev) => (list.some((c) => c.id === prev) ? prev : list[0].id));
         }
-      } catch (e) {
+      } catch {
         if (!cancelled) setError("Failed to load categories.");
       } finally {
         if (!cancelled) setLoadingCategories(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const fetchResults = useCallback(async () => {
@@ -153,7 +250,7 @@ export default function LaboratoryEntryPage() {
     setLoadingResults(true);
     try {
       const res = await fetch(
-        `${API_BASE}/api/laboratorian/patients/${selectedPatientId}/results?date=${selectedDate}`
+        `${API_BASE}/api/laboratorian/patients/${selectedPatientId}/results?date=${selectedDate}`,
       );
       if (!res.ok) throw new Error("Failed to load results");
       const data = await res.json();
@@ -184,9 +281,7 @@ export default function LaboratoryEntryPage() {
     setSubmitting(true);
     try {
       const now = new Date();
-      const collectedAt = new Date(
-        `${selectedDate}T${now.toTimeString().slice(0, 8)}`
-      ).toISOString();
+      const collectedAt = new Date(`${selectedDate}T${now.toTimeString().slice(0, 8)}`).toISOString();
 
       const res = await fetch(`${API_BASE}/api/laboratorian/results`, {
         method: "POST",
@@ -206,8 +301,7 @@ export default function LaboratoryEntryPage() {
         throw new Error(err.detail ?? "Failed to save lab test");
       }
 
-      setTestName("");
-      setResultSummary("");
+      resetTestFields();
       await fetchResults();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save lab test.");
@@ -217,389 +311,444 @@ export default function LaboratoryEntryPage() {
   };
 
   const entriesForSelectedDate = entries;
-
-  const pendingCount = entriesForSelectedDate.filter(
-    (e) => e.status === "pending"
-  ).length;
-  const completedCount = entriesForSelectedDate.filter(
-    (e) => e.status === "completed"
-  ).length;
+  const pendingCount = entriesForSelectedDate.filter((e) => e.status === "pending").length;
+  const completedCount = entriesForSelectedDate.filter((e) => e.status === "completed").length;
 
   return (
-    <div
-      id="dashboard-content"
-      className="bg-base-surface min-h-screen px-8 py-8 space-y-8"
-    >
-      <div className="-mx-8 -mt-8 bg-base-card border-b border-base-border px-8 py-4 flex flex-col md:flex-row items-center md:items-end justify-between gap-4">
-        <div className="text-center md:text-left">
-          <h2 className="text-text-primary font-semibold text-xl tracking-tight">
-            Laboratory Data Entry
-          </h2>
-          <p className="text-text-primary text-sm leading-relaxed mt-1">
-            Select a patient first, then add daily lab tests for that patient.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="lab-entry-date" className="text-text-secondary text-sm font-medium">
-            Working date
-          </label>
-          <input
-            id="lab-entry-date"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
-          />
-        </div>
-      </div>
+    <div id="dashboard-content" className="relative min-h-0 overflow-x-hidden pb-10">
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-50 dark:opacity-100 bg-[radial-gradient(ellipse_85%_55%_at_50%_-25%,rgba(16,185,129,0.14),transparent_55%),radial-gradient(ellipse_60%_45%_at_100%_0%,rgba(6,182,212,0.11),transparent_48%)]" />
 
-      {/* Step 1: Select patient */}
-      <div className="bg-base-card/70 border border-base-border rounded-2xl shadow-card backdrop-blur-md p-6 hover:bg-base-hover hover:-translate-y-1 transition-all duration-200">
-        <h3 className="text-text-primary font-semibold text-base mb-5 flex items-center gap-2">
-          <User className="text-text-secondary" size={20} />
-          Step 1 — Select patient
-        </h3>
-        <div ref={patientDropdownRef} className="relative w-full max-w-md">
-          <label className="text-text-secondary text-sm font-medium mb-1.5 block">
-            Patient
-          </label>
-          <div className="relative">
-            <input
-              ref={patientInputRef}
-              type="text"
-              value={patientInputValue}
-              onChange={(e) => {
-                setPatientQuery(e.target.value);
-                if (!patientDropdownOpen) setPatientDropdownOpen(true);
-              }}
-              onFocus={() => {
-                if (!loadingPatients) setPatientDropdownOpen(true);
-                if (!selectedPatient) setPatientQuery((q) => q); // keep any typed text
-              }}
-              onKeyDown={(e) => {
-                if (!patientDropdownOpen && (e.key === "ArrowDown" || e.key === "Enter")) {
-                  setPatientDropdownOpen(true);
-                  return;
-                }
-                if (!patientDropdownOpen) return;
-                if (e.key === "Escape") {
-                  setPatientDropdownOpen(false);
-                  return;
-                }
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setHighlightedPatientIndex((i) => Math.min(i + 1, Math.max(filteredPatients.length - 1, 0)));
-                  return;
-                }
-                if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setHighlightedPatientIndex((i) => Math.max(i - 1, 0));
-                  return;
-                }
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const p = filteredPatients[highlightedPatientIndex];
-                  if (p) selectPatient(p);
-                }
-              }}
-              disabled={loadingPatients}
-              placeholder={loadingPatients ? "Loading patients…" : "Search patient by name or ID..."}
-              className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-2.5 w-full pr-20 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70"
-              aria-expanded={patientDropdownOpen}
-              aria-autocomplete="list"
-              role="combobox"
-            />
-            {patientInputValue && !loadingPatients && (
-              <button
-                type="button"
-                onClick={() => selectPatient(null)}
-                className="absolute right-10 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-text-muted hover:text-text-primary hover:bg-base-hover transition-colors duration-150"
-                title="Clear selection"
-                aria-label="Clear selection"
-              >
-                <X size={16} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-text-secondary hover:bg-base-hover transition-colors duration-150"
-              aria-label={patientDropdownOpen ? "Close list" : "Open list"}
-              disabled={loadingPatients}
-            >
-              <ChevronDown size={18} className={patientDropdownOpen ? "rotate-180 transition-transform" : "transition-transform"} />
-            </button>
-          </div>
-
-          {patientDropdownOpen && !loadingPatients && (
-            <ul
-              className="absolute left-0 right-0 top-full mt-2 z-20 bg-base-card border border-base-border rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] max-h-64 overflow-y-auto"
-              role="listbox"
-            >
-              {filteredPatients.length === 0 ? (
-                <li className="py-3 px-4 text-text-muted text-sm">
-                  No patients match your search.
-                </li>
-              ) : (
-                filteredPatients.map((p, idx) => (
-                  <li key={p.id}>
-                    <button
-                      type="button"
-                      onMouseEnter={() => setHighlightedPatientIndex(idx)}
-                      onClick={() => selectPatient(p)}
-                      className={`w-full py-3 px-4 text-left text-sm hover:bg-base-hover transition-colors duration-150 ${
-                        idx === highlightedPatientIndex ? "bg-brand-blue/10" : ""
-                      } ${selectedPatientId === String(p.id) ? "text-text-primary font-medium" : "text-text-secondary"}`}
-                      role="option"
-                      aria-selected={selectedPatientId === String(p.id)}
-                    >
-                      <span className="block truncate">
-                        #{p.id} — {p.name} (Age {p.age})
-                      </span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-          {loadingPatients && (
-            <p className="text-text-muted text-sm mt-2">Loading patients…</p>
-          )}
-        </div>
-      </div>
-
-      {/* Step 2: Add daily tests (only when patient selected) */}
-      {selectedPatient && (
-        <>
-          {/* Summary cards for selected patient's daily tests */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-status-warning"
-              left={
-                <div>
-                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
-                    Pending Tests
-                  </p>
-                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">{pendingCount}</p>
+      <div className="dashboard-page-shell max-w-6xl">
+        {/* Header — enhanced framing */}
+        <header className="relative mb-7 sm:mb-9">
+          <div className="rounded-2xl border border-base-border/80 bg-base-card/50 p-4 shadow-sm backdrop-blur-md dark:border-white/[0.07] dark:bg-white/[0.03] sm:p-5">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="relative z-10 min-w-0 max-w-2xl">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/45 bg-emerald-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-950 shadow-sm dark:border-emerald-500/50 dark:bg-emerald-950 dark:text-emerald-300 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <Beaker size={12} className="text-emerald-800 dark:text-emerald-400" />
+                  Laboratory
                 </div>
-              }
-              rightIcon={<Clock className="text-text-secondary" size={26} />}
-              tooltipTitle="Pending tests"
-              tooltipContent={
-                <>
-                  <TooltipRow label="Patient" value={selectedPatient.name} />
-                  <TooltipRow label="Selected date" value={selectedDate} />
-                </>
-              }
-            />
-            <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-status-success"
-              left={
-                <div>
-                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
-                    Completed Tests
-                  </p>
-                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">{completedCount}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-900/35 ring-1 ring-white/20">
+                    <TestTube2 className="h-6 w-6" strokeWidth={2} />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                    Laboratory data entry
+                  </h1>
                 </div>
-              }
-              rightIcon={<CheckCircle className="text-text-secondary" size={26} />}
-              tooltipTitle="Completed tests"
-              tooltipContent={
-                <>
-                  <TooltipRow label="Patient" value={selectedPatient.name} />
-                  <TooltipRow label="Selected date" value={selectedDate} />
-                </>
-              }
-            />
-            <CompactMetricCard
-              borderLeftClass="border-l-4 border-l-brand-blue"
-              left={
-                <div>
-                  <p className="text-text-secondary text-xs font-medium uppercase tracking-widest">
-                    Total (this patient, day)
-                  </p>
-                  <p className="text-text-primary text-3xl font-bold tabular-nums mt-1">
-                    {entriesForSelectedDate.length}
-                  </p>
-                </div>
-              }
-              rightIcon={<TestTube2 className="text-text-secondary" size={26} />}
-              tooltipTitle="Daily total"
-              tooltipContent={
-                <>
-                  <TooltipRow label="Patient" value={selectedPatient.name} />
-                  <TooltipRow label="Selected date" value={selectedDate} />
-                </>
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] space-y-5">
-              <h3 className="text-text-primary font-semibold text-base mb-1 flex items-center gap-2">
-                <ClipboardList className="text-text-secondary" size={20} />
-                Step 2 — Add daily test for {selectedPatient.name}
-              </h3>
-
-              {error && (
-                <p className="bg-status-danger/10 border border-status-danger/30 text-status-danger rounded-xl px-5 py-4 text-sm font-medium">
-                  {error}
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  Select a patient and the working date, then record tests for that day. All fields with{" "}
+                  <span className="font-semibold text-emerald-600 dark:text-cyan-400">*</span> are required.
                 </p>
-              )}
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
-                      Test Category
-                    </label>
-                    <select
-                      value={categories.length === 0 ? "" : testCategoryId}
-                      onChange={(e) => setTestCategoryId(Number(e.target.value))}
-                      disabled={loadingCategories || categories.length === 0}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 disabled:opacity-70 appearance-none"
-                    >
-                      <option value="">{loadingCategories ? "Loading…" : "No categories"}</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
-                      Test Name
-                    </label>
-                    <input
-                      type="text"
-                      value={testName}
-                      onChange={(e) => setTestName(e.target.value)}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
-                      placeholder="e.g. CBC, LFT, RFT"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
-                      Status
-                    </label>
-                    <select
-                      value={status}
-                      onChange={(e) =>
-                        setStatus(e.target.value as LabStatus)
-                      }
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 appearance-none"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-text-secondary text-sm font-medium mb-1.5 block">
-                      Result Summary
-                    </label>
-                    <input
-                      type="text"
-                      value={resultSummary}
-                      onChange={(e) => setResultSummary(e.target.value)}
-                      className="bg-base-card border border-base-border text-text-primary placeholder:text-text-muted rounded-xl px-4 py-3 w-full focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200"
-                      placeholder="e.g. Normal, Mildly elevated, Critical"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting || categories.length === 0}
-                  className="bg-btn-primary text-text-bright font-semibold rounded-xl px-5 py-2.5 shadow-btn hover:shadow-glow-blue hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center"
+              <div className="flex shrink-0 flex-col gap-1.5 rounded-2xl border border-base-border bg-base-card px-4 py-3 shadow-inner dark:border-white/[0.08] dark:bg-dash-elevated/80 sm:flex-row sm:items-center sm:gap-3">
+                <label
+                  htmlFor="lab-entry-date"
+                  className="text-xs font-bold uppercase tracking-wider text-text-secondary"
                 >
-                  {submitting ? "Saving..." : "Add daily test"}
-                </button>
-              </form>
-            </div>
-
-            <div className="bg-base-card border border-base-border rounded-2xl p-6 shadow-[0_2px_16px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden">
-              <h3 className="text-text-primary font-semibold text-base mb-5">
-                Daily tests — {selectedPatient.name} ({selectedDate})
-              </h3>
-              {loadingResults ? (
-                <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
-                  Loading…
+                  Working date
+                </label>
+                <div className="relative min-w-[10.5rem]">
+                  <CalendarDays
+                    className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-emerald-600/80 dark:text-cyan-400"
+                    aria-hidden
+                  />
+                  <input
+                    id="lab-entry-date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className={`${inputClass} py-2.5 pl-9 pr-3 text-sm`}
+                  />
                 </div>
-              ) : entriesForSelectedDate.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-text-muted text-sm">
-                  No tests recorded for this patient on this date yet.
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto">
-                  <div className="bg-base-card border border-base-border rounded-2xl overflow-hidden">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-base-muted">
-                      <tr>
-                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Test</th>
-                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Status</th>
-                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4">Summary</th>
-                        <th className="text-text-muted text-xs uppercase tracking-wider font-medium py-3 px-4 text-right">Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {entriesForSelectedDate.map((entry) => {
-                        const timeLabel = new Date(
-                          entry.collected_at
-                        ).toLocaleTimeString(undefined, {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        });
-                        const statusColor =
-                          entry.status === "completed"
-                            ? "bg-status-success/10 text-status-success text-xs font-medium px-2.5 py-1 rounded-full"
-                            : "bg-status-warning/10 text-status-warning text-xs font-medium px-2.5 py-1 rounded-full";
-
-                        return (
-                          <tr
-                            key={entry.id}
-                            className="border-b border-base-border last:border-0 hover:bg-base-hover transition-colors duration-150"
-                          >
-                            <td className="text-text-primary text-sm py-3 px-4">
-                              <span className="text-text-muted text-xs block">
-                                {entry.test_category}
-                              </span>
-                              {entry.test_name}
-                            </td>
-                            <td className="text-text-primary text-sm py-3 px-4">
-                              <span className={statusColor}>
-                                {entry.status === "completed"
-                                  ? "Completed"
-                                  : "Pending"}
-                              </span>
-                            </td>
-                            <td className="text-text-primary text-sm py-3 px-4">
-                              {entry.result_summary}
-                            </td>
-                            <td className="text-text-primary text-sm py-3 px-4 text-right tabular-nums">
-                              {timeLabel}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
-        </>
-      )}
+        </header>
 
-      {!selectedPatient && (
-        <p className="text-text-muted text-sm text-center py-4">
-          Select a patient above to add daily lab tests.
-        </p>
-      )}
+        <div className="space-y-6 sm:space-y-7">
+          <LabSection
+            step={1}
+            title="Select patient"
+            subtitle="Open the list to see everyone, or type letters so only names that start with that text stay in the list. Results use the working date in the header."
+          >
+            <div ref={patientDropdownRef} className="relative w-full max-w-xl">
+              <FieldLabel required>Patient</FieldLabel>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-emerald-600/80 dark:text-cyan-400">
+                  <User size={18} strokeWidth={2} />
+                </span>
+                <input
+                  ref={patientInputRef}
+                  type="text"
+                  value={patientInputValue}
+                  onChange={(e) => {
+                    setPatientQuery(e.target.value);
+                    if (!patientDropdownOpen) setPatientDropdownOpen(true);
+                  }}
+                  onFocus={() => {
+                    if (!loadingPatients) setPatientDropdownOpen(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!patientDropdownOpen && (e.key === "ArrowDown" || e.key === "Enter")) {
+                      setPatientDropdownOpen(true);
+                      return;
+                    }
+                    if (!patientDropdownOpen) return;
+                    if (e.key === "Escape") {
+                      setPatientDropdownOpen(false);
+                      return;
+                    }
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setHighlightedPatientIndex((i) =>
+                        Math.min(i + 1, Math.max(filteredPatients.length - 1, 0)),
+                      );
+                      return;
+                    }
+                    if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setHighlightedPatientIndex((i) => Math.max(i - 1, 0));
+                      return;
+                    }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const p = filteredPatients[highlightedPatientIndex];
+                      if (p) selectPatient(p);
+                    }
+                  }}
+                  disabled={loadingPatients}
+                  placeholder={loadingPatients ? "Loading patients…" : "Scroll the list or type the start of a name…"}
+                  className={`${inputClass} pl-12 pr-20`}
+                  aria-expanded={patientDropdownOpen}
+                  aria-autocomplete="list"
+                  role="combobox"
+                />
+                {patientInputValue && !loadingPatients && (
+                  <button
+                    type="button"
+                    onClick={() => selectPatient(null)}
+                    className="absolute right-10 top-1/2 z-10 -translate-y-1/2 rounded-lg p-1.5 text-text-muted transition hover:bg-base-hover hover:text-text-bright"
+                    title="Clear selection"
+                    aria-label="Clear selection"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => !loadingPatients && setPatientDropdownOpen((o) => !o)}
+                  className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-lg p-1.5 text-text-secondary transition hover:bg-base-hover"
+                  aria-label={patientDropdownOpen ? "Close list" : "Open list"}
+                  disabled={loadingPatients}
+                >
+                  <ChevronDown
+                    size={18}
+                    className={patientDropdownOpen ? "rotate-180 transition-transform" : "transition-transform"}
+                  />
+                </button>
+              </div>
+
+              {patientDropdownOpen && !loadingPatients && (
+                <ul
+                  className="absolute left-0 right-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-base-border bg-base-card py-1 shadow-[0_16px_48px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04] dark:shadow-[0_16px_56px_rgba(0,0,0,0.55)] dark:ring-white/10"
+                  role="listbox"
+                >
+                  {filteredPatients.length === 0 ? (
+                    <li className="px-4 py-3 text-sm text-text-muted">
+                      {patients.length === 0
+                        ? "No patients loaded."
+                        : "No patient names start with that — clear the box to see everyone again."}
+                    </li>
+                  ) : (
+                    filteredPatients.map((p, idx) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onMouseEnter={() => setHighlightedPatientIndex(idx)}
+                          onClick={() => selectPatient(p)}
+                          className={`w-full px-4 py-3 text-left text-sm transition ${
+                            idx === highlightedPatientIndex ? "bg-emerald-500/12 dark:bg-cyan-500/12" : ""
+                          } ${
+                            selectedPatientId === String(p.id)
+                              ? "font-semibold text-text-bright"
+                              : "text-text-secondary hover:bg-base-hover"
+                          }`}
+                          role="option"
+                          aria-selected={selectedPatientId === String(p.id)}
+                        >
+                          <span className="block truncate">
+                            #{p.id} — {p.name}{" "}
+                            <span className="font-normal text-text-muted">(age {p.age})</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+              {loadingPatients && <p className="mt-2 text-sm text-text-muted">Loading patients…</p>}
+            </div>
+          </LabSection>
+
+          {!selectedPatient && (
+            <div className="rounded-2xl border border-dashed border-emerald-300/50 bg-emerald-50/40 px-6 py-12 text-center dark:border-emerald-500/25 dark:bg-emerald-950/20">
+              <FlaskConical className="mx-auto mb-3 h-11 w-11 text-emerald-600/70 dark:text-emerald-400/80" strokeWidth={1.25} />
+              <p className="text-sm font-semibold text-text-bright">Choose a patient to continue</p>
+              <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-text-secondary sm:text-sm">
+                Daily metrics, the test form, and the results table will appear in the steps below once you select a
+                patient.
+              </p>
+            </div>
+          )}
+
+          {selectedPatient && (
+            <div className="space-y-6 sm:space-y-7">
+              <LabSection
+                step={2}
+                title={`Today for ${selectedPatient.name}`}
+                subtitle={`Figures are for ${selectedDate} only — change the working date in the header to view another day.`}
+              >
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+                  <CompactMetricCard
+                    borderLeftClass="border-l-4 border-l-status-warning"
+                    left={
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Pending</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums text-text-bright">{pendingCount}</p>
+                      </div>
+                    }
+                    rightIcon={<Clock className="text-text-secondary" size={26} />}
+                    tooltipTitle="Pending tests"
+                    tooltipContent={
+                      <>
+                        <TooltipRow label="Patient" value={selectedPatient.name} />
+                        <TooltipRow label="Date" value={selectedDate} />
+                      </>
+                    }
+                  />
+                  <CompactMetricCard
+                    borderLeftClass="border-l-4 border-l-status-success"
+                    left={
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Completed</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums text-text-bright">{completedCount}</p>
+                      </div>
+                    }
+                    rightIcon={<CheckCircle className="text-text-secondary" size={26} />}
+                    tooltipTitle="Completed tests"
+                    tooltipContent={
+                      <>
+                        <TooltipRow label="Patient" value={selectedPatient.name} />
+                        <TooltipRow label="Date" value={selectedDate} />
+                      </>
+                    }
+                  />
+                  <CompactMetricCard
+                    borderLeftClass="border-l-4 border-l-emerald-500"
+                    left={
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-text-secondary">Total tests</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums text-text-bright">
+                          {entriesForSelectedDate.length}
+                        </p>
+                      </div>
+                    }
+                    rightIcon={<TestTube2 className="text-text-secondary" size={26} />}
+                    tooltipTitle="All tests this day"
+                    tooltipContent={
+                      <>
+                        <TooltipRow label="Patient" value={selectedPatient.name} />
+                        <TooltipRow label="Date" value={selectedDate} />
+                      </>
+                    }
+                  />
+                </div>
+              </LabSection>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-7">
+                <LabSection
+                  step={3}
+                  title="Record a new test"
+                  subtitle="Each save adds one row for this patient on the working date. Use status to track workflow."
+                >
+                  {error && (
+                    <div
+                      className="mb-4 rounded-xl border border-status-danger/40 bg-status-danger/10 px-4 py-3 text-sm font-medium text-status-danger"
+                      role="alert"
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  <form id={formId} onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <FieldLabel required>Test category</FieldLabel>
+                        <InputShell icon={ListFilter} withChevron>
+                          <select
+                            value={categories.length === 0 ? "" : testCategoryId}
+                            onChange={(e) => setTestCategoryId(Number(e.target.value))}
+                            disabled={loadingCategories || categories.length === 0}
+                            className={`${inputClass} appearance-none disabled:opacity-50`}
+                          >
+                            <option value="">{loadingCategories ? "Loading…" : "No categories"}</option>
+                            {categories.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </InputShell>
+                      </div>
+                      <div>
+                        <FieldLabel required>Test name</FieldLabel>
+                        <InputShell icon={Activity}>
+                          <input
+                            type="text"
+                            value={testName}
+                            onChange={(e) => setTestName(e.target.value)}
+                            className={inputClass}
+                            placeholder="e.g. CBC, LFT, RFT"
+                          />
+                        </InputShell>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <FieldLabel required>Status</FieldLabel>
+                        <InputShell icon={ClipboardList} withChevron>
+                          <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value as LabStatus)}
+                            className={`${inputClass} appearance-none`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </InputShell>
+                      </div>
+                      <div>
+                        <FieldLabel>Result summary</FieldLabel>
+                        <InputShell icon={FileText}>
+                          <input
+                            type="text"
+                            value={resultSummary}
+                            onChange={(e) => setResultSummary(e.target.value)}
+                            className={inputClass}
+                            placeholder="e.g. Normal, Elevated, Critical"
+                          />
+                        </InputShell>
+                        <p className="mt-1.5 text-[11px] leading-snug text-text-muted">
+                          Defaults to &quot;Pending interpretation&quot; if left empty.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col-reverse gap-3 border-t border-base-border pt-5 sm:flex-row sm:justify-end sm:gap-3 dark:border-white/[0.06]">
+                      <button
+                        type="button"
+                        onClick={resetTestFields}
+                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-base-border bg-transparent px-5 py-2.5 text-sm font-semibold text-text-secondary transition hover:border-emerald-500/35 hover:bg-base-hover hover:text-text-bright"
+                      >
+                        <RotateCcw size={17} />
+                        Clear form
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || categories.length === 0}
+                        className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-2.5 text-sm font-bold text-white shadow-[0_8px_28px_rgba(16,185,129,0.28)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <TestTube2 size={18} strokeWidth={2.25} />
+                        {submitting ? "Saving…" : "Save test"}
+                      </button>
+                    </div>
+                  </form>
+                </LabSection>
+
+                <LabSection
+                  step={4}
+                  title="Tests for this day"
+                  subtitle={`All rows for ${selectedPatient.name} on ${selectedDate}.`}
+                >
+                  {loadingResults ? (
+                    <div className="flex min-h-[220px] items-center justify-center text-sm text-text-muted">
+                      Loading…
+                    </div>
+                  ) : entriesForSelectedDate.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-base-border bg-base-muted/25 px-4 py-12 text-center text-sm text-text-muted dark:bg-white/[0.02]">
+                      No tests recorded for this date yet. Add one using the form.
+                    </div>
+                  ) : (
+                    <div className="max-h-[min(58vh,520px)] overflow-auto rounded-xl border border-base-border shadow-inner">
+                      <table className="w-full min-w-[520px] text-left text-sm">
+                        <thead className="sticky top-0 z-10 bg-base-muted/95 backdrop-blur-sm dark:bg-[#0f1729]/95">
+                          <tr className="border-b border-base-border dark:border-white/[0.06]">
+                            <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-text-muted">
+                              Test
+                            </th>
+                            <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-text-muted">
+                              Status
+                            </th>
+                            <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-text-muted">
+                              Summary
+                            </th>
+                            <th className="px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-text-muted">
+                              Time
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {entriesForSelectedDate.map((entry) => {
+                            const timeLabel = new Date(entry.collected_at).toLocaleTimeString(undefined, {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            });
+                            const statusColor =
+                              entry.status === "completed"
+                                ? "bg-status-success/15 text-status-success ring-1 ring-status-success/30"
+                                : "bg-status-warning/15 text-status-warning ring-1 ring-status-warning/30";
+
+                            return (
+                              <tr
+                                key={entry.id}
+                                className="border-b border-base-border transition-colors last:border-0 hover:bg-emerald-500/[0.06] dark:border-white/[0.05] dark:hover:bg-cyan-500/[0.06]"
+                              >
+                                <td className="px-4 py-3.5 text-text-bright">
+                                  <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                                    {entry.test_category}
+                                  </span>
+                                  <span className="font-medium">{entry.test_name}</span>
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <span
+                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${statusColor}`}
+                                  >
+                                    {entry.status === "completed" ? "Completed" : "Pending"}
+                                  </span>
+                                </td>
+                                <td
+                                  className="max-w-[220px] truncate px-4 py-3.5 text-text-secondary"
+                                  title={entry.result_summary}
+                                >
+                                  {entry.result_summary}
+                                </td>
+                                <td className="px-4 py-3.5 text-right tabular-nums text-text-secondary">{timeLabel}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </LabSection>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
