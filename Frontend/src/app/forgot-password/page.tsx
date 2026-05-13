@@ -12,6 +12,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [resetUrl, setResetUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +29,7 @@ export default function ForgotPasswordPage() {
         setError(typeof data?.detail === "string" ? data.detail : "Something went wrong. Please try again.");
         return;
       }
+      setResetUrl(typeof (data as any)?.reset_url === "string" ? (data as any).reset_url : null);
       setSent(true);
     } catch {
       setError("Request failed. Please try again.");
@@ -49,6 +51,19 @@ export default function ForgotPasswordPage() {
             <div className="px-4 py-3 rounded-xl bg-status-success/10 text-status-success text-sm border border-status-success/30">
               If an account exists with this email, you will receive a link to reset your password. Please check your inbox (and spam folder).
             </div>
+            {resetUrl && (
+              <div className="px-4 py-3 rounded-xl bg-brand-blue/10 text-text-primary text-sm border border-brand-blue/30">
+                <p className="text-text-secondary text-xs mb-2">
+                  Email is not configured on this server. Use this reset link:
+                </p>
+                <a
+                  href={resetUrl}
+                  className="break-all text-[#5d9fff] hover:text-[#8eb9ff] underline underline-offset-2"
+                >
+                  {resetUrl}
+                </a>
+              </div>
+            )}
             <Link
               href="/login"
               className="block w-full text-center bg-transparent border border-base-border text-text-secondary rounded-xl px-5 py-2.5 hover:border-brand-blue/50 hover:text-text-bright transition-all duration-200 font-medium"
