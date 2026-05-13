@@ -4,33 +4,56 @@ import { useEffect, useState } from "react";
 
 export default function LiveClock() {
   const [time, setTime] = useState("");
+  const [dateLine, setDateLine] = useState("");
 
   useEffect(() => {
     const updateClock = () => {
-      setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      );
+      setDateLine(
+        now.toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+      );
     };
-    
-    // Set initial time
+
     updateClock();
-    
-    // Update every second
+
     const intervalId = setInterval(updateClock, 1000);
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
-  // Return a placeholder during SSR to avoid hydration mismatch
+  const wrapClass =
+    "inline-flex h-9 min-h-9 flex-col items-end justify-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-0.5 leading-none text-slate-900 dark:border-white/10 dark:bg-white/[0.04] dark:text-text-bright";
+
   if (!time) {
     return (
-      <span className="hidden w-[120px] tabular-nums sm:block text-slate-900 font-mono font-bold bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 dark:bg-transparent dark:border-transparent dark:text-text-bright dark:font-semibold dark:font-sans">
-        --:--:--
-      </span>
+      <div className={wrapClass} aria-hidden>
+        <span className="text-[9px] font-medium text-slate-500 dark:text-text-secondary">
+          —
+        </span>
+        <span className="font-mono text-xs font-bold tabular-nums sm:text-sm">--:--:--</span>
+      </div>
     );
   }
 
   return (
-    <span className="hidden sm:block w-[120px] tabular-nums text-slate-900 font-mono font-bold bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 dark:bg-transparent dark:border-transparent dark:text-text-bright dark:font-semibold dark:font-sans">
-      {time}
-    </span>
+    <div className={wrapClass} title={`${dateLine} ${time}`}>
+      <span className="text-[9px] font-semibold text-slate-600 dark:text-text-secondary">
+        {dateLine}
+      </span>
+      <span className="font-mono text-xs font-bold tabular-nums sm:text-sm">{time}</span>
+    </div>
   );
 }

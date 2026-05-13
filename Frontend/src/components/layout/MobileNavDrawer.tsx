@@ -37,7 +37,7 @@ export default function MobileNavDrawer() {
   const items = getMobileNavItems(role, pathname ?? "");
 
   return (
-    <div className="md:hidden shrink-0">
+    <div className="shrink-0 lg:hidden">
       <button
         type="button"
         onClick={() => setOpen(true)}
