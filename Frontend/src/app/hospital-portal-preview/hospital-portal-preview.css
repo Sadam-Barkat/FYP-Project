@@ -1,0 +1,455 @@
+@keyframes rotateBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes neonPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px #ff2d78, 0 0 30px #1a6fff44;
+  }
+  50% {
+    box-shadow: 0 0 25px #ff2d78, 0 0 60px #1a6fff88, 0 0 10px #00e5ff;
+  }
+}
+
+.neon-border {
+  background:
+    linear-gradient(#0a0a0f, #0a0a0f) padding-box,
+    linear-gradient(135deg, #ff2d78, #1a6fff, #00e5ff, #ff2d78) border-box;
+  border: 3px solid transparent;
+  border-radius: 24px;
+  animation:
+    neonPulse 3s ease-in-out infinite,
+    rotateBorder 10s linear infinite;
+  background-size: 300% 300%;
+}
+
+@keyframes neonPulseHero {
+  0%,
+  100% {
+    box-shadow:
+      0 0 14px rgba(255, 45, 120, 0.4),
+      0 0 26px rgba(0, 229, 255, 0.28),
+      inset 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 45, 120, 0.5),
+      0 0 38px rgba(0, 229, 255, 0.42),
+      inset 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Landing poster: thin rim, left magenta → right cyan */
+.neon-border-hero {
+  background:
+    linear-gradient(#06060c, #06060c) padding-box,
+    linear-gradient(
+      90deg,
+      #ff2d78 0%,
+      #d946ef 18%,
+      #1a6fff 52%,
+      #00e5ff 100%
+    ) border-box;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  animation: neonPulseHero 3.5s ease-in-out infinite;
+}
+
+.glow-input {
+  /* Beat browser / Tailwind defaults + stay dark when empty */
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: none;
+  color: #e8eefc !important;
+  outline: none;
+  width: 100%;
+  padding: 10px 36px 10px 0;
+  font-size: 14px;
+  transition: color 0.25s ease;
+  color-scheme: dark;
+}
+
+.glow-input:focus {
+  color: #ffffff !important;
+}
+
+.glow-input:focus-visible {
+  outline: none;
+}
+
+.glow-input::placeholder {
+  color: #4a6088;
+}
+
+/* Chrome / Edge / Safari autofill — kills white/yellow boxes */
+.glow-input:-webkit-autofill,
+.glow-input:-webkit-autofill:hover,
+.glow-input:-webkit-autofill:focus,
+.glow-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #e8eefc !important;
+  caret-color: #e8eefc;
+  box-shadow: 0 0 0 1000px rgba(14, 22, 48, 0.96) inset !important;
+  transition: background-color 99999s ease-out 0s;
+}
+
+/* Firefox 139+ */
+.glow-input:-moz-autofill {
+  box-shadow: 0 0 0 1000px rgba(14, 22, 48, 0.96) inset !important;
+  color: #e8eefc !important;
+}
+
+.portal-gradient-rule {
+  height: 2px;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    #ff2d78 0%,
+    #1a6fff 50%,
+    #00e5ff 100%
+  );
+  box-shadow:
+    0 0 10px rgba(255, 45, 120, 0.35),
+    0 0 18px rgba(26, 111, 255, 0.45);
+  transition:
+    box-shadow 0.35s ease,
+    filter 0.35s ease;
+}
+
+.portal-input-shell:focus-within .portal-gradient-rule {
+  box-shadow:
+    0 0 14px rgba(255, 45, 120, 0.55),
+    0 0 28px rgba(26, 111, 255, 0.65),
+    0 0 8px rgba(0, 229, 255, 0.35);
+  filter: brightness(1.08);
+}
+
+.portal-column-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(26, 111, 255, 0.55) 22%,
+    rgba(0, 229, 255, 0.35) 50%,
+    rgba(255, 45, 120, 0.35) 78%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 12px rgba(26, 111, 255, 0.55),
+    0 0 22px rgba(255, 45, 120, 0.12);
+}
+
+/* Landing hero — smaller card + animated neon ring (spin + glow pulse) */
+@keyframes landing-neon-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes landing-neon-blink {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(255, 45, 120, 0.35),
+      0 0 20px rgba(0, 212, 255, 0.28),
+      0 0 8px rgba(136, 0, 255, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 24px rgba(255, 45, 120, 0.65),
+      0 0 38px rgba(0, 212, 255, 0.48),
+      0 0 16px rgba(0, 68, 255, 0.35);
+  }
+}
+
+.landing-neon-outer {
+  position: relative;
+  width: min(92vw, 880px);
+  height: clamp(200px, 52vw, 300px);
+  max-height: min(300px, 42vh);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  animation: landing-neon-blink 2.4s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .landing-neon-outer {
+    height: clamp(240px, 38vw, 300px);
+    max-height: 300px;
+  }
+}
+
+.landing-neon-outer::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 180%;
+  aspect-ratio: 1;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    #ff2d78,
+    #8800ff,
+    #0044ff,
+    #00d4ff,
+    #22d3ee,
+    #ff2d78
+  );
+  animation: landing-neon-spin 5s linear infinite;
+}
+
+/* Readability behind bottom copy — faces stay untouched higher up */
+.landing-bottom-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(6, 10, 28, 0.82) 0%,
+    rgba(6, 10, 28, 0.35) 48%,
+    transparent 100%
+  );
+}
+
+/* Soft inner rim — depth without hiding photo */
+.landing-inner-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 40px 80px rgba(0, 0, 0, 0.12);
+}
+
+@keyframes landing-line-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.92;
+    filter: brightness(1.25);
+  }
+}
+
+.landing-accent-line {
+  animation: landing-line-shimmer 3s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(255, 45, 120, 0.35),
+    0 0 18px rgba(0, 68, 255, 0.25);
+}
+
+/* Premium headline: subtle cool-white gradient */
+.landing-welcome-title {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #e8efff 55%,
+    #c8d4f0 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.75))
+    drop-shadow(0 0 24px rgba(26, 111, 255, 0.15));
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(1.05rem, 3.8vw + 0.35rem, 2.2rem);
+  letter-spacing: clamp(0.08em, 1.2vw, 0.4em);
+  padding-left: clamp(0.08em, 0.8vw, 0.4em);
+  text-align: center;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.landing-cta {
+  width: min(340px, 92vw) !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.landing-cta:focus-visible {
+  outline: 2px solid #00d4ff;
+  outline-offset: 3px;
+}
+
+/* ─── Unique ambient: slow drifting aurora orbs (preview page only) ─── */
+.portal-unique-ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.portal-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  mix-blend-mode: screen;
+}
+
+.portal-orb-a {
+  width: min(55vw, 520px);
+  height: min(55vw, 520px);
+  left: -8%;
+  top: 18%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 45, 120, 0.55) 0%,
+    transparent 70%
+  );
+  animation: portal-drift-a 22s ease-in-out infinite;
+}
+
+.portal-orb-b {
+  width: min(48vw, 440px);
+  height: min(48vw, 440px);
+  right: -12%;
+  bottom: 8%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 212, 255, 0.45) 0%,
+    transparent 70%
+  );
+  animation: portal-drift-b 26s ease-in-out infinite;
+}
+
+.portal-orb-c {
+  width: min(40vw, 380px);
+  height: min(40vw, 380px);
+  left: 38%;
+  top: -15%;
+  background: radial-gradient(
+    circle,
+    rgba(136, 0, 255, 0.35) 0%,
+    transparent 68%
+  );
+  animation: portal-drift-c 19s ease-in-out infinite;
+}
+
+@keyframes portal-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(8%, -6%) scale(1.08);
+  }
+  66% {
+    transform: translate(-5%, 4%) scale(0.96);
+  }
+}
+
+@keyframes portal-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  40% {
+    transform: translate(-10%, -8%) scale(1.06);
+  }
+  70% {
+    transform: translate(6%, 10%) scale(0.94);
+  }
+}
+
+@keyframes portal-drift-c {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-12%, 14%) scale(1.12);
+    opacity: 0.5;
+  }
+}
+
+/* ─── HUD L-brackets on landing card ─── */
+@keyframes landing-hud-glow {
+  0%,
+  100% {
+    opacity: 0.65;
+    filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.45));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(255, 45, 120, 0.5))
+      drop-shadow(0 0 8px rgba(0, 212, 255, 0.35));
+  }
+}
+
+.landing-hud-corners {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 14px;
+}
+
+.landing-hud-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  animation: landing-hud-glow 3.2s ease-in-out infinite;
+}
+
+.landing-hud-corner-tl {
+  top: 11px;
+  left: 11px;
+  border-left: 2px solid rgba(0, 212, 255, 0.9);
+  border-top: 2px solid rgba(0, 212, 255, 0.9);
+  border-radius: 3px 0 0 0;
+  animation-delay: 0s;
+}
+
+.landing-hud-corner-tr {
+  top: 11px;
+  right: 11px;
+  border-right: 2px solid rgba(255, 45, 120, 0.85);
+  border-top: 2px solid rgba(255, 45, 120, 0.85);
+  border-radius: 0 3px 0 0;
+  animation-delay: 0.4s;
+}
+
+.landing-hud-corner-bl {
+  bottom: 11px;
+  left: 11px;
+  border-left: 2px solid rgba(255, 45, 120, 0.85);
+  border-bottom: 2px solid rgba(255, 45, 120, 0.85);
+  border-radius: 0 0 0 3px;
+  animation-delay: 0.8s;
+}
+
+.landing-hud-corner-br {
+  bottom: 11px;
+  right: 11px;
+  border-right: 2px solid rgba(0, 212, 255, 0.9);
+  border-bottom: 2px solid rgba(0, 212, 255, 0.9);
+  border-radius: 0 0 3px 0;
+  animation-delay: 1.2s;
+}

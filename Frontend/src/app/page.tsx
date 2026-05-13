@@ -1,8 +1,5 @@
-import { redirect } from 'next/navigation';
+import HospitalPortalExperience from "@/components/hospital-portal-preview/HospitalPortalExperience";
 
 export default function Home() {
-  // For this hospital dashboard, always start at the secure login page.
-  redirect('/login');
-  return null;
+  return <HospitalPortalExperience />;
 }
-

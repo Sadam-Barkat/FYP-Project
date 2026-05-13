@@ -14,6 +14,14 @@ export function normalizeApiBaseUrl(raw: string): string {
   return s;
 }
 
-export function getApiBaseUrl(fallback = "http://localhost:8000"): string {
+/**
+ * When `NEXT_PUBLIC_API_URL` is unset, use the same origin as the portal login fallback so
+ * auth and dashboards hit one backend (avoids logging in against Railway while `/doctor` calls localhost).
+ * Override with `NEXT_PUBLIC_API_URL=http://localhost:8000` in `.env.local` for a local API.
+ */
+export const DEFAULT_PUBLIC_API_FALLBACK =
+  "https://fyp-project-production-8c05.up.railway.app";
+
+export function getApiBaseUrl(fallback = DEFAULT_PUBLIC_API_FALLBACK): string {
   return normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || fallback);
 }
