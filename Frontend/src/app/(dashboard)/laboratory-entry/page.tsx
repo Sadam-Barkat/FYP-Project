@@ -93,7 +93,7 @@ function InputShell({
   children,
   withChevron,
 }: {
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
   children: React.ReactNode;
   withChevron?: boolean;
 }) {
