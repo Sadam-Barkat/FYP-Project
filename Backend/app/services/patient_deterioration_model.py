@@ -72,6 +72,41 @@ def _label_from_prob(prob: float, thresholds: ModelThresholds) -> str:
     return "Low"
 
 
+def predict_deterioration_risk_batch(feature_rows: List[Dict[str, Optional[float]]]) -> List[RiskResult]:
+    """
+    Predict deterioration risk probability for a batch of patients.
+    """
+    model, features, thresholds = get_model_bundle()
+
+    if not feature_rows:
+        return []
+
+    X = []
+    for row in feature_rows:
+        x = []
+        for f in features:
+            v = row.get(f)
+            x.append(0.0 if v is None else float(v))
+        X.append(x)
+
+    try:
+        proba = model.predict_proba(X)
+        probs = [float(p[1]) for p in proba]
+    except Exception:
+        probs = [0.0] * len(feature_rows)
+
+    results = []
+    for prob in probs:
+        pct = int(round(max(0.0, min(1.0, prob)) * 100))
+        results.append(
+            RiskResult(
+                risk_prob=prob,
+                risk_pct=pct,
+                risk_label=_label_from_prob(prob, thresholds),
+            )
+        )
+    return results
+
 def predict_deterioration_risk(feature_row: Dict[str, Optional[float]]) -> RiskResult:
     """
     Predict deterioration risk probability using the bundled sklearn model.

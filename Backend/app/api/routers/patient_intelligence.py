@@ -20,6 +20,7 @@ from app.models.vital import Vital
 from app.services.patient_deterioration_model import (
     get_model_bundle,
     predict_deterioration_risk,
+    predict_deterioration_risk_batch,
 )
 
 router = APIRouter(prefix="/api", tags=["patient-intelligence"])
@@ -276,6 +277,10 @@ async def get_patient_intelligence(
     abnormal_patient_ids: set[int] = set()
     scored: List[Tuple[int, str, int]] = []
     ml_rows: List[Dict[str, Any]] = []
+    
+    # Prepare features for batch ML prediction
+    ml_feature_rows = []
+    patient_meta_list = []
 
     for row in adm_rows:
         admission: Admission = row.Admission
@@ -308,8 +313,6 @@ async def get_patient_intelligence(
         sc = _score_for_vital(v)
         scored.append((sc, name, pid))
 
-        # ML prediction (real model) — uses latest vitals + patient demographics.
-        # If vitals are missing, the model will score with zeros (conservative "Low").
         admission_days = 0
         try:
             admission_days = max(
@@ -321,19 +324,42 @@ async def get_patient_intelligence(
         gender = (patient.gender or "").strip().lower()
         gender_encoded = 1 if gender.startswith("m") else 0
 
-        rr = predict_deterioration_risk(
-            {
-                "heart_rate": getattr(v, "heart_rate", None) if v else None,
-                "blood_pressure_sys": getattr(v, "blood_pressure_sys", None) if v else None,
-                "blood_pressure_dia": getattr(v, "blood_pressure_dia", None) if v else None,
-                "spo2": getattr(v, "spo2", None) if v else None,
-                "temperature": getattr(v, "temperature", None) if v else None,
-                "respiratory_rate": getattr(v, "respiratory_rate", None) if v else None,
-                "age": getattr(patient, "age", None),
-                "admission_days": admission_days,
-                "gender_encoded": gender_encoded,
-            }
-        )
+        ml_feature_rows.append({
+            "heart_rate": getattr(v, "heart_rate", None) if v else None,
+            "blood_pressure_sys": getattr(v, "blood_pressure_sys", None) if v else None,
+            "blood_pressure_dia": getattr(v, "blood_pressure_dia", None) if v else None,
+            "spo2": getattr(v, "spo2", None) if v else None,
+            "temperature": getattr(v, "temperature", None) if v else None,
+            "respiratory_rate": getattr(v, "respiratory_rate", None) if v else None,
+            "age": getattr(patient, "age", None),
+            "admission_days": admission_days,
+            "gender_encoded": gender_encoded,
+        })
+        patient_meta_list.append({
+            "pid": pid,
+            "name": name,
+            "patient": patient,
+            "admission": admission,
+            "v": v,
+            "sc": sc,
+            "patient_vital_normal": patient_vital_normal,
+            "patient_vital_total": patient_vital_total,
+        })
+
+    # Run ML prediction in a single batch
+    import asyncio
+    batch_results = await asyncio.to_thread(predict_deterioration_risk_batch, ml_feature_rows)
+
+    for meta, rr in zip(patient_meta_list, batch_results):
+        pid = meta["pid"]
+        name = meta["name"]
+        patient = meta["patient"]
+        admission = meta["admission"]
+        v = meta["v"]
+        sc = meta["sc"]
+        patient_vital_normal = meta["patient_vital_normal"]
+        patient_vital_total = meta["patient_vital_total"]
+
         ml_rows.append(
             {
                 "patient_id": pid,

@@ -135,7 +135,10 @@ async def compute_billing_finance_overview(
         )
 
     revenue_vs_expenses: List[Dict[str, Any]] = []
-    for i in range(7):
+    
+    import asyncio
+    
+    async def fetch_day_revenue(i: int):
         day = seven_days_ago + timedelta(days=i)
         label = day.strftime("%a")
         d0, d1 = day_bounds_utc_naive(day, tz)
@@ -145,9 +148,9 @@ async def compute_billing_finance_overview(
             )
         )
         day_revenue = float(day_rev_r.scalar_one() or 0.0)
-        revenue_vs_expenses.append(
-            {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
-        )
+        return {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
+
+    revenue_vs_expenses = await asyncio.gather(*(fetch_day_revenue(i) for i in range(7)))
 
     # ML forecasts (next 7 calendar days + default/collection risk). Never fail the endpoint.
     ml_revenue_forecast: List[Dict[str, Any]] = []
