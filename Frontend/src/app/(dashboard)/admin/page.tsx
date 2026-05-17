@@ -3796,7 +3796,15 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 4: Emergency Cases */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  onClick={() =>
+                    openBedsDetail((d) => bedsEmergencyModalPayload(d), {
+                      title: "Emergency cases",
+                      subtitle: "Loading alert summary…",
+                    })
+                  }
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="text-kpi-red text-[10px]">🚨</span>
                     <p className="text-kpi-red text-[9px] font-semibold uppercase tracking-wider">
