@@ -55,64 +55,70 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
 
     # Distinct patients still admitted as of end of this calendar day (census),
     # not "admitted today only" — matches "patients currently in hospital" for the KPI.
-    total_patients_result = await db.execute(
-        select(func.count(func.distinct(Admission.patient_id))).where(
-            and_(
-                Admission.admission_date <= day_end,
-                or_(
-                    Admission.discharge_date.is_(None),
-                    Admission.discharge_date > day_end,
-                ),
+    import asyncio
+
+    (
+        total_patients_result,
+        active_admissions_result,
+        available_beds_result,
+        critical_patients_result,
+        staff_on_duty_result,
+        revenue_today_result,
+    ) = await asyncio.gather(
+        db.execute(
+            select(func.count(func.distinct(Admission.patient_id))).where(
+                and_(
+                    Admission.admission_date <= day_end,
+                    or_(
+                        Admission.discharge_date.is_(None),
+                        Admission.discharge_date > day_end,
+                    ),
+                )
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .where(Admission.discharge_date.is_(None))
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Bed)
+            .where(Bed.status == BedStatus.available)
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(latest_vitals)
+            .where(
+                latest_vitals.c.rn == 1,
+                func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(User)
+            .where(
+                and_(
+                    User.role.in_((UserRole.doctor, UserRole.nurse)),
+                    User.is_active.is_(True),
+                )
+            )
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                and_(
+                    Transaction.transaction_date >= day_start,
+                    Transaction.transaction_date <= day_end,
+                )
             )
         )
     )
+
     total_patients = int(total_patients_result.scalar_one() or 0)
-
-    active_admissions_result = await db.execute(
-        select(func.count())
-        .select_from(Admission)
-        .where(Admission.discharge_date.is_(None))
-    )
     active_admissions = int(active_admissions_result.scalar_one() or 0)
-
-    available_beds_result = await db.execute(
-        select(func.count())
-        .select_from(Bed)
-        .where(Bed.status == BedStatus.available)
-    )
     available_beds = int(available_beds_result.scalar_one() or 0)
-
-    latest_vitals = _latest_vital_per_patient_subquery()
-    critical_patients_result = await db.execute(
-        select(func.count())
-        .select_from(latest_vitals)
-        .where(
-            latest_vitals.c.rn == 1,
-            func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
-        )
-    )
     critical_patients = int(critical_patients_result.scalar_one() or 0)
-
-    staff_on_duty_result = await db.execute(
-        select(func.count())
-        .select_from(User)
-        .where(
-            and_(
-                User.role.in_((UserRole.doctor, UserRole.nurse)),
-                User.is_active.is_(True),
-            )
-        )
-    )
     staff_on_duty = int(staff_on_duty_result.scalar_one() or 0)
-
-    revenue_today_result = await db.execute(
-        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-            and_(
-                Transaction.transaction_date >= day_start,
-                Transaction.transaction_date <= day_end,
-            )
-        )
-    )
     revenue_today = float(revenue_today_result.scalar_one() or 0.0)
 
     return {
@@ -159,51 +165,80 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
     tz = get_app_timezone()
     day_start, day_end = day_bounds_utc_naive(base_date, tz)
 
-    admitted_today_r = await db.execute(
-        select(func.count(func.distinct(Admission.patient_id))).where(
-            and_(
-                Admission.admission_date >= day_start,
-                Admission.admission_date <= day_end,
+    import asyncio
+
+    (
+        admitted_today_r,
+        discharged_today_r,
+        under_obs_r,
+        male_r,
+        female_r,
+        children_r,
+        elderly_r,
+    ) = await asyncio.gather(
+        db.execute(
+            select(func.count(func.distinct(Admission.patient_id))).where(
+                and_(
+                    Admission.admission_date >= day_start,
+                    Admission.admission_date <= day_end,
+                )
             )
+        ),
+        db.execute(
+            select(func.count(func.distinct(Admission.patient_id))).where(
+                and_(
+                    Admission.discharge_date.is_not(None),
+                    Admission.discharge_date >= day_start,
+                    Admission.discharge_date <= day_end,
+                )
+            )
+        ),
+        db.execute(
+            select(func.count(func.distinct(latest_sq.c.patient_id)))
+            .select_from(latest_sq)
+            .join(
+                admitted_today_patients,
+                admitted_today_patients.c.patient_id == latest_sq.c.patient_id,
+            )
+            .where(
+                latest_sq.c.rn == 1,
+                func.lower(func.coalesce(latest_sq.c.condition_level, "")).like("%observation%"),
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .join(Patient, Patient.id == Admission.patient_id)
+            .where(
+                Admission.discharge_date.is_(None),
+                func.lower(Patient.gender).in_(("m", "male")),
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .join(Patient, Patient.id == Admission.patient_id)
+            .where(
+                Admission.discharge_date.is_(None),
+                func.lower(Patient.gender).in_(("f", "female")),
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .join(Patient, Patient.id == Admission.patient_id)
+            .where(Admission.discharge_date.is_(None), Patient.age < 18)
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .join(Patient, Patient.id == Admission.patient_id)
+            .where(Admission.discharge_date.is_(None), Patient.age >= 60)
         )
     )
+
     admitted_today = int(admitted_today_r.scalar_one() or 0)
-
-    discharged_today_r = await db.execute(
-        select(func.count(func.distinct(Admission.patient_id))).where(
-            and_(
-                Admission.discharge_date.is_not(None),
-                Admission.discharge_date >= day_start,
-                Admission.discharge_date <= day_end,
-            )
-        )
-    )
     discharged_today = int(discharged_today_r.scalar_one() or 0)
-
-    latest_sq = _latest_vital_per_patient_subquery()
-    admitted_today_patients = (
-        select(Admission.patient_id)
-        .where(
-            and_(
-                Admission.admission_date >= day_start,
-                Admission.admission_date <= day_end,
-            )
-        )
-        .distinct()
-        .subquery()
-    )
-    under_obs_r = await db.execute(
-        select(func.count(func.distinct(latest_sq.c.patient_id)))
-        .select_from(latest_sq)
-        .join(
-            admitted_today_patients,
-            admitted_today_patients.c.patient_id == latest_sq.c.patient_id,
-        )
-        .where(
-            latest_sq.c.rn == 1,
-            func.lower(func.coalesce(latest_sq.c.condition_level, "")).like("%observation%"),
-        )
-    )
     under_observation_patients = int(under_obs_r.scalar_one() or 0)
 
     total_patients_breakdown = {
@@ -213,36 +248,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "outpatient": 0,
     }
 
-    male_r = await db.execute(
-        select(func.count())
-        .select_from(Admission)
-        .join(Patient, Patient.id == Admission.patient_id)
-        .where(
-            Admission.discharge_date.is_(None),
-            func.lower(Patient.gender).in_(("m", "male")),
-        )
-    )
-    female_r = await db.execute(
-        select(func.count())
-        .select_from(Admission)
-        .join(Patient, Patient.id == Admission.patient_id)
-        .where(
-            Admission.discharge_date.is_(None),
-            func.lower(Patient.gender).in_(("f", "female")),
-        )
-    )
-    children_r = await db.execute(
-        select(func.count())
-        .select_from(Admission)
-        .join(Patient, Patient.id == Admission.patient_id)
-        .where(Admission.discharge_date.is_(None), Patient.age < 18)
-    )
-    elderly_r = await db.execute(
-        select(func.count())
-        .select_from(Admission)
-        .join(Patient, Patient.id == Admission.patient_id)
-        .where(Admission.discharge_date.is_(None), Patient.age >= 60)
-    )
     active_admissions_breakdown = {
         "male": int(male_r.scalar_one() or 0),
         "female": int(female_r.scalar_one() or 0),
@@ -250,16 +255,53 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "elderly": int(elderly_r.scalar_one() or 0),
     }
 
-    total_beds_br = await db.execute(select(func.count()).select_from(Bed))
-    occupied_br = await db.execute(
-        select(func.count()).select_from(Bed).where(Bed.status == BedStatus.occupied)
+    (
+        total_beds_br,
+        occupied_br,
+        available_br,
+        maint_br,
+        lv_rows,
+        role_counts_r,
+        paid_amt_r,
+        pending_amt_r,
+        tx_r,
+        largest_r,
+    ) = await asyncio.gather(
+        db.execute(select(func.count()).select_from(Bed)),
+        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.occupied)),
+        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.available)),
+        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.maintenance)),
+        db.execute(select(lv_sq.c.condition_level).where(lv_sq.c.rn == 1)),
+        db.execute(select(User.role, func.count(User.id)).where(User.is_active.is_(True)).group_by(User.role)),
+        db.execute(
+            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                and_(
+                    Transaction.transaction_date >= day_start,
+                    Transaction.transaction_date <= day_end,
+                )
+            )
+        ),
+        db.execute(
+            select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+                and_(
+                    Billing.status == BillingStatus.pending,
+                    Billing.date >= day_start,
+                    Billing.date <= day_end,
+                )
+            )
+        ),
+        db.execute(
+            select(func.count())
+            .select_from(Billing)
+            .where(and_(Billing.date >= day_start, Billing.date <= day_end))
+        ),
+        db.execute(
+            select(func.coalesce(func.max(Billing.amount), 0.0)).where(
+                and_(Billing.date >= day_start, Billing.date <= day_end)
+            )
+        )
     )
-    available_br = await db.execute(
-        select(func.count()).select_from(Bed).where(Bed.status == BedStatus.available)
-    )
-    maint_br = await db.execute(
-        select(func.count()).select_from(Bed).where(Bed.status == BedStatus.maintenance)
-    )
+
     available_beds_breakdown = {
         "total_beds": int(total_beds_br.scalar_one() or 0),
         "occupied": int(occupied_br.scalar_one() or 0),
@@ -268,9 +310,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
     }
 
     lv_sq = _latest_vital_per_patient_subquery()
-    lv_rows = await db.execute(
-        select(lv_sq.c.condition_level).where(lv_sq.c.rn == 1)
-    )
     crit_b = {"critical": 0, "emergency": 0, "stable": 0, "under_observation": 0}
     for (cl,) in lv_rows.all():
         bucket = _classify_latest_condition(cl)
@@ -285,11 +324,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "under_observation": int(crit_b["under_observation"]),
     }
 
-    role_counts_r = await db.execute(
-        select(User.role, func.count(User.id))
-        .where(User.is_active.is_(True))
-        .group_by(User.role)
-    )
     by_role = {row[0]: int(row[1]) for row in role_counts_r.all()}
     staff_on_duty_breakdown = {
         "doctors": int(by_role.get(UserRole.doctor, 0)),
@@ -300,33 +334,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "receptionists": 0,
     }
 
-    paid_amt_r = await db.execute(
-        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-            and_(
-                Transaction.transaction_date >= day_start,
-                Transaction.transaction_date <= day_end,
-            )
-        )
-    )
-    pending_amt_r = await db.execute(
-        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
-            and_(
-                Billing.status == BillingStatus.pending,
-                Billing.date >= day_start,
-                Billing.date <= day_end,
-            )
-        )
-    )
-    tx_r = await db.execute(
-        select(func.count())
-        .select_from(Billing)
-        .where(and_(Billing.date >= day_start, Billing.date <= day_end))
-    )
-    largest_r = await db.execute(
-        select(func.coalesce(func.max(Billing.amount), 0.0)).where(
-            and_(Billing.date >= day_start, Billing.date <= day_end)
-        )
-    )
     revenue_today_breakdown = {
         "paid": float(paid_amt_r.scalar_one() or 0.0),
         "pending": float(pending_amt_r.scalar_one() or 0.0),
