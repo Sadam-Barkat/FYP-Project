@@ -475,6 +475,47 @@ function financeSnapshotModalPayload(
   };
 }
 
+function financeForecastModalPayload(financeData: Record<string, unknown>): DetailModalPayload {
+  const pts = Array.isArray(financeData?.ml_revenue_forecast)
+    ? (financeData.ml_revenue_forecast as any[])
+    : [];
+  const totalPredRevenue = pts.reduce(
+    (s, p) => s + Number(p?.predicted_revenue ?? 0),
+    0
+  );
+  const totalPredExpenses = totalPredRevenue * 0.3;
+  const totalPredNet = totalPredRevenue - totalPredExpenses;
+  const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
+
+  const rows = pts.map((p) => {
+    const rev = Number(p?.predicted_revenue ?? 0);
+    return {
+      date: String(p?.date ?? ""),
+      revenue: Number(rev.toFixed(2)),
+      expenses: Number((rev * 0.3).toFixed(2)),
+      net: Number((rev * 0.7).toFixed(2)),
+    };
+  });
+
+  const forecastTable: DetailTablePayload = {
+    caption: "Predicted Daily Totals (Next 7 Days)",
+    columns: [
+      { key: "date", label: "Date" },
+      { key: "revenue", label: "Predicted Revenue" },
+      { key: "expenses", label: "Estimated Expenses" },
+      { key: "net", label: "Predicted Net" },
+    ],
+    rows,
+  };
+
+  return {
+    title: "Revenue Forecast · next 7 days",
+    subtitle: `Total Rev ₨${totalPredRevenue.toFixed(2)} · Exp ₨${totalPredExpenses.toFixed(2)} · Net ₨${totalPredNet.toFixed(2)} (Avg/day: ₨${avgPredRevenue.toFixed(2)})`,
+    tables: [forecastTable],
+    blocks: [],
+  };
+}
+
 function liveStaffStatusModalPayload(
   title: string,
   subtitle: string,
@@ -3192,7 +3233,12 @@ export default function AdminDashboard() {
                     const totalPredNet = totalPredRevenue - totalPredExpenses;
                     const avgPredRevenue = totalPredRevenue / Math.max(1, pts.length);
                     return (
-                      <div className="space-y-0.5">
+                      <div 
+                        className={`space-y-0.5 ${insightOpenCls}`}
+                        role="presentation"
+                        title="View forecast detail"
+                        onClick={() => openDetail(financeForecastModalPayload(financeData as Record<string, unknown>))}
+                      >
                         <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider">
                           ⚡ Predicted (Next 7 Days Totals)
                         </p>
