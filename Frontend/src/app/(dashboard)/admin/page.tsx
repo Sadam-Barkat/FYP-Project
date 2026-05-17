@@ -4904,25 +4904,30 @@ export default function AdminDashboard() {
                 {/* ML prediction summary */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const ml = labData.ml_backlog_risk ?? {};
-                    const label = String(ml.risk_label ?? "Low");
-                    const pct = typeof ml.risk_pct === "number" ? ml.risk_pct : 0;
-                    const highRiskDays = (labData.ml_next_7_days_forecast ?? []).filter(
-                      (f) => f.backlog_risk,
-                    ).length;
-                    const isHigh = ["High", "Critical"].includes(label) || pct >= 50;
+                    const forecast = labData.ml_next_7_days_forecast ?? [];
+                    const highRiskDays = forecast.filter((f) => f.backlog_risk).length;
+                    const avgPct =
+                      forecast.length > 0
+                        ? Math.round(
+                            (forecast.reduce((s, f) => s + (f.risk_probability ?? 0), 0) /
+                              forecast.length) *
+                              100,
+                          )
+                        : typeof labData.ml_backlog_risk?.risk_pct === "number"
+                          ? labData.ml_backlog_risk.risk_pct
+                          : 0;
                     return (
-                      <p className={`text-[11px] font-semibold ${isHigh ? "text-kpi-red" : "text-kpi-green"}`}>
-                        ⚡ ML backlog risk: {label} ({pct}% avg)
-                        {highRiskDays > 0 ? ` · ${highRiskDays} high-risk day(s)` : ""}
+                      <p className="text-[11px] font-semibold text-kpi-purple">
+                        ⚡ Next 7 days:{" "}
+                        <span className="tabular-nums">{highRiskDays}</span>{" "}
+                        {highRiskDays === 1 ? "day" : "days"} at backlog risk
+                        <span className="text-tx-muted font-normal">
+                          {" "}
+                          · {avgPct}% avg backlog probability
+                        </span>
                       </p>
                     );
                   })()}
-                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    {labData.ml_available
-                      ? "lab_backlog_model.pkl + lab_abnormal_model.pkl · live inference"
-                      : "ML models loading or unavailable — showing DB snapshot"}
-                  </p>
                 </div>
               </div>
 
@@ -4984,11 +4989,6 @@ export default function AdminDashboard() {
                   );
                 })()}
 
-                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  {labData.ml_available
-                    ? "ML-powered · lab_backlog_model.pkl + lab_abnormal_model.pkl"
-                    : "Rule-based suggestion · enable ML models on backend"}
-                </p>
               </div>
 
             </div>
