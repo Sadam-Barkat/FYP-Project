@@ -65,58 +65,49 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
     
     latest_vitals = _latest_vital_per_patient_subquery()
 
-    (
-        total_patients_result,
-        active_admissions_result,
-        available_beds_result,
-        critical_patients_result,
-        staff_on_duty_result,
-        revenue_today_result,
-    ) = await asyncio.gather(
-        db.execute(
-            select(func.count(func.distinct(Admission.patient_id))).where(
-                and_(
-                    Admission.admission_date <= day_end,
-                    or_(
-                        Admission.discharge_date.is_(None),
-                        Admission.discharge_date > day_end,
-                    ),
-                )
+    total_patients_result = await db.execute(
+        select(func.count(func.distinct(Admission.patient_id))).where(
+            and_(
+                Admission.admission_date <= day_end,
+                or_(
+                    Admission.discharge_date.is_(None),
+                    Admission.discharge_date > day_end,
+                ),
             )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Admission)
-            .where(Admission.discharge_date.is_(None))
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Bed)
-            .where(Bed.status == BedStatus.available)
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(latest_vitals)
-            .where(
-                func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
+        )
+    )
+    active_admissions_result = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .where(Admission.discharge_date.is_(None))
+    )
+    available_beds_result = await db.execute(
+        select(func.count())
+        .select_from(Bed)
+        .where(Bed.status == BedStatus.available)
+    )
+    critical_patients_result = await db.execute(
+        select(func.count())
+        .select_from(latest_vitals)
+        .where(
+            func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
+        )
+    )
+    staff_on_duty_result = await db.execute(
+        select(func.count())
+        .select_from(User)
+        .where(
+            and_(
+                User.role.in_((UserRole.doctor, UserRole.nurse)),
+                User.is_active.is_(True),
             )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(User)
-            .where(
-                and_(
-                    User.role.in_((UserRole.doctor, UserRole.nurse)),
-                    User.is_active.is_(True),
-                )
-            )
-        ),
-        db.execute(
-            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-                and_(
-                    Transaction.transaction_date >= day_start,
-                    Transaction.transaction_date <= day_end,
-                )
+        )
+    )
+    revenue_today_result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+            and_(
+                Transaction.transaction_date >= day_start,
+                Transaction.transaction_date <= day_end,
             )
         )
     )
@@ -184,73 +175,63 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         .subquery()
     )
 
-    (
-        admitted_today_r,
-        discharged_today_r,
-        under_obs_r,
-        male_r,
-        female_r,
-        children_r,
-        elderly_r,
-    ) = await asyncio.gather(
-        db.execute(
-            select(func.count(func.distinct(Admission.patient_id))).where(
-                and_(
-                    Admission.admission_date >= day_start,
-                    Admission.admission_date <= day_end,
-                )
+    admitted_today_r = await db.execute(
+        select(func.count(func.distinct(Admission.patient_id))).where(
+            and_(
+                Admission.admission_date >= day_start,
+                Admission.admission_date <= day_end,
             )
-        ),
-        db.execute(
-            select(func.count(func.distinct(Admission.patient_id))).where(
-                and_(
-                    Admission.discharge_date.is_not(None),
-                    Admission.discharge_date >= day_start,
-                    Admission.discharge_date <= day_end,
-                )
-            )
-        ),
-        db.execute(
-            select(func.count(func.distinct(latest_sq.c.patient_id)))
-            .select_from(latest_sq)
-            .join(
-                admitted_today_patients,
-                admitted_today_patients.c.patient_id == latest_sq.c.patient_id,
-            )
-            .where(
-                func.lower(func.coalesce(latest_sq.c.condition_level, "")).like("%observation%"),
-            )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Admission)
-            .join(Patient, Patient.id == Admission.patient_id)
-            .where(
-                Admission.discharge_date.is_(None),
-                func.lower(Patient.gender).in_(("m", "male")),
-            )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Admission)
-            .join(Patient, Patient.id == Admission.patient_id)
-            .where(
-                Admission.discharge_date.is_(None),
-                func.lower(Patient.gender).in_(("f", "female")),
-            )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Admission)
-            .join(Patient, Patient.id == Admission.patient_id)
-            .where(Admission.discharge_date.is_(None), Patient.age < 18)
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Admission)
-            .join(Patient, Patient.id == Admission.patient_id)
-            .where(Admission.discharge_date.is_(None), Patient.age >= 60)
         )
+    )
+    discharged_today_r = await db.execute(
+        select(func.count(func.distinct(Admission.patient_id))).where(
+            and_(
+                Admission.discharge_date.is_not(None),
+                Admission.discharge_date >= day_start,
+                Admission.discharge_date <= day_end,
+            )
+        )
+    )
+    under_obs_r = await db.execute(
+        select(func.count(func.distinct(latest_sq.c.patient_id)))
+        .select_from(latest_sq)
+        .join(
+            admitted_today_patients,
+            admitted_today_patients.c.patient_id == latest_sq.c.patient_id,
+        )
+        .where(
+            func.lower(func.coalesce(latest_sq.c.condition_level, "")).like("%observation%"),
+        )
+    )
+    male_r = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .join(Patient, Patient.id == Admission.patient_id)
+        .where(
+            Admission.discharge_date.is_(None),
+            func.lower(Patient.gender).in_(("m", "male")),
+        )
+    )
+    female_r = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .join(Patient, Patient.id == Admission.patient_id)
+        .where(
+            Admission.discharge_date.is_(None),
+            func.lower(Patient.gender).in_(("f", "female")),
+        )
+    )
+    children_r = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .join(Patient, Patient.id == Admission.patient_id)
+        .where(Admission.discharge_date.is_(None), Patient.age < 18)
+    )
+    elderly_r = await db.execute(
+        select(func.count())
+        .select_from(Admission)
+        .join(Patient, Patient.id == Admission.patient_id)
+        .where(Admission.discharge_date.is_(None), Patient.age >= 60)
     )
 
     admitted_today = int(admitted_today_r.scalar_one() or 0)
@@ -273,50 +254,37 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
 
     lv_sq = _latest_vital_per_patient_subquery()
 
-    (
-        total_beds_br,
-        occupied_br,
-        available_br,
-        maint_br,
-        lv_rows,
-        role_counts_r,
-        paid_amt_r,
-        pending_amt_r,
-        tx_r,
-        largest_r,
-    ) = await asyncio.gather(
-        db.execute(select(func.count()).select_from(Bed)),
-        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.occupied)),
-        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.available)),
-        db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.maintenance)),
-        db.execute(select(lv_sq.c.condition_level)),
-        db.execute(select(User.role, func.count(User.id)).where(User.is_active.is_(True)).group_by(User.role)),
-        db.execute(
-            select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-                and_(
-                    Transaction.transaction_date >= day_start,
-                    Transaction.transaction_date <= day_end,
-                )
+    total_beds_br = await db.execute(select(func.count()).select_from(Bed))
+    occupied_br = await db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.occupied))
+    available_br = await db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.available))
+    maint_br = await db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.maintenance))
+    lv_rows = await db.execute(select(lv_sq.c.condition_level))
+    role_counts_r = await db.execute(select(User.role, func.count(User.id)).where(User.is_active.is_(True)).group_by(User.role))
+    paid_amt_r = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+            and_(
+                Transaction.transaction_date >= day_start,
+                Transaction.transaction_date <= day_end,
             )
-        ),
-        db.execute(
-            select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
-                and_(
-                    Billing.status == BillingStatus.pending,
-                    Billing.date >= day_start,
-                    Billing.date <= day_end,
-                )
+        )
+    )
+    pending_amt_r = await db.execute(
+        select(func.coalesce(func.sum(Billing.amount), 0.0)).where(
+            and_(
+                Billing.status == BillingStatus.pending,
+                Billing.date >= day_start,
+                Billing.date <= day_end,
             )
-        ),
-        db.execute(
-            select(func.count())
-            .select_from(Billing)
-            .where(and_(Billing.date >= day_start, Billing.date <= day_end))
-        ),
-        db.execute(
-            select(func.coalesce(func.max(Billing.amount), 0.0)).where(
-                and_(Billing.date >= day_start, Billing.date <= day_end)
-            )
+        )
+    )
+    tx_r = await db.execute(
+        select(func.count())
+        .select_from(Billing)
+        .where(and_(Billing.date >= day_start, Billing.date <= day_end))
+    )
+    largest_r = await db.execute(
+        select(func.coalesce(func.max(Billing.amount), 0.0)).where(
+            and_(Billing.date >= day_start, Billing.date <= day_end)
         )
     )
 
@@ -593,9 +561,11 @@ async def get_hospital_overview(
 
 
         # ---- 7-Day Trends (for mini charts and averages) ----
-        import asyncio
+        bed_occupancy_trend = []
+        icu_occupancy_trend = []
+        revenue_trend = []
         
-        async def fetch_day_trend(i: int):
+        for i in range(7):
             d = seven_days_ago + timedelta(days=i)
             d_start, d_end = day_bounds_utc_naive(d, tz)
             
@@ -610,25 +580,23 @@ async def get_hospital_overview(
                 .subquery()
             )
             
-            occ_d_result, icu_occ_d_result, rev_d_result = await asyncio.gather(
-                db.execute(
-                    select(func.count(func.distinct(Bed.id)))
-                    .select_from(Bed)
-                    .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
-                    .where(Bed.status == BedStatus.occupied)
-                ),
-                db.execute(
-                    select(func.count(func.distinct(Bed.id)))
-                    .select_from(Bed)
-                    .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
-                    .where(Bed.ward == "ICU")
-                ),
-                db.execute(
-                    select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-                        and_(
-                            Transaction.transaction_date >= d_start,
-                            Transaction.transaction_date <= d_end,
-                        )
+            occ_d_result = await db.execute(
+                select(func.count(func.distinct(Bed.id)))
+                .select_from(Bed)
+                .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
+                .where(Bed.status == BedStatus.occupied)
+            )
+            icu_occ_d_result = await db.execute(
+                select(func.count(func.distinct(Bed.id)))
+                .select_from(Bed)
+                .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
+                .where(Bed.ward == "ICU")
+            )
+            rev_d_result = await db.execute(
+                select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                    and_(
+                        Transaction.transaction_date >= d_start,
+                        Transaction.transaction_date <= d_end,
                     )
                 )
             )
@@ -640,13 +608,9 @@ async def get_hospital_overview(
             bed_pct = (float(occ_d) / float(total_beds) * 100.0) if total_beds > 0 else 0.0
             icu_pct = (float(icu_occ_d) / float(icu_total) * 100.0) if icu_total > 0 else 0.0
             
-            return bed_pct, icu_pct, rev_d
-
-        trend_results = await asyncio.gather(*(fetch_day_trend(i) for i in range(7)))
-        
-        bed_occupancy_trend = [r[0] for r in trend_results]
-        icu_occupancy_trend = [r[1] for r in trend_results]
-        revenue_trend = [r[2] for r in trend_results]
+            bed_occupancy_trend.append(bed_pct)
+            icu_occupancy_trend.append(icu_pct)
+            revenue_trend.append(rev_d)
             
         bed_occupancy_7d_avg = sum(bed_occupancy_trend) / len(bed_occupancy_trend) if bed_occupancy_trend else 0.0
         icu_occupancy_7d_avg = sum(icu_occupancy_trend) / len(icu_occupancy_trend) if icu_occupancy_trend else 0.0
@@ -654,11 +618,9 @@ async def get_hospital_overview(
 
         yesterday_date = base_date - timedelta(days=1)
         
-        today_kpis, yesterday_kpis, kpi_breakdowns = await asyncio.gather(
-            _compute_admin_kpi_snapshot(db, base_date),
-            _compute_admin_kpi_snapshot(db, yesterday_date),
-            _compute_admin_kpi_breakdowns(db, base_date)
-        )
+        today_kpis = await _compute_admin_kpi_snapshot(db, base_date)
+        yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
+        kpi_breakdowns = await _compute_admin_kpi_breakdowns(db, base_date)
         
         tpb = kpi_breakdowns.get("total_patients_breakdown")
         if isinstance(tpb, dict):
