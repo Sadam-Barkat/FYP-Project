@@ -1056,6 +1056,60 @@ export type PharmacyIntelResponse = {
   ml_available?: boolean;
 };
 
+export type FinanceBillingOverview = {
+  todays_revenue?: number;
+  outstanding_balance?: number;
+  insurance_claims?: number;
+  todays_expenses?: number;
+  recent_invoices?: Array<Record<string, unknown>>;
+  revenue_vs_expenses?: Array<{ day?: string; revenue?: number; expenses?: number }>;
+  ml_revenue_forecast?: Array<{ date?: string; predicted_revenue?: number }>;
+  ml_revenue_risk_level?: string;
+  ml_collection_risk?: { risk_pct?: number; risk_label?: string };
+  selected_date?: string;
+};
+
+export type PatientsBedsOverview = {
+  total_capacity?: number;
+  total_patients?: number;
+  occupied_beds?: number;
+  occupancy_percentage?: number;
+  available_beds?: number;
+  available_beds_status?: number;
+  maintenance_beds?: number;
+  emergency_cases?: number;
+  critical_condition_cases?: number;
+  bed_occupancy_by_department?: Array<{ department?: string; occupied?: number; total?: number }>;
+  admissions_discharges_trend?: Array<Record<string, unknown>>;
+  previous_7_days_admissions?: number;
+  previous_7_days_discharges?: number;
+  ml_next_7_days_forecast?: Array<Record<string, unknown>>;
+  ml_shortage_risk?: Record<string, unknown>;
+  selected_date?: string;
+};
+
+export type HrStaffOverview = {
+  staff_on_duty?: number;
+  active_shifts?: number;
+  absent_today?: number;
+  on_leave?: number;
+  live_staff_status?: Array<Record<string, unknown>>;
+  attendance_trend?: Array<{ present?: number; absent?: number; leave?: number }>;
+  attendance_forecast_details?: Array<Record<string, unknown>>;
+  understaffing_risk?: Record<string, unknown>;
+  selected_date?: string;
+};
+
+export type LaboratoryOverview = {
+  pending_tests?: number;
+  completed_today?: number;
+  active_technicians?: number;
+  critical_results?: number;
+  daily_test_volume_by_category?: Array<{ category?: string; completed?: number; pending?: number }>;
+  weekly_result_trends?: Array<{ day?: string; normal?: number; abnormal?: number }>;
+  selected_date?: string;
+};
+
 function pharmacyMedicineNameTable(title: string, names: string[], emptySubtitle: string): DetailModalPayload {
   const list = names ?? [];
   return {
@@ -1610,7 +1664,7 @@ export default function AdminDashboard() {
     isLoading: financeLoading,
     mutate: mutateFinance,
     ensureDetail: ensureFinanceDetail,
-  } = useLazyDashboardCard<Record<string, unknown>>("/api/billing-finance-overview", () =>
+  } = useLazyDashboardCard<FinanceBillingOverview>("/api/billing-finance-overview", () =>
     setFinanceLastFetch(new Date()),
   );
 
@@ -1620,7 +1674,7 @@ export default function AdminDashboard() {
     isLoading: bedsLoading,
     mutate: mutateBeds,
     ensureDetail: ensureBedsDetail,
-  } = useLazyDashboardCard<Record<string, unknown>>("/api/patients-beds-overview", () =>
+  } = useLazyDashboardCard<PatientsBedsOverview>("/api/patients-beds-overview", () =>
     setBedsLastFetch(new Date()),
   );
 
@@ -1630,12 +1684,12 @@ export default function AdminDashboard() {
     isLoading: staffLoading,
     mutate: mutateStaff,
     ensureDetail: ensureStaffDetail,
-  } = useLazyDashboardCard<Record<string, unknown>>("/api/hr-staff-overview", () =>
+  } = useLazyDashboardCard<HrStaffOverview>("/api/hr-staff-overview", () =>
     setStaffLastFetch(new Date()),
   );
 
   const [labLastFetch, setLabLastFetch] = useState<Date | null>(null);
-  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<Record<string, unknown>>(
+  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<LaboratoryOverview>(
     apiUrl("/api/laboratory-overview", true),
     fetcher,
     { refreshInterval: 60000, onSuccess: () => setLabLastFetch(new Date()) }
@@ -1656,21 +1710,21 @@ export default function AdminDashboard() {
   );
 
   const openFinanceDetail = useCallback(
-    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+    (builder: (d: FinanceBillingOverview) => DetailModalPayload) => {
       void ensureFinanceDetail().then((d) => openDetail(builder(d)));
     },
     [ensureFinanceDetail, openDetail],
   );
 
   const openBedsDetail = useCallback(
-    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+    (builder: (d: PatientsBedsOverview) => DetailModalPayload) => {
       void ensureBedsDetail().then((d) => openDetail(builder(d)));
     },
     [ensureBedsDetail, openDetail],
   );
 
   const openStaffDetail = useCallback(
-    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+    (builder: (d: HrStaffOverview) => DetailModalPayload) => {
       void ensureStaffDetail().then((d) => openDetail(builder(d)));
     },
     [ensureStaffDetail, openDetail],
