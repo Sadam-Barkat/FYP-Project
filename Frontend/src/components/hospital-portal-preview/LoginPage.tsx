@@ -177,7 +177,7 @@ export function LoginPage({ onBackToLanding }: { onBackToLanding?: () => void })
 
   return (
     <motion.div
-      className="mx-auto flex min-h-0 w-full max-w-[min(100%,22.5rem)] flex-1 flex-col overflow-hidden px-2 max-h-[calc(100dvh-1.25rem)] sm:max-w-[min(100%,26rem)] sm:px-3 md:max-h-[calc(100dvh-3.5rem)] md:max-w-[min(100%,920px)] md:px-5"
+      className="mx-auto flex min-h-0 w-full max-w-[min(100%,22.5rem)] flex-1 flex-col justify-center overflow-hidden px-2 pt-4 max-h-[calc(100dvh-2.5rem)] sm:max-w-[min(100%,26rem)] sm:px-3 sm:pt-6 md:max-h-[calc(100dvh-5rem)] md:max-w-[min(100%,920px)] md:px-5 md:pt-8"
       initial={{ opacity: 0, x: 80 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{

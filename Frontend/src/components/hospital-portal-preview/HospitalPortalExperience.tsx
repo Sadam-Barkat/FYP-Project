@@ -16,7 +16,7 @@ export default function HospitalPortalExperience({
   const [showLogin, setShowLogin] = useState(initialShowLogin);
 
   return (
-    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#050508] px-[max(10px,env(safe-area-inset-left))] pt-[max(6px,env(safe-area-inset-top))] pr-[max(10px,env(safe-area-inset-right))] pb-[max(6px,env(safe-area-inset-bottom))] md:px-5 md:py-6">
+    <div className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#050508] px-[max(10px,env(safe-area-inset-left))] pt-[max(12px,env(safe-area-inset-top))] pr-[max(10px,env(safe-area-inset-right))] pb-[max(12px,env(safe-area-inset-bottom))] md:px-5 md:py-8">
       {/* Slow drifting aurora — unique ambient depth */}
       <div className="portal-unique-ambient" aria-hidden>
         <span className="portal-orb portal-orb-a" />
@@ -35,7 +35,7 @@ export default function HospitalPortalExperience({
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,6,12,0.2)_0%,rgba(5,6,12,0.92)_100%)]"
         aria-hidden
       />
-      <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col items-stretch justify-center overflow-hidden">
+      <div className="relative z-10 flex min-h-0 w-full flex-1 flex-col items-stretch justify-center overflow-hidden pt-6 pb-4 md:pt-10 md:pb-8">
         <AnimatePresence mode="wait">
           {!showLogin ? (
             <div
@@ -52,7 +52,7 @@ export default function HospitalPortalExperience({
                 </div>
               }
             >
-              <div className="flex min-h-0 w-full flex-1 flex-col items-stretch overflow-hidden">
+              <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden">
                 <LoginPage key="login" onBackToLanding={() => setShowLogin(false)} />
               </div>
             </Suspense>
