@@ -36,6 +36,36 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+function SkeletonCard() {
+  return (
+    <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+      {/* Col 1: 4 Stats */}
+      <div className="grid grid-rows-4 divide-y divide-dash-border">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex flex-col justify-center px-3 py-2">
+            <div className="h-2 w-16 bg-dash-border/30 rounded animate-pulse mb-2" />
+            <div className="h-5 w-10 bg-dash-border/30 rounded animate-pulse" />
+            <div className="w-full h-1 rounded-full bg-dash-border mt-2 overflow-hidden">
+              <div className="h-full w-1/2 bg-dash-border/40 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Col 2: Chart */}
+      <div className="flex flex-col px-4 py-3">
+        <div className="h-2 w-32 bg-dash-border/30 rounded animate-pulse mb-4" />
+        <div className="flex-1 bg-dash-border/10 rounded-xl animate-pulse" />
+        <div className="h-2 w-24 bg-dash-border/30 rounded animate-pulse mt-4" />
+      </div>
+      {/* Col 3: Suggestions */}
+      <div className="flex flex-col px-4 py-3 bg-white/[0.01]">
+        <div className="h-2 w-20 bg-dash-border/30 rounded animate-pulse mb-3" />
+        <div className="flex-1 bg-dash-border/10 rounded-xl animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 const cardBase =
   "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default p-4 pb-[48%] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 dark:bg-transparent dark:border-0 dark:shadow-none dark:hover:-translate-y-1";
 
@@ -2119,7 +2149,7 @@ export default function AdminDashboard() {
 
           {/* Loading state */}
           {intelLoading && !intelData ? (
-            <div className="flex-1 min-h-0 animate-pulse bg-dash-border/20 rounded-b-2xl" />
+            <SkeletonCard />
           ) : null}
 
           {/* Error state */}
@@ -2195,7 +2225,7 @@ export default function AdminDashboard() {
 
           {/* Loading */}
           {pharmacyLoading && !pharmacyData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+            <SkeletonCard />
           ) : null}
 
           {/* Error */}
@@ -2676,7 +2706,7 @@ export default function AdminDashboard() {
           </div>
 
           {financeLoading && !financeData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+            <SkeletonCard />
           ) : null}
 
           {!financeData && !financeLoading ? (
@@ -3222,7 +3252,7 @@ export default function AdminDashboard() {
           </div>
 
           {bedsLoading && !bedsData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+            <SkeletonCard />
           ) : null}
 
           {!bedsData && !bedsLoading ? (
@@ -3698,7 +3728,7 @@ export default function AdminDashboard() {
 
           {/* Loading */}
           {staffLoading && !staffData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+            <SkeletonCard />
           ) : null}
 
           {/* Error */}
@@ -4217,7 +4247,7 @@ export default function AdminDashboard() {
 
           {/* Loading */}
           {labLoading && !labData ? (
-            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+            <SkeletonCard />
           ) : null}
 
           {/* Error */}
