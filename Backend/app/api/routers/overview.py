@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, time, date
 from typing import List, Dict, Any, Optional
+import time as py_time
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select, func, and_, or_, cast, Date
@@ -25,6 +27,10 @@ from app.models.vital import Vital
 
 router = APIRouter(prefix="/api", tags=["overview"])
 
+_OVERVIEW_CACHE: Dict[str, Any] = {}
+_OVERVIEW_CACHE_TIME: float = 0.0
+_OVERVIEW_CACHE_LOCK = asyncio.Lock()
+CACHE_TTL = 60.0  # 60 seconds
 
 def _format_kpi_trend_pct(today: float, yesterday: float) -> str:
     """Percentage change today vs yesterday; 'N/A' when comparison is undefined."""
@@ -92,7 +98,6 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
             select(func.count())
             .select_from(latest_vitals)
             .where(
-                latest_vitals.c.rn == 1,
                 func.lower(latest_vitals.c.condition_level).in_(("critical", "emergency")),
             )
         ),
@@ -138,13 +143,10 @@ def _latest_vital_per_patient_subquery():
         select(
             Vital.patient_id,
             Vital.condition_level,
-            func.row_number()
-            .over(
-                partition_by=Vital.patient_id,
-                order_by=Vital.recorded_at.desc(),
-            )
-            .label("rn"),
-        ).subquery()
+        )
+        .distinct(Vital.patient_id)
+        .order_by(Vital.patient_id, Vital.recorded_at.desc())
+        .subquery()
     )
 
 
@@ -216,7 +218,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
                 admitted_today_patients.c.patient_id == latest_sq.c.patient_id,
             )
             .where(
-                latest_sq.c.rn == 1,
                 func.lower(func.coalesce(latest_sq.c.condition_level, "")).like("%observation%"),
             )
         ),
@@ -288,7 +289,7 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.occupied)),
         db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.available)),
         db.execute(select(func.count()).select_from(Bed).where(Bed.status == BedStatus.maintenance)),
-        db.execute(select(lv_sq.c.condition_level).where(lv_sq.c.rn == 1)),
+        db.execute(select(lv_sq.c.condition_level)),
         db.execute(select(User.role, func.count(User.id)).where(User.is_active.is_(True)).group_by(User.role)),
         db.execute(
             select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
@@ -375,6 +376,14 @@ async def get_hospital_overview(
     """
     Aggregate key hospital metrics for the Admin 'Hospital Overview' dashboard.
     """
+    global _OVERVIEW_CACHE, _OVERVIEW_CACHE_TIME
+    
+    # Only use cache if no specific date is requested
+    if date_param is None:
+        now = py_time.time()
+        if _OVERVIEW_CACHE and (now - _OVERVIEW_CACHE_TIME) < CACHE_TTL:
+            return _OVERVIEW_CACHE
+
     try:
         # ---- Time boundaries (calendar day in APP_TIMEZONE) ----
         now = utc_naive_now()
@@ -684,8 +693,7 @@ async def get_hospital_overview(
             **kpi_breakdowns,
         }
 
-        return {
-
+        final_result = {
             "total_beds": int(total_beds),
             "active_patients": active_patients,
             "todays_revenue": todays_revenue,
@@ -703,6 +711,13 @@ async def get_hospital_overview(
             "revenue_7d_avg": revenue_7d_avg,
             **admin_dashboard_kpis,
         }
+
+        if date_param is None:
+            async with _OVERVIEW_CACHE_LOCK:
+                _OVERVIEW_CACHE = final_result
+                _OVERVIEW_CACHE_TIME = py_time.time()
+
+        return final_result
 
     except Exception as exc:
         # Basic error handling – log in real app; here we just return 500
