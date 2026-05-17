@@ -56,6 +56,8 @@ async def _compute_admin_kpi_snapshot(db: AsyncSession, base_date: date) -> Dict
     # Distinct patients still admitted as of end of this calendar day (census),
     # not "admitted today only" — matches "patients currently in hospital" for the KPI.
     import asyncio
+    
+    latest_vitals = _latest_vital_per_patient_subquery()
 
     (
         total_patients_result,

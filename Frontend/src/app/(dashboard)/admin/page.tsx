@@ -1667,6 +1667,10 @@ export default function AdminDashboard() {
                       className="h-8 w-24 max-w-full animate-pulse rounded-xl bg-slate-100 dark:bg-white/8"
                       aria-hidden
                     />
+                  ) : !kpiData ? (
+                    <p className="text-slate-400 font-medium text-sm dark:text-slate-500">
+                      Error loading
+                    </p>
                   ) : (
                     <p
                       className="text-slate-900 font-black text-3xl tabular-nums leading-none dark:text-tx-bright"
@@ -1678,8 +1682,8 @@ export default function AdminDashboard() {
                 <p
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${trendPillClass(trendStr)}`}
                 >
-                  <span className={isActuallyLoading ? "text-slate-600 dark:text-tx-secondary" : trendTextClass(trendStr)}>
-                    {isActuallyLoading ? "N/A vs yesterday" : trendLine}
+                  <span className={isActuallyLoading ? "text-slate-600 dark:text-tx-secondary" : !kpiData ? "text-slate-400 dark:text-slate-500" : trendTextClass(trendStr)}>
+                    {isActuallyLoading ? "N/A vs yesterday" : !kpiData ? "N/A" : trendLine}
                   </span>
                 </p>
               </div>
