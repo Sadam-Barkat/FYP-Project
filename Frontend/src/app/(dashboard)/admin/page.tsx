@@ -619,6 +619,55 @@ function labIntelTooltipPanelCls(
   return `absolute left-full ${pos} z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`;
 }
 
+function labPendingTestsModalPayload(d: LaboratoryOverview): DetailModalPayload {
+  const roster = d.pending_tests_roster ?? [];
+  const total = Math.max(d.pending_tests ?? 0, roster.length);
+  const rows = roster.map((r, i) => ({
+    n: i + 1,
+    patient_name: r.patient_name ?? "—",
+    category: r.category ?? "—",
+    test_name: r.test_name ?? "—",
+    requested: r.requested ?? "—",
+  }));
+  return {
+    title: "Pending tests · full list",
+    subtitle:
+      rows.length > 0
+        ? `${total} pending · showing ${rows.length} record${rows.length === 1 ? "" : "s"}`
+        : `${total} pending · no row details returned`,
+    table: {
+      caption: "Pending lab requests & open results",
+      columns: [
+        { key: "n", label: "#" },
+        { key: "patient_name", label: "Patient" },
+        { key: "category", label: "Category" },
+        { key: "test_name", label: "Test" },
+        { key: "requested", label: "Requested" },
+      ],
+      rows,
+    },
+    blocks:
+      rows.length === 0 && total > 0
+        ? [
+            {
+              sections: [
+                {
+                  title: "Note",
+                  accent: "orange",
+                  items: [
+                    {
+                      primary: `${total} pending in summary`,
+                      secondary: "Detail rows load on full fetch — try again if empty.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ]
+        : [],
+  };
+}
+
 function labCategoryBreakdownModal(
   d: LaboratoryOverview,
   mode: "pending" | "completed",
@@ -1480,8 +1529,17 @@ export type LabAbnormalAtRisk = {
   abnormal_probability: number;
 };
 
+export type LabPendingTestRow = {
+  patient_name?: string;
+  category?: string;
+  test_name?: string;
+  requested?: string;
+  source?: string;
+};
+
 export type LaboratoryOverview = {
   pending_tests?: number;
+  pending_tests_roster?: LabPendingTestRow[];
   completed_today?: number;
   active_technicians?: number;
   critical_results?: number;
@@ -4893,9 +4951,9 @@ export default function AdminDashboard() {
                   role="presentation"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openLabDetail((d) => labCategoryBreakdownModal(d, "pending"), {
+                    openLabDetail((d) => labPendingTestsModalPayload(d), {
                       title: "Pending tests",
-                      subtitle: "Loading category breakdown…",
+                      subtitle: "Loading full pending list…",
                     });
                   }}
                 >
@@ -4918,14 +4976,28 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div className={`${labIntelTooltipPanelCls(htmlIsDark)} top-0`}>
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Pending by Category</p>
-                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.pending ?? 0) > 0).slice(0, 4).map((cat: any, i: number) => (
-                      <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">
-                        • {cat.category}: {cat.pending} pending
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Pending tests</p>
+                    <p className="text-[10px] text-kpi-orange">
+                      Total pending: {labData.pending_tests ?? 0}
+                    </p>
+                    {(labData.pending_tests_roster ?? []).slice(0, 4).map((r, i) => (
+                      <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                        • {r.patient_name} · {r.category}
                       </p>
                     ))}
-                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.pending ?? 0) > 0).length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">No pending tests</p>
+                    {(labData.pending_tests ?? 0) > (labData.pending_tests_roster ?? []).length &&
+                    (labData.pending_tests_roster ?? []).length > 0 ? (
+                      <p className="text-[10px] text-tx-muted mt-0.5">
+                        +{(labData.pending_tests ?? 0) - (labData.pending_tests_roster ?? []).length} more — click for full list
+                      </p>
+                    ) : null}
+                    {(labData.pending_tests_roster ?? []).length === 0 &&
+                    (labData.pending_tests ?? 0) === 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">No pending tests</p>
+                    )}
+                    {(labData.pending_tests_roster ?? []).length === 0 &&
+                    (labData.pending_tests ?? 0) > 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">Click to load full list</p>
                     )}
                   </div>
                 </div>
@@ -5058,13 +5130,39 @@ export default function AdminDashboard() {
 
               {/* ── COLUMN 2: Weekly Trends Chart + Category Breakdown ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
-                <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🤖 ML Lab Backlog Risk (Next 7 Days)
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-purple" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    🤖 ML Lab Backlog Risk (Next 7 Days)
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-purple" />
+                    </span>
+                  </p>
+                  <span className="relative group/labmlinfo inline-flex items-center justify-center cursor-help">
+                    <svg
+                      className="w-3 h-3 text-tx-muted transition-colors group-hover/labmlinfo:text-kpi-purple"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span
+                      role="tooltip"
+                      className={
+                        htmlIsDark
+                          ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[220px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/labmlinfo:opacity-100"
+                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[220px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/labmlinfo:opacity-100"
+                      }
+                    >
+                      Daily backlog risk % from the ML model for the next 7 days. Higher bars mean more pending workload. Click the footer for the full forecast table.
+                    </span>
                   </span>
-                </p>
+                </div>
 
                 <div className="mt-2 h-[100px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.laboratory import LaboratoryResult
 from app.models.laboratory_extra import LabCategory, LabRequest
+from app.models.patient import Patient
 from app.models.staff import Staff
 from app.services.lab_workload_model import (
     predict_abnormal_risk_samples,
@@ -18,6 +19,81 @@ router = APIRouter(prefix="/api", tags=["laboratory"])
 
 # Must match laboratorian: category stored in test_name as "CategoryName | TestName"
 LAB_ENTRY_DELIMITER = " | "
+
+
+def _fmt_lab_datetime(dt: Optional[datetime]) -> str:
+    if not dt:
+        return "—"
+    return dt.strftime("%Y-%m-%d %H:%M")
+
+
+async def _fetch_pending_tests_roster(
+    db: AsyncSession,
+    *,
+    base_date: date,
+    limit: int = 500,
+) -> List[Dict[str, Any]]:
+    """All pending lab work (requests + non-completed results) through selected date."""
+    day_end = datetime.combine(base_date, time.max)
+    roster: List[Dict[str, Any]] = []
+
+    pending_req = await db.execute(
+        select(LabRequest, Patient, LabCategory)
+        .join(Patient, Patient.id == LabRequest.patient_id)
+        .join(LabCategory, LabCategory.id == LabRequest.lab_category_id)
+        .where(
+            and_(
+                LabRequest.status == "pending",
+                LabRequest.request_date <= day_end,
+            )
+        )
+        .order_by(LabRequest.request_date.desc())
+        .limit(limit)
+    )
+    for req, patient, cat in pending_req.all():
+        cat_name = (cat.name if cat else "Other") or "Other"
+        roster.append(
+            {
+                "patient_name": (patient.name or "").strip() or f"Patient #{patient.id}",
+                "category": cat_name,
+                "test_name": cat_name,
+                "requested": _fmt_lab_datetime(req.request_date),
+                "source": "request",
+            }
+        )
+
+    if len(roster) < limit:
+        pending_results = await db.execute(
+            select(LaboratoryResult, Patient)
+            .join(Patient, Patient.id == LaboratoryResult.patient_id)
+            .where(
+                and_(
+                    LaboratoryResult.status != "completed",
+                    cast(LaboratoryResult.collected_at, Date) <= base_date,
+                )
+            )
+            .order_by(LaboratoryResult.collected_at.desc())
+            .limit(max(0, limit - len(roster)))
+        )
+        for result, patient in pending_results.all():
+            test_name = (result.test_name or "").strip() or "Unknown"
+            if LAB_ENTRY_DELIMITER in test_name:
+                cat_name, test_only = test_name.split(LAB_ENTRY_DELIMITER, 1)
+                cat_name = cat_name.strip() or "Other"
+                test_name = test_only.strip() or test_name
+            else:
+                cat_name = "Other"
+            roster.append(
+                {
+                    "patient_name": (patient.name or "").strip() or f"Patient #{patient.id}",
+                    "category": cat_name,
+                    "test_name": test_name,
+                    "requested": _fmt_lab_datetime(result.collected_at),
+                    "source": "result",
+                }
+            )
+
+    return roster
 
 
 @router.get("/laboratory-overview")
@@ -126,7 +202,7 @@ async def get_laboratory_overview(
             .where(
                 and_(
                     LabRequest.status == "pending",
-                    cast(LabRequest.request_date, Date) == base_date,
+                    cast(LabRequest.request_date, Date) <= base_date,
                 )
             )
             .group_by(LabRequest.lab_category_id)
@@ -213,6 +289,11 @@ async def get_laboratory_overview(
                 }
             )
 
+        roster_limit = 8 if summary_only else 500
+        pending_tests_roster = await _fetch_pending_tests_roster(
+            db, base_date=base_date, limit=roster_limit
+        )
+
         result: Dict[str, Any] = {
             "pending_tests": int(pending_tests),
             "completed_today": int(completed_today),
@@ -221,6 +302,7 @@ async def get_laboratory_overview(
             "daily_test_volume_by_category": daily_test_volume_by_category,
             "weekly_result_trends": weekly_result_trends,
             "selected_date": base_date.isoformat(),
+            "pending_tests_roster": pending_tests_roster,
         }
 
         if summary_only:
