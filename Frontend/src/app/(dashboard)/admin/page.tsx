@@ -430,7 +430,7 @@ function financeSnapshotModalPayload(
   if (focus === "expenses") {
     return {
       title: "Expenses · trend detail",
-      subtitle: `Today's expenses snapshot: ₨${expenses}`,
+      subtitle: `Today's expenses snapshot: ₨${expenses.toFixed(2)}`,
       tables: [financeTrendTable(financeData)],
       blocks: [],
     };
@@ -442,7 +442,7 @@ function financeSnapshotModalPayload(
   if (focus === "revenue") {
     return {
       title: "Today's revenue · billing lines",
-      subtitle: `Recorded revenue: ₨${revenue}`,
+      subtitle: `Recorded revenue: ₨${revenue.toFixed(2)}`,
       tables: [invTable, trendTable],
       blocks: [],
     };
@@ -450,14 +450,14 @@ function financeSnapshotModalPayload(
   if (focus === "outstanding") {
     return {
       title: "Outstanding balance · invoices",
-      subtitle: `Outstanding: ₨${outstanding}`,
+      subtitle: `Outstanding: ₨${outstanding.toFixed(2)}`,
       tables: [invTable],
       blocks: [],
     };
   }
   return {
     title: "Net profit · context",
-    subtitle: `Rev ₨${revenue} · Exp ₨${expenses} · Net ₨${net}`,
+    subtitle: `Rev ₨${revenue.toFixed(2)} · Exp ₨${expenses.toFixed(2)} · Net ₨${net.toFixed(2)}`,
     tables: [invTable, trendTable],
     blocks: [],
   };
