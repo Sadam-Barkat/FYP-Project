@@ -64,17 +64,36 @@
   animation: neonPulseHero 3.5s ease-in-out infinite;
 }
 
+.portal-input-shell {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.portal-input-shell:focus-within {
+  border-color: rgba(26, 111, 255, 0.55);
+  box-shadow: 0 0 0 2px rgba(26, 111, 255, 0.15);
+}
+
 .glow-input {
   /* Beat browser / Tailwind defaults + stay dark when empty */
-  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: transparent !important;
   border: none;
   color: #e8eefc !important;
   outline: none;
   width: 100%;
-  padding: 10px 36px 10px 0;
+  padding: 12px 14px;
   font-size: 14px;
   transition: color 0.25s ease;
   color-scheme: dark;
+}
+
+.portal-input-shell:has(button) .glow-input {
+  padding-right: 44px;
 }
 
 .glow-input:focus {

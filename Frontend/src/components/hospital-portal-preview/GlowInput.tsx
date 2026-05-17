@@ -31,7 +31,7 @@ export function GlowInput({
         />
         <div className="portal-gradient-rule" aria-hidden />
         {rightSlot ? (
-          <div className="pointer-events-none absolute right-0 top-[42%] flex -translate-y-1/2 items-center [&_button]:pointer-events-auto">
+          <div className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center [&_button]:pointer-events-auto">
             {rightSlot}
           </div>
         ) : null}
