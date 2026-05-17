@@ -1119,26 +1119,71 @@ function pharmacyMedicineNameTable(title: string, names: string[], emptySubtitle
   };
 }
 
+function pharmacyStockBreakdown(pharmacyData: PharmacyIntelResponse) {
+  const total = Math.max(1, pharmacyData.total_medicines);
+  const oos = pharmacyData.out_of_stock_count ?? 0;
+  const low = pharmacyData.low_stock_count ?? 0;
+  const soon = pharmacyData.expiring_soon_count ?? 0;
+  const expired = pharmacyData.expired_count ?? 0;
+  const safe = Math.max(0, total - oos - low - soon - expired);
+  const healthPct = Math.round((safe / total) * 100);
+  const share = (n: number) => `${Math.round((n / total) * 100)}%`;
+  return { total, oos, low, soon, expired, safe, healthPct, share };
+}
+
 function pharmacyInventorySnapshotTable(pharmacyData: PharmacyIntelResponse): DetailModalPayload {
-  const rows: Record<string, string>[] = [];
-  (pharmacyData.out_of_stock_medicines ?? []).forEach((medicine) => rows.push({ category: "Out of stock", medicine }));
-  (pharmacyData.low_stock_medicines ?? []).forEach((medicine) => rows.push({ category: "Low stock", medicine }));
-  (pharmacyData.expiring_soon_medicines ?? []).forEach((medicine) => rows.push({ category: "Expiring soon", medicine }));
-  (pharmacyData.expired_medicines ?? []).forEach((medicine) => rows.push({ category: "Expired", medicine }));
+  const { total, oos, low, soon, expired, safe, healthPct, share } =
+    pharmacyStockBreakdown(pharmacyData);
+
+  const overviewRows: Record<string, string | number>[] = [
+    { category: "✓ Safe", count: safe, share: share(safe) },
+    { category: "⚠ Low stock", count: low, share: share(low) },
+    { category: "⏳ Expiring soon (30d)", count: soon, share: share(soon) },
+    { category: "✗ Out of stock", count: oos, share: share(oos) },
+    { category: "💀 Expired", count: expired, share: share(expired) },
+    { category: "Catalogue total", count: total, share: "100%" },
+    { category: "Health rate", count: `${healthPct}%`, share: "—" },
+  ];
+
+  const medicineRows: Record<string, string>[] = [];
+  (pharmacyData.out_of_stock_medicines ?? []).forEach((medicine) =>
+    medicineRows.push({ category: "Out of stock", medicine }),
+  );
+  (pharmacyData.low_stock_medicines ?? []).forEach((medicine) =>
+    medicineRows.push({ category: "Low stock", medicine }),
+  );
+  (pharmacyData.expiring_soon_medicines ?? []).forEach((medicine) =>
+    medicineRows.push({ category: "Expiring soon", medicine }),
+  );
+  (pharmacyData.expired_medicines ?? []).forEach((medicine) =>
+    medicineRows.push({ category: "Expired", medicine }),
+  );
+
   return {
-    title: "Inventory snapshot (named items)",
-    subtitle:
-      rows.length === 0
-        ? `No named breakdown in payload · catalogue total ${pharmacyData.total_medicines}`
-        : `${rows.length} named row(s) · catalogue total ${pharmacyData.total_medicines}`,
-    table: {
-      caption: "Items returned by the intelligence API",
-      columns: [
-        { key: "category", label: "Category" },
-        { key: "medicine", label: "Medicine" },
-      ],
-      rows,
-    },
+    title: "Total Medicines",
+    subtitle: `${total} in catalogue · ${healthPct}% healthy`,
+    tables: [
+      {
+        caption: "Stock overview (same as hover tooltip)",
+        columns: [
+          { key: "category", label: "Category" },
+          { key: "count", label: "Count" },
+          { key: "share", label: "Share" },
+        ],
+        rows: overviewRows,
+      },
+      {
+        caption: "Medicines by category",
+        columns: [
+          { key: "category", label: "Category" },
+          { key: "medicine", label: "Medicine" },
+        ],
+        rows:
+          medicineRows.length > 0
+            ? medicineRows
+            : [{ category: "—", medicine: "No named medicines in flagged categories" }],
+      },
+    ],
     blocks: [],
   };
 }
@@ -2385,18 +2430,13 @@ export default function AdminDashboard() {
                     {pharmacyData.total_medicines}
                   </p>
                   {(() => {
-                    const total = Math.max(1, pharmacyData.total_medicines);
-                    const oos = pharmacyData.out_of_stock_count ?? 0;
-                    const low = pharmacyData.low_stock_count ?? 0;
-                    const soon = pharmacyData.expiring_soon_count ?? 0;
-                    const expired = pharmacyData.expired_count ?? 0;
-                    const safe = Math.max(0, total - oos - low - soon - expired);
+                    const { total, oos, low, soon, expired, safe, healthPct: healthyPct } =
+                      pharmacyStockBreakdown(pharmacyData);
                     // Build segments only for non-zero values, then normalize to <=100%
                     const rawLow  = low > 0           ? Math.max(2, Math.round((low / total) * 100))             : 0;
                     const rawSoon = soon > 0          ? Math.max(2, Math.round((soon / total) * 100))            : 0;
                     const rawOos  = (oos + expired) > 0 ? Math.max(2, Math.round(((oos + expired) / total) * 100)) : 0;
                     const safePct = Math.max(0, 100 - rawLow - rawSoon - rawOos);
-                    const healthyPct = Math.round((safe / total) * 100);
                     return (
                       <div className="mt-1.5 w-[120px] max-w-[120px]">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 flex">
