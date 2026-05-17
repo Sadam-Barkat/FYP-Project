@@ -611,6 +611,167 @@ function bedsAdmissionsForecastModalPayload(bedsData: Record<string, unknown>): 
   };
 }
 
+function labIntelTooltipPanelCls(
+  htmlIsDark: boolean,
+  position: "top" | "bottom" = "top",
+): string {
+  const pos = position === "bottom" ? "bottom-0" : "top-0";
+  return `absolute left-full ${pos} z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`;
+}
+
+function labCategoryBreakdownModal(
+  d: LaboratoryOverview,
+  mode: "pending" | "completed",
+): DetailModalPayload {
+  const cats = d.daily_test_volume_by_category ?? [];
+  const rows = cats
+    .map((c) => ({
+      category: c.category ?? "—",
+      count: mode === "pending" ? Number(c.pending ?? 0) : Number(c.completed ?? 0),
+      total: Number(c.pending ?? 0) + Number(c.completed ?? 0),
+    }))
+    .filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const total = rows.reduce((s, r) => s + r.count, 0);
+  return {
+    title: mode === "pending" ? "Pending tests" : "Completed today",
+    subtitle: `${total} test(s) across ${rows.length} categor${rows.length === 1 ? "y" : "ies"}`,
+    table: {
+      caption: mode === "pending" ? "Pending by category" : "Completed by category",
+      columns: [
+        { key: "category", label: "Category" },
+        { key: "count", label: mode === "pending" ? "Pending" : "Completed" },
+        { key: "total", label: "Total (day)" },
+      ],
+      rows,
+    },
+    blocks: [],
+  };
+}
+
+function labCriticalModalPayload(d: LaboratoryOverview): DetailModalPayload {
+  const atRisk = d.ml_abnormal_at_risk ?? [];
+  const tableRows = atRisk.map((r) => ({
+    patient: r.patient_name,
+    test: r.test_name,
+    category: r.category,
+    abnormal_probability: `${Math.round((r.abnormal_probability ?? 0) * 100)}%`,
+  }));
+  return {
+    title: "Critical & abnormal results",
+    subtitle: `${d.critical_results ?? 0} critical today · ${atRisk.length} pending flagged by ML`,
+    ...(tableRows.length > 0
+      ? {
+          table: {
+            caption: "ML abnormal risk (pending tests)",
+            columns: [
+              { key: "patient", label: "Patient" },
+              { key: "test", label: "Test" },
+              { key: "category", label: "Category" },
+              { key: "abnormal_probability", label: "Abnormal prob." },
+            ],
+            rows: tableRows,
+          },
+        }
+      : {}),
+    blocks: [
+      {
+        sections: [
+          {
+            title: "Today's critical flags",
+            accent: "red",
+            items: [
+              { primary: "Critical result count", badge: String(d.critical_results ?? 0) },
+              {
+                primary: "Physician review",
+                secondary: "Critical values in today's laboratory results",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function labTechniciansModalPayload(d: LaboratoryOverview): DetailModalPayload {
+  const pending = d.pending_tests ?? 0;
+  const techs = Math.max(1, d.active_technicians ?? 1);
+  const load = Math.round(pending / techs);
+  const rows = (d.daily_test_volume_by_category ?? [])
+    .map((c) => ({
+      category: c.category ?? "—",
+      pending: Number(c.pending ?? 0),
+      est_per_tech: (Number(c.pending ?? 0) / techs).toFixed(1),
+    }))
+    .filter((r) => r.pending > 0)
+    .sort((a, b) => b.pending - a.pending);
+  return {
+    title: "Active technicians · capacity",
+    subtitle: `${techs} technician(s) · ${load} pending tests per tech`,
+    table: {
+      caption: "Pending load by category",
+      columns: [
+        { key: "category", label: "Category" },
+        { key: "pending", label: "Pending" },
+        { key: "est_per_tech", label: "Est. / tech" },
+      ],
+      rows,
+    },
+    blocks: [
+      {
+        sections: [
+          {
+            title: "Workload",
+            accent: load >= 5 ? "orange" : "green",
+            items: [
+              { primary: "Pending tests", badge: String(pending) },
+              { primary: "Active technicians", badge: String(techs) },
+              {
+                primary: "Load per technician",
+                secondary:
+                  load >= 5 ? "High — consider extra shifts" : "Within normal range",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function labBacklogForecastModalPayload(d: LaboratoryOverview): DetailModalPayload {
+  const fc = d.ml_next_7_days_forecast ?? [];
+  const rows = fc.map((f) => ({
+    date: f.date,
+    day_name: f.day_name ?? "—",
+    backlog_risk: f.backlog_risk ? "Yes" : "No",
+    risk_probability: `${Math.round((f.risk_probability ?? 0) * 100)}%`,
+  }));
+  const highDays = fc.filter((f) => f.backlog_risk).length;
+  const avgPct =
+    fc.length > 0
+      ? Math.round(
+          (fc.reduce((s, f) => s + (f.risk_probability ?? 0), 0) / fc.length) * 100,
+        )
+      : 0;
+  return {
+    title: "Lab backlog forecast (next 7 days)",
+    subtitle: `${highDays} high-risk day(s) · ${avgPct}% average backlog probability`,
+    table: {
+      caption: "ML backlog model — daily forecast",
+      columns: [
+        { key: "date", label: "Date" },
+        { key: "day_name", label: "Day" },
+        { key: "backlog_risk", label: "Backlog risk" },
+        { key: "risk_probability", label: "Probability" },
+      ],
+      rows,
+    },
+    blocks: [],
+  };
+}
+
 function financeInvoiceTable(financeData: Record<string, unknown>): DetailTablePayload {
   const inv = Array.isArray(financeData.recent_invoices)
     ? (financeData.recent_invoices as Record<string, unknown>[])
@@ -1946,10 +2107,13 @@ export default function AdminDashboard() {
   );
 
   const [labLastFetch, setLabLastFetch] = useState<Date | null>(null);
-  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<LaboratoryOverview>(
-    apiUrl("/api/laboratory-overview", true),
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setLabLastFetch(new Date()) }
+  const {
+    data: labData,
+    isLoading: labLoading,
+    mutate: mutateLab,
+    ensureDetail: ensureLabDetail,
+  } = useLazyDashboardCard<LaboratoryOverview>("/api/laboratory-overview", () =>
+    setLabLastFetch(new Date()),
   );
 
   const openIntelDetail = useCallback(
@@ -2015,6 +2179,19 @@ export default function AdminDashboard() {
       }, loading);
     },
     [ensureStaffDetail, openDetailAsync],
+  );
+
+  const openLabDetail = useCallback(
+    (
+      builder: (d: LaboratoryOverview) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensureLabDetail();
+        return builder(d);
+      }, loading);
+    },
+    [ensureLabDetail, openDetailAsync],
   );
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
@@ -4667,7 +4844,7 @@ export default function AdminDashboard() {
 
         {/* ── Lab & Appointments Intelligence Card ── */}
         <div
-          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-visible dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           {/* Header */}
@@ -4705,13 +4882,23 @@ export default function AdminDashboard() {
 
           {/* Body — 3 columns same as all other cards */}
           {labData ? (
-            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-visible">
 
               {/* ── COLUMN 1: 4 KPI Stats with TOOLTIPS ── */}
-              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
 
                 {/* Stat 1: Pending Tests */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openLabDetail((d) => labCategoryBreakdownModal(d, "pending"), {
+                      title: "Pending tests",
+                      subtitle: "Loading category breakdown…",
+                    });
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Pending Tests</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-kpi-orange font-black text-xl tabular-nums leading-none">
@@ -4730,8 +4917,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((labData.pending_tests ?? 0) / Math.max(1, (labData.pending_tests ?? 0) + (labData.completed_today ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className={`${labIntelTooltipPanelCls(htmlIsDark)} top-0`}>
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Pending by Category</p>
                     {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.pending ?? 0) > 0).slice(0, 4).map((cat: any, i: number) => (
                       <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">
@@ -4745,7 +4931,17 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 2: Completed Today */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openLabDetail((d) => labCategoryBreakdownModal(d, "completed"), {
+                      title: "Completed today",
+                      subtitle: "Loading category breakdown…",
+                    });
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Completed Today</p>
                   <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
                     {labData.completed_today ?? 0}
@@ -4756,22 +4952,39 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((labData.completed_today ?? 0) / Math.max(1, (labData.pending_tests ?? 0) + (labData.completed_today ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className={`${labIntelTooltipPanelCls(htmlIsDark)} top-0`}>
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Completed by Category</p>
-                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.completed ?? 0) > 0).slice(0, 4).map((cat: any, i: number) => (
-                      <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">
-                        ✓ {cat.category}: {cat.completed} done
-                      </p>
-                    ))}
-                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.completed ?? 0) > 0).length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">No completions yet</p>
+                    <p className="text-[10px] text-kpi-green">Completed today: {labData.completed_today ?? 0}</p>
+                    <p className="text-[10px] text-kpi-orange mt-0.5">
+                      Still pending: {labData.pending_tests ?? 0}
+                    </p>
+                    {(labData.daily_test_volume_by_category ?? [])
+                      .filter((c) => (c.completed ?? 0) > 0)
+                      .slice(0, 4)
+                      .map((cat, i) => (
+                        <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                          ✓ {cat.category}: {cat.completed} done
+                        </p>
+                      ))}
+                    {(labData.daily_test_volume_by_category ?? []).filter((c) => (c.completed ?? 0) > 0)
+                      .length === 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">No completions yet</p>
                     )}
                   </div>
                 </div>
 
                 {/* Stat 3: Critical Results */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openLabDetail((d) => labCriticalModalPayload(d), {
+                      title: "Critical results",
+                      subtitle: "Loading abnormal risk detail…",
+                    });
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Critical Results</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
@@ -4790,17 +5003,33 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((labData.critical_results ?? 0) / Math.max(1, labData.completed_today ?? 1)) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className={`${labIntelTooltipPanelCls(htmlIsDark)} top-0`}>
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Critical Detail</p>
-                    <p className="text-[10px] text-kpi-red">{labData.critical_results ?? 0} critical results found</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Requires immediate doctor review</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Notify attending physicians now</p>
+                    <p className="text-[10px] text-kpi-red">{labData.critical_results ?? 0} critical today</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Requires immediate physician review</p>
+                    {(labData.ml_abnormal_at_risk ?? []).slice(0, 3).map((r, i) => (
+                      <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">
+                        ⚠ {r.patient_name}: {Math.round((r.abnormal_probability ?? 0) * 100)}%
+                      </p>
+                    ))}
+                    {(labData.ml_abnormal_at_risk ?? []).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">No ML-flagged pending tests</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Stat 4: Active Technicians */}
-                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-2 transition-colors hover:bg-white/[0.02] ${insightOpenCls}`}
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openLabDetail((d) => labTechniciansModalPayload(d), {
+                      title: "Active technicians",
+                      subtitle: "Loading capacity breakdown…",
+                    });
+                  }}
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Active Techs</p>
                   <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
                     {labData.active_technicians ?? 0}
@@ -4811,8 +5040,7 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, (labData.active_technicians ?? 0) * 20)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                  <div className={labIntelTooltipPanelCls(htmlIsDark, "bottom")}>
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Lab Capacity</p>
                     <p className="text-[10px] text-kpi-cyan">{labData.active_technicians ?? 0} technicians active</p>
                     <p className="text-[10px] text-tx-secondary mt-0.5">
@@ -4898,7 +5126,18 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ML prediction summary */}
-                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                <div
+                  className={`mt-auto pt-2 border-t border-dash-border shrink-0 ${insightOpenCls}`}
+                  role="presentation"
+                  title="Backlog forecast detail"
+                  onClick={() =>
+                    labData &&
+                    openLabDetail((d) => labBacklogForecastModalPayload(d), {
+                      title: "Lab backlog forecast",
+                      subtitle: "Loading 7-day forecast…",
+                    })
+                  }
+                >
                   {(() => {
                     const forecast = labData.ml_next_7_days_forecast ?? [];
                     const highRiskDays = forecast.filter((f) => f.backlog_risk).length;
