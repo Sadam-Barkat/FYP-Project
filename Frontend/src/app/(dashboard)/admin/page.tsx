@@ -582,6 +582,38 @@ function financeForecastModalPayload(financeData: Record<string, unknown>): Deta
   };
 }
 
+type LiveStaffRow = { name?: string; role?: string; department?: string; status?: string };
+
+function staffLiveRows(staffData: HrStaffOverview): LiveStaffRow[] {
+  return (staffData.live_staff_status ?? []) as LiveStaffRow[];
+}
+
+function staffStatusSlice(rows: LiveStaffRow[], status: string, limit = 4): LiveStaffRow[] {
+  return rows.filter((s) => s.status === status).slice(0, limit);
+}
+
+function staffDeptBreakdown(
+  rows: LiveStaffRow[],
+  status: string,
+  limit = 4,
+): { dept: string; count: number }[] {
+  const map = new Map<string, number>();
+  rows
+    .filter((s) => s.status === status)
+    .forEach((s) => {
+      const d = (s.department && String(s.department).trim()) || "Unassigned";
+      map.set(d, (map.get(d) ?? 0) + 1);
+    });
+  return [...map.entries()]
+    .map(([dept, count]) => ({ dept, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+function staffIntelTooltipPanelCls(htmlIsDark: boolean): string {
+  return `absolute left-full z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`;
+}
+
 function liveStaffStatusModalPayload(
   title: string,
   subtitle: string,
@@ -3883,7 +3915,7 @@ export default function AdminDashboard() {
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
         {/* ── Staff & Attendance Intelligence Card ── */}
         <div
-          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-visible dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           {/* Header */}
@@ -3951,18 +3983,19 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((staffData.staff_on_duty ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.absent_today ?? 0) + (staffData.on_leave ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div
-                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
-                  >
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Staff Breakdown</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty").slice(0, 4).map((s: any, i: number) => (
-                      <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">✓ {s.name} · {s.role}</p>
+                  <div className={`${staffIntelTooltipPanelCls(htmlIsDark)} top-0`}>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Attendance Detail</p>
+                    <p className="text-[10px] text-kpi-green">On duty: {staffData.staff_on_duty ?? 0}</p>
+                    <p className="text-[10px] text-kpi-red mt-0.5">Absent: {staffData.absent_today ?? 0}</p>
+                    <p className="text-[10px] text-tx-yellow mt-0.5">On leave: {staffData.on_leave ?? 0}</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Off duty: {staffStatusSlice(staffLiveRows(staffData), "Off Duty", 999).length}
+                    </p>
+                    {staffDeptBreakdown(staffLiveRows(staffData), "On Duty").map((d, i) => (
+                      <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                        {d.dept}: {d.count}
+                      </p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty").length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">No live data available</p>
-                    )}
-                    <p className="text-[10px] text-kpi-cyan mt-1">Active shifts: {staffData.active_shifts ?? 0}</p>
                   </div>
                 </div>
 
@@ -3991,17 +4024,17 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((staffData.active_shifts ?? 0) / Math.max(1, staffData.staff_on_duty ?? 1)) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div
-                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
-                  >
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Shift Coverage</p>
-                    <p className="text-[10px] text-kpi-cyan">Morning shift: Active</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Evening shift: Active</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Night shift: Scheduled</p>
-                    <p className="text-[10px] text-kpi-green mt-1">
-                      {staffData.active_shifts ?? 0} of {staffData.staff_on_duty ?? 0} staff on shift
-                    </p>
+                  <div className={`${staffIntelTooltipPanelCls(htmlIsDark)} top-0`}>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Attendance Records</p>
+                    <p className="text-[10px] text-kpi-cyan">Logged today: {staffData.active_shifts ?? 0}</p>
+                    <p className="text-[10px] text-kpi-green mt-0.5">Present: {staffData.staff_on_duty ?? 0}</p>
+                    <p className="text-[10px] text-kpi-red mt-0.5">Absent: {staffData.absent_today ?? 0}</p>
+                    <p className="text-[10px] text-tx-yellow mt-0.5">On leave: {staffData.on_leave ?? 0}</p>
+                    {staffStatusSlice(staffLiveRows(staffData), "On Duty", 4).map((s, i) => (
+                      <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                        ✓ {s.name} · {s.role}
+                      </p>
+                    ))}
                   </div>
                 </div>
 
@@ -4038,16 +4071,17 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((staffData.absent_today ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.absent_today ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP */}
-                  <div
-                    className={`absolute left-full top-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
-                  >
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Absent Staff</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent").slice(0, 4).map((s: any, i: number) => (
-                      <p key={i} className="text-[10px] text-kpi-red mt-0.5 truncate">✗ {s.name} · {s.department}</p>
+                  <div className={`${staffIntelTooltipPanelCls(htmlIsDark)} top-0`}>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Absent Detail</p>
+                    <p className="text-[10px] text-kpi-red">Absent today: {staffData.absent_today ?? 0}</p>
+                    <p className="text-[10px] text-kpi-green mt-0.5">On duty: {staffData.staff_on_duty ?? 0}</p>
+                    {staffStatusSlice(staffLiveRows(staffData), "Absent", 4).map((s, i) => (
+                      <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                        ✗ {s.name} · {s.department}
+                      </p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent").length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">No absences recorded</p>
+                    {staffStatusSlice(staffLiveRows(staffData), "Absent").length === 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">No absences recorded</p>
                     )}
                   </div>
                 </div>
@@ -4080,16 +4114,17 @@ export default function AdminDashboard() {
                       style={{ width: `${Math.min(100, ((staffData.on_leave ?? 0) / Math.max(1, (staffData.staff_on_duty ?? 0) + (staffData.on_leave ?? 0))) * 100)}%` }}
                     />
                   </div>
-                  {/* TOOLTIP — opens upward on last row */}
-                  <div
-                    className={`absolute left-full bottom-0 z-50 ml-1 w-48 ${patientIntelHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
-                  >
-                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">On Leave</p>
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave").slice(0, 4).map((s: any, i: number) => (
-                      <p key={i} className="text-[10px] text-tx-yellow mt-0.5 truncate">• {s.name} · {s.department}</p>
+                  <div className={`${staffIntelTooltipPanelCls(htmlIsDark)} bottom-0`}>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Leave Detail</p>
+                    <p className="text-[10px] text-tx-yellow">On leave: {staffData.on_leave ?? 0}</p>
+                    <p className="text-[10px] text-kpi-green mt-0.5">On duty: {staffData.staff_on_duty ?? 0}</p>
+                    {staffStatusSlice(staffLiveRows(staffData), "On Leave", 4).map((s, i) => (
+                      <p key={i} className="text-[10px] text-tx-secondary mt-0.5 truncate">
+                        • {s.name} · {s.department}
+                      </p>
                     ))}
-                    {(staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave").length === 0 && (
-                      <p className="text-[10px] text-tx-secondary">No staff on leave</p>
+                    {staffStatusSlice(staffLiveRows(staffData), "On Leave").length === 0 && (
+                      <p className="text-[10px] text-tx-secondary mt-0.5">No staff on leave</p>
                     )}
                   </div>
                 </div>
