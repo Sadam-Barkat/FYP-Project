@@ -36,6 +36,37 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+function apiUrl(path: string, summaryOnly = false): string {
+  const base = `${getApiBaseUrl()}${path}`;
+  if (!summaryOnly) return base;
+  return `${base}${path.includes("?") ? "&" : "?"}summary_only=true`;
+}
+
+/** Dashboard card: load summary on mount; fetch full payload only when opening a drill-down. */
+function useLazyDashboardCard<T>(
+  path: string,
+  onSuccess: () => void,
+) {
+  const summaryUrl = apiUrl(path, true);
+  const fullUrl = apiUrl(path, false);
+  const detailRef = useRef<T | null>(null);
+  const { data, isLoading, mutate } = useSWR<T>(summaryUrl, fetcher, {
+    refreshInterval: 60000,
+    onSuccess,
+  });
+  const ensureDetail = useCallback(async (): Promise<T> => {
+    if (detailRef.current) return detailRef.current;
+    const full = (await fetcher(fullUrl)) as T;
+    detailRef.current = full;
+    return full;
+  }, [fullUrl]);
+  const refresh = useCallback(() => {
+    detailRef.current = null;
+    void mutate();
+  }, [mutate]);
+  return { data, isLoading, mutate: refresh, ensureDetail };
+}
+
 function SkeletonCard() {
   return (
     <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
@@ -1173,8 +1204,8 @@ function formatKpiDisplay(
   if (!data) return "—";
   const raw = data[valueKey];
   if (raw === null || raw === undefined) return "—";
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return "—";
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return "—";
 
   let formatted = "";
   if (n >= 1_000_000) {
@@ -1548,51 +1579,101 @@ export default function AdminDashboard() {
 
   const [kpiLastFetch, setKpiLastFetch] = useState<Date | null>(null);
   const { data: kpiData, isLoading: kpiLoading, mutate: mutateKpi } = useSWR<HospitalOverviewKpis>(
-    `${getApiBaseUrl()}/api/hospital-overview`,
+    apiUrl("/api/hospital-overview", true),
     fetcher,
     { refreshInterval: 60000, onSuccess: () => setKpiLastFetch(new Date()) }
   );
 
   const [intelLastFetch, setIntelLastFetch] = useState<Date | null>(null);
-  const { data: intelData, isLoading: intelLoading, mutate: mutateIntel } = useSWR<PatientIntelResponse>(
-    `${getApiBaseUrl()}/api/patient-intelligence`,
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setIntelLastFetch(new Date()) }
+  const {
+    data: intelData,
+    isLoading: intelLoading,
+    mutate: mutateIntel,
+    ensureDetail: ensureIntelDetail,
+  } = useLazyDashboardCard<PatientIntelResponse>("/api/patient-intelligence", () =>
+    setIntelLastFetch(new Date()),
   );
 
   const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
-  const { data: pharmacyData, isLoading: pharmacyLoading, mutate: mutatePharmacy } = useSWR<PharmacyIntelResponse>(
-    `${getApiBaseUrl()}/api/pharmacy-intelligence`,
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setPharmacyLastFetch(new Date()) }
+  const {
+    data: pharmacyData,
+    isLoading: pharmacyLoading,
+    mutate: mutatePharmacy,
+    ensureDetail: ensurePharmacyDetail,
+  } = useLazyDashboardCard<PharmacyIntelResponse>("/api/pharmacy-intelligence", () =>
+    setPharmacyLastFetch(new Date()),
   );
 
   const [financeLastFetch, setFinanceLastFetch] = useState<Date | null>(null);
-  const { data: financeData, isLoading: financeLoading, mutate: mutateFinance } = useSWR<any>(
-    `${getApiBaseUrl()}/api/billing-finance-overview`,
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setFinanceLastFetch(new Date()) }
+  const {
+    data: financeData,
+    isLoading: financeLoading,
+    mutate: mutateFinance,
+    ensureDetail: ensureFinanceDetail,
+  } = useLazyDashboardCard<Record<string, unknown>>("/api/billing-finance-overview", () =>
+    setFinanceLastFetch(new Date()),
   );
 
   const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
-  const { data: bedsData, isLoading: bedsLoading, mutate: mutateBeds } = useSWR<any>(
-    `${getApiBaseUrl()}/api/patients-beds-overview`,
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setBedsLastFetch(new Date()) }
+  const {
+    data: bedsData,
+    isLoading: bedsLoading,
+    mutate: mutateBeds,
+    ensureDetail: ensureBedsDetail,
+  } = useLazyDashboardCard<Record<string, unknown>>("/api/patients-beds-overview", () =>
+    setBedsLastFetch(new Date()),
   );
 
   const [staffLastFetch, setStaffLastFetch] = useState<Date | null>(null);
-  const { data: staffData, isLoading: staffLoading, mutate: mutateStaff } = useSWR<any>(
-    `${getApiBaseUrl()}/api/hr-staff-overview`,
-    fetcher,
-    { refreshInterval: 60000, onSuccess: () => setStaffLastFetch(new Date()) }
+  const {
+    data: staffData,
+    isLoading: staffLoading,
+    mutate: mutateStaff,
+    ensureDetail: ensureStaffDetail,
+  } = useLazyDashboardCard<Record<string, unknown>>("/api/hr-staff-overview", () =>
+    setStaffLastFetch(new Date()),
   );
 
   const [labLastFetch, setLabLastFetch] = useState<Date | null>(null);
-  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<any>(
-    `${getApiBaseUrl()}/api/laboratory-overview`,
+  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<Record<string, unknown>>(
+    apiUrl("/api/laboratory-overview", true),
     fetcher,
     { refreshInterval: 60000, onSuccess: () => setLabLastFetch(new Date()) }
+  );
+
+  const openIntelDetail = useCallback(
+    (builder: (d: PatientIntelResponse) => DetailModalPayload) => {
+      void ensureIntelDetail().then((d) => openDetail(builder(d)));
+    },
+    [ensureIntelDetail, openDetail],
+  );
+
+  const openPharmacyDetail = useCallback(
+    (builder: (d: PharmacyIntelResponse) => DetailModalPayload) => {
+      void ensurePharmacyDetail().then((d) => openDetail(builder(d)));
+    },
+    [ensurePharmacyDetail, openDetail],
+  );
+
+  const openFinanceDetail = useCallback(
+    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+      void ensureFinanceDetail().then((d) => openDetail(builder(d)));
+    },
+    [ensureFinanceDetail, openDetail],
+  );
+
+  const openBedsDetail = useCallback(
+    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+      void ensureBedsDetail().then((d) => openDetail(builder(d)));
+    },
+    [ensureBedsDetail, openDetail],
+  );
+
+  const openStaffDetail = useCallback(
+    (builder: (d: Record<string, unknown>) => DetailModalPayload) => {
+      void ensureStaffDetail().then((d) => openDetail(builder(d)));
+    },
+    [ensureStaffDetail, openDetail],
   );
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
@@ -1819,8 +1900,8 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(
-                      patientIntelRosterTablePayload(intelData, "all", "All inpatients — full roster"),
+                    openIntelDetail((d) =>
+                      patientIntelRosterTablePayload(d, "all", "All inpatients — full roster"),
                     )
                   }
                 >
@@ -1869,9 +1950,9 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(
+                    openIntelDetail((d) =>
                       patientIntelRosterTablePayload(
-                        intelData,
+                        d,
                         "healthy",
                         "Vitals health — inpatients",
                       ),
@@ -1920,9 +2001,9 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(
+                    openIntelDetail((d) =>
                       patientIntelRosterTablePayload(
-                        intelData,
+                        d,
                         "critical_vitals",
                         "Critical / abnormal vitals — inpatient roster",
                       ),
@@ -1984,9 +2065,9 @@ export default function AdminDashboard() {
                   className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                   role="presentation"
                   onClick={() =>
-                    openDetail(
+                    openIntelDetail((d) =>
                       patientIntelRosterTablePayload(
-                        intelData,
+                        d,
                         "at_risk",
                         "At risk — inpatient roster",
                       ),
@@ -2067,7 +2148,7 @@ export default function AdminDashboard() {
                           role={rowOpen ? "button" : undefined}
                           onClick={
                             rowOpen
-                              ? () => openDetail(patientIntelSingleRowTable(intelData, pid))
+                              ? () => openIntelDetail((d) => patientIntelSingleRowTable(d, pid))
                               : undefined
                           }
                         >
@@ -2089,9 +2170,9 @@ export default function AdminDashboard() {
                   role="presentation"
                   title="Risk detail"
                   onClick={() =>
-                    openDetail(
+                    openIntelDetail((d) =>
                       patientIntelRosterTablePayload(
-                        intelData,
+                        d,
                         "ml_deterioration_24h",
                         "ML high/critical (24h) — matching inpatients",
                       ),
@@ -2250,7 +2331,7 @@ export default function AdminDashboard() {
                 {/* Stat 1: Total Medicines — tooltip opens downward */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => openDetail(pharmacyInventorySnapshotTable(pharmacyData))}
+                  onClick={() => openPharmacyDetail((d) => pharmacyInventorySnapshotTable(d))}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
                   <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
@@ -2314,10 +2395,10 @@ export default function AdminDashboard() {
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
                   onClick={() =>
-                    openDetail(
+                    openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
                         "Out of stock",
-                        pharmacyData.out_of_stock_medicines ?? [],
+                        d.out_of_stock_medicines ?? [],
                         "No out-of-stock medicines",
                       ),
                     )
@@ -2366,10 +2447,10 @@ export default function AdminDashboard() {
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() =>
-                    openDetail(
+                    openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
                         "Low stock",
-                        pharmacyData.low_stock_medicines ?? [],
+                        d.low_stock_medicines ?? [],
                         "No low-stock medicines",
                       ),
                     )
@@ -2415,10 +2496,10 @@ export default function AdminDashboard() {
                 <div
                   className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() =>
-                    openDetail(
+                    openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
                         "Expiring soon (30d)",
-                        pharmacyData.expiring_soon_medicines ?? [],
+                        d.expiring_soon_medicines ?? [],
                         "No medicines expiring in the next 30 days",
                       ),
                     )
@@ -2557,7 +2638,7 @@ export default function AdminDashboard() {
                   className={`mt-auto pt-2 border-t border-dash-border shrink-0 ${insightOpenCls}`}
                   role="presentation"
                   title="Full ML / reorder table"
-                  onClick={() => openDetail(pharmacyMlAtRiskTable(pharmacyData))}
+                  onClick={() => openPharmacyDetail((d) => pharmacyMlAtRiskTable(d))}
                 >
                   {(() => {
                     const atRisk   = pharmacyData.ml_at_risk_medicines ?? [];
@@ -2655,7 +2736,9 @@ export default function AdminDashboard() {
                     role="presentation"
                     title="Forecast detail"
                     onClick={() =>
-                      openDetail(pharmacyDemandForecastModalPayload(pharmacyData as unknown as Record<string, unknown>))
+                      openPharmacyDetail((d) =>
+                        pharmacyDemandForecastModalPayload(d as unknown as Record<string, unknown>),
+                      )
                     }
                   >
                     {(() => {
@@ -2747,9 +2830,7 @@ export default function AdminDashboard() {
                         className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                         role="presentation"
                         onClick={() =>
-                          openDetail(
-                            financeSnapshotModalPayload(financeData as Record<string, unknown>, "revenue"),
-                          )
+                          openFinanceDetail((d) => financeSnapshotModalPayload(d, "revenue"))
                         }
                       >
                         <div
@@ -2824,12 +2905,7 @@ export default function AdminDashboard() {
                         className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                         role="presentation"
                         onClick={() =>
-                          openDetail(
-                            financeSnapshotModalPayload(
-                              financeData as Record<string, unknown>,
-                              "outstanding",
-                            ),
-                          )
+                          openFinanceDetail((d) => financeSnapshotModalPayload(d, "outstanding"))
                         }
                       >
                         <div
@@ -2912,9 +2988,7 @@ export default function AdminDashboard() {
                         className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                         role="presentation"
                         onClick={() =>
-                          openDetail(
-                            financeSnapshotModalPayload(financeData as Record<string, unknown>, "net"),
-                          )
+                          openFinanceDetail((d) => financeSnapshotModalPayload(d, "net"))
                         }
                       >
                         <div
@@ -2957,12 +3031,7 @@ export default function AdminDashboard() {
                         className={`relative group min-h-0 flex flex-col justify-center px-3 py-1 hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
                         role="presentation"
                         onClick={() =>
-                          openDetail(
-                            financeSnapshotModalPayload(
-                              financeData as Record<string, unknown>,
-                              "expenses",
-                            ),
-                          )
+                          openFinanceDetail((d) => financeSnapshotModalPayload(d, "expenses"))
                         }
                       >
                         <div
@@ -3134,7 +3203,7 @@ export default function AdminDashboard() {
                         className={`space-y-0.5 ${insightOpenCls}`}
                         role="presentation"
                         title="View forecast detail"
-                        onClick={() => openDetail(financeForecastModalPayload(financeData as Record<string, unknown>))}
+                        onClick={() => openFinanceDetail((d) => financeForecastModalPayload(d))}
                       >
                         <p className="text-kpi-cyan text-[10px] font-bold uppercase tracking-wider">
                           ⚡ Predicted (Next 7 Days Totals)
@@ -3613,7 +3682,8 @@ export default function AdminDashboard() {
                   role="presentation"
                   title="Admission forecast detail"
                   onClick={() =>
-                    bedsData && openDetail(bedsAdmissionsForecastModalPayload(bedsData as Record<string, unknown>))
+                    bedsData &&
+                    openBedsDetail((d) => bedsAdmissionsForecastModalPayload(d))
                   }
                 >
                   {(() => {
@@ -3715,7 +3785,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>👨‍⚕️</span>
               <h2 className="text-tx-bright font-bold text-lg">Staff & Attendance Intelligence</h2>
-            </div>
+    </div>
             <div className="flex items-center gap-2">
               {staffData ? (
                 <span className="whitespace-nowrap text-tx-secondary text-xs">
@@ -3756,11 +3826,11 @@ export default function AdminDashboard() {
                   role="presentation"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(
+                    openStaffDetail((d) =>
                       liveStaffStatusModalPayload(
                         "Staff on duty · detail",
                         "Present today · names + roles",
-                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Duty"),
+                        (d.live_staff_status ?? []).filter((s: any) => s.status === "On Duty"),
                       ),
                     );
                   }}
@@ -3796,11 +3866,11 @@ export default function AdminDashboard() {
                   role="presentation"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(
+                    openStaffDetail((d) =>
                       liveStaffStatusModalPayload(
                         "Active shifts · roster",
-                        `${staffData.active_shifts ?? 0} records vs ${staffData.staff_on_duty ?? 0} on duty`,
-                        staffData.live_staff_status ?? [],
+                        `${d.active_shifts ?? 0} records vs ${d.staff_on_duty ?? 0} on duty`,
+                        d.live_staff_status ?? [],
                       ),
                     );
                   }}
@@ -3835,11 +3905,11 @@ export default function AdminDashboard() {
                   role="presentation"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(
+                    openStaffDetail((d) =>
                       liveStaffStatusModalPayload(
                         "Absent today · detail",
                         "Counted from today's attendance marks",
-                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "Absent"),
+                        (d.live_staff_status ?? []).filter((s: any) => s.status === "Absent"),
                       ),
                     );
                   }}
@@ -3882,11 +3952,11 @@ export default function AdminDashboard() {
                   role="presentation"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(
+                    openStaffDetail((d) =>
                       liveStaffStatusModalPayload(
                         "On leave today · detail",
                         "Today's leave marks",
-                        (staffData.live_staff_status ?? []).filter((s: any) => s.status === "On Leave"),
+                        (d.live_staff_status ?? []).filter((s: any) => s.status === "On Leave"),
                       ),
                     );
                   }}
@@ -3928,7 +3998,7 @@ export default function AdminDashboard() {
                   title="Open full breakdown"
                   onClick={() =>
                     staffData &&
-                    openDetail(staffForecastFullModalPayload(staffData as Record<string, unknown>))
+                    openStaffDetail((d) => staffForecastFullModalPayload(d))
                   }
                 >
                   <p className="text-kpi-green text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -4064,11 +4134,11 @@ export default function AdminDashboard() {
                   title="Tap to expand full roster"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(
+                    openStaffDetail((d) =>
                       liveStaffStatusModalPayload(
                         "Live staff status · full roster",
                         "Today's attendance snapshot",
-                        staffData.live_staff_status ?? [],
+                        d.live_staff_status ?? [],
                       ),
                     );
                   }}
@@ -4099,7 +4169,7 @@ export default function AdminDashboard() {
                   title="Tap for absent / leave names · all 7 days"
                   onClick={(e) => {
                     e.stopPropagation();
-                    openDetail(staffForecastFullModalPayload(staffData));
+                    openStaffDetail((d) => staffForecastFullModalPayload(d));
                   }}
                 >
                   {(() => {

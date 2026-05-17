@@ -21,7 +21,7 @@ import os
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -446,6 +446,7 @@ def _ml_medicines_to_reorder(
 
 @router.get("/pharmacy-intelligence")
 async def get_pharmacy_intelligence(
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> Dict[str, Any]:
@@ -711,6 +712,12 @@ async def get_pharmacy_intelligence(
         ],
         stockout_items=[{"name": n} for n in out_of_stock_medicines],
     )
+
+    if summary_only:
+        out_of_stock_medicines = out_of_stock_medicines[:2]
+        low_stock_medicines = low_stock_medicines[:2]
+        expiring_soon_medicines = expiring_soon_medicines[:2]
+        expired_medicines = expired_medicines[:2]
 
     return {
         # ── Stock counts (real DB data) ──

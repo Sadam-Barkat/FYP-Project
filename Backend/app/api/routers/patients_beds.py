@@ -26,6 +26,7 @@ router = APIRouter(prefix="/api", tags=["patients_beds"])
 @router.get("/patients-beds-overview")
 async def get_patients_beds_overview(
     date_param: Optional[date] = Query(None, alias="date"),
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -290,8 +291,7 @@ async def get_patients_beds_overview(
                 "predicted_admissions_7d_avg": 0.0,
             }
 
-        return {
-
+        result = {
             "total_capacity": int(total_capacity),
             "total_patients": int(total_patients),
             "occupied_beds": int(occupied_beds),
@@ -311,6 +311,9 @@ async def get_patients_beds_overview(
             "ml_next_7_days_forecast": ml_forecast,
             "ml_shortage_risk": ml_summary,
         }
+        if summary_only:
+            result["admissions_discharges_trend"] = []
+        return result
 
     except Exception as exc:
         raise HTTPException(

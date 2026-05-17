@@ -44,6 +44,7 @@ def require_finance_or_admin(current_user: User = Depends(get_current_user)) -> 
 async def compute_billing_finance_overview(
     db: AsyncSession,
     date_param: Optional[date],
+    summary_only: bool = False,
 ) -> Dict[str, Any]:
     """
     Core metrics for Billing & Finance (used by HTTP route and PDF export).
@@ -89,6 +90,53 @@ async def compute_billing_finance_overview(
 
     week_start_utc, _ = day_bounds_utc_naive(seven_days_ago, tz)
     _, week_end_utc = day_bounds_utc_naive(base_date, tz)
+
+    recent_invoices: List[Dict[str, Any]] = []
+    if summary_only:
+        revenue_vs_expenses: List[Dict[str, Any]] = []
+        import asyncio
+
+        async def fetch_day_revenue(i: int):
+            day = seven_days_ago + timedelta(days=i)
+            label = day.strftime("%a")
+            d0, d1 = day_bounds_utc_naive(day, tz)
+            day_rev_r = await db.execute(
+                select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                    and_(Transaction.transaction_date >= d0, Transaction.transaction_date <= d1)
+                )
+            )
+            day_revenue = float(day_rev_r.scalar_one() or 0.0)
+            return {"day": label, "revenue": day_revenue, "expenses": day_revenue * 0.3}
+
+        revenue_vs_expenses = await asyncio.gather(*(fetch_day_revenue(i) for i in range(7)))
+        ml_revenue_forecast: List[Dict[str, Any]] = []
+        ml_revenue_risk_level: str = "Low"
+        ml_collection_risk: Dict[str, Any] = {"risk_pct": 0, "risk_label": "Low"}
+        try:
+            ml_forecast_points = await predict_next_7_days_revenue(db, base_date)
+            ml_revenue_forecast = [
+                {"date": p.date, "predicted_revenue": float(p.predicted_revenue)}
+                for p in ml_forecast_points
+            ]
+            ml_revenue_risk_level = revenue_forecast_risk_label(
+                ml_forecast_points, todays_revenue
+            )
+            dr = await predict_collection_default_risk(db, base_date, lookback_days=7)
+            ml_collection_risk = {"risk_pct": int(dr.risk_pct), "risk_label": dr.risk_label}
+        except Exception:
+            pass
+        return {
+            "todays_revenue": todays_revenue,
+            "outstanding_balance": outstanding_balance,
+            "insurance_claims": int(insurance_claims),
+            "todays_expenses": todays_expenses,
+            "recent_invoices": recent_invoices,
+            "revenue_vs_expenses": revenue_vs_expenses,
+            "ml_revenue_forecast": ml_revenue_forecast,
+            "ml_revenue_risk_level": ml_revenue_risk_level,
+            "ml_collection_risk": ml_collection_risk,
+            "selected_date": base_date.isoformat(),
+        }
 
     recent_invoices_result = await db.execute(
         select(
@@ -206,11 +254,12 @@ async def compute_billing_finance_overview(
 @router.get("/billing-finance-overview")
 async def get_billing_finance_overview(
     date_param: Optional[date] = Query(None, alias="date"),
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_finance_or_admin),
 ) -> Dict[str, Any]:
     try:
-        return await compute_billing_finance_overview(db, date_param)
+        return await compute_billing_finance_overview(db, date_param, summary_only=summary_only)
     except HTTPException:
         raise
     except Exception as exc:

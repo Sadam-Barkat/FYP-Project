@@ -82,6 +82,7 @@ def _features_for_absenteeism(
 @router.get("/hr-staff-overview")
 async def get_hr_staff_overview(
     date_param: Optional[date_type] = Query(None, alias="date"),
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -342,9 +343,9 @@ async def get_hr_staff_overview(
             "active_shifts": int(active_shifts),
             "absent_today": absent_today,
             "on_leave": on_leave,
-            "live_staff_status": live_staff_status,
+            "live_staff_status": [] if summary_only else live_staff_status,
             "attendance_trend": attendance_trend,
-            "attendance_forecast_details": attendance_forecast_details,
+            "attendance_forecast_details": [] if summary_only else attendance_forecast_details,
             "understaffing_risk": understaffing_risk,
             "selected_date": base_date.isoformat(),
         }

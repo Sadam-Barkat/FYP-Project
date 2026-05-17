@@ -28,7 +28,7 @@ from app.models.vital import Vital
 router = APIRouter(prefix="/api", tags=["overview"])
 
 _OVERVIEW_CACHE: Dict[str, Any] = {}
-_OVERVIEW_CACHE_TIME: float = 0.0
+_OVERVIEW_CACHE_TIME: Dict[str, float] = {}
 _OVERVIEW_CACHE_LOCK = asyncio.Lock()
 CACHE_TTL = 60.0  # 60 seconds
 
@@ -339,6 +339,7 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
 @router.get("/hospital-overview")
 async def get_hospital_overview(
     date_param: Optional[date] = Query(None, alias="date"),
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -346,11 +347,13 @@ async def get_hospital_overview(
     """
     global _OVERVIEW_CACHE, _OVERVIEW_CACHE_TIME
     
+    cache_key = "summary" if summary_only else "full"
     # Only use cache if no specific date is requested
     if date_param is None:
         now = py_time.time()
-        if _OVERVIEW_CACHE and (now - _OVERVIEW_CACHE_TIME) < CACHE_TTL:
-            return _OVERVIEW_CACHE
+        cached_at = _OVERVIEW_CACHE_TIME.get(cache_key, 0.0)
+        if _OVERVIEW_CACHE.get(cache_key) and (now - cached_at) < CACHE_TTL:
+            return _OVERVIEW_CACHE[cache_key]
 
     try:
         # ---- Time boundaries (calendar day in APP_TIMEZONE) ----
@@ -359,6 +362,48 @@ async def get_hospital_overview(
         base_date = date_param or calendar_today_for_app(now)
         day_start, day_end = day_bounds_utc_naive(base_date, tz)
         seven_days_ago = base_date - timedelta(days=6)  # inclusive range [seven_days_ago..base_date]
+
+        if summary_only:
+            yesterday_date = base_date - timedelta(days=1)
+            today_kpis = await _compute_admin_kpi_snapshot(db, base_date)
+            yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
+            kpi_breakdowns = await _compute_admin_kpi_breakdowns(db, base_date)
+            tpb = kpi_breakdowns.get("total_patients_breakdown")
+            if isinstance(tpb, dict):
+                tpb["in_hospital"] = int(today_kpis["total_patients"])
+                tpb["in_hospital_yesterday"] = int(yesterday_kpis["total_patients"])
+            summary_result = {
+                "total_patients": int(today_kpis["total_patients"]),
+                "active_admissions": int(today_kpis["active_admissions"]),
+                "available_beds": int(today_kpis["available_beds"]),
+                "critical_patients": int(today_kpis["critical_patients"]),
+                "staff_on_duty": int(today_kpis["staff_on_duty"]),
+                "revenue_today": float(today_kpis["revenue_today"]),
+                "total_patients_trend": _format_kpi_trend_pct(
+                    today_kpis["total_patients"], yesterday_kpis["total_patients"]
+                ),
+                "active_admissions_trend": _format_kpi_trend_pct(
+                    today_kpis["active_admissions"], yesterday_kpis["active_admissions"]
+                ),
+                "available_beds_trend": _format_kpi_trend_pct(
+                    today_kpis["available_beds"], yesterday_kpis["available_beds"]
+                ),
+                "critical_patients_trend": _format_kpi_trend_pct(
+                    today_kpis["critical_patients"], yesterday_kpis["critical_patients"]
+                ),
+                "staff_on_duty_trend": _format_kpi_trend_pct(
+                    today_kpis["staff_on_duty"], yesterday_kpis["staff_on_duty"]
+                ),
+                "revenue_today_trend": _format_kpi_trend_pct(
+                    today_kpis["revenue_today"], yesterday_kpis["revenue_today"]
+                ),
+                **kpi_breakdowns,
+            }
+            if date_param is None:
+                async with _OVERVIEW_CACHE_LOCK:
+                    _OVERVIEW_CACHE["summary"] = summary_result
+                    _OVERVIEW_CACHE_TIME["summary"] = py_time.time()
+            return summary_result
 
         # ---- total_beds ----
         total_beds_result = await db.execute(select(func.count()).select_from(Bed))
@@ -676,8 +721,8 @@ async def get_hospital_overview(
 
         if date_param is None:
             async with _OVERVIEW_CACHE_LOCK:
-                _OVERVIEW_CACHE = final_result
-                _OVERVIEW_CACHE_TIME = py_time.time()
+                _OVERVIEW_CACHE["full"] = final_result
+                _OVERVIEW_CACHE_TIME["full"] = py_time.time()
 
         return final_result
 

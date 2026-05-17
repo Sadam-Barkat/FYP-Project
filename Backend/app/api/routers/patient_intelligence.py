@@ -7,7 +7,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -238,6 +238,7 @@ def _generate_local_summary(metrics: dict, top_patients: list) -> dict:
 
 @router.get("/patient-intelligence")
 async def get_patient_intelligence(
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> Dict[str, Any]:
@@ -370,34 +371,35 @@ async def get_patient_intelligence(
             }
         )
 
-        active_inpatient_roster.append(
-            {
-                "patient_id": pid,
-                "name": name,
-                "age": int(patient.age) if patient.age is not None else None,
-                "gender": patient.gender,
-                "blood_group": patient.blood_group,
-                "contact": patient.contact or "",
-                "address": (patient.address or "")[:200],
-                "admission_date": admission.admission_date.isoformat()
-                if admission.admission_date
-                else None,
-                "reason_for_admission": (admission.reason_for_admission or "")[:200],
-                "bed_id": admission.bed_id,
-                "news2_score": sc,
-                "heart_rate": v.heart_rate if v else None,
-                "spo2": v.spo2 if v else None,
-                "temperature": float(v.temperature) if v and v.temperature is not None else None,
-                "blood_pressure_sys": v.blood_pressure_sys if v else None,
-                "blood_pressure_dia": v.blood_pressure_dia if v else None,
-                "respiratory_rate": v.respiratory_rate if v else None,
-                "ml_risk_label": rr.risk_label,
-                "ml_risk_pct": rr.risk_pct,
-                "has_abnormal_vital": pid in abnormal_patient_ids,
-                "vital_field_normal_count": patient_vital_normal,
-                "vital_field_total_count": patient_vital_total,
-            }
-        )
+        if not summary_only:
+            active_inpatient_roster.append(
+                {
+                    "patient_id": pid,
+                    "name": name,
+                    "age": int(patient.age) if patient.age is not None else None,
+                    "gender": patient.gender,
+                    "blood_group": patient.blood_group,
+                    "contact": patient.contact or "",
+                    "address": (patient.address or "")[:200],
+                    "admission_date": admission.admission_date.isoformat()
+                    if admission.admission_date
+                    else None,
+                    "reason_for_admission": (admission.reason_for_admission or "")[:200],
+                    "bed_id": admission.bed_id,
+                    "news2_score": sc,
+                    "heart_rate": v.heart_rate if v else None,
+                    "spo2": v.spo2 if v else None,
+                    "temperature": float(v.temperature) if v and v.temperature is not None else None,
+                    "blood_pressure_sys": v.blood_pressure_sys if v else None,
+                    "blood_pressure_dia": v.blood_pressure_dia if v else None,
+                    "respiratory_rate": v.respiratory_rate if v else None,
+                    "ml_risk_label": rr.risk_label,
+                    "ml_risk_pct": rr.risk_pct,
+                    "has_abnormal_vital": pid in abnormal_patient_ids,
+                    "vital_field_normal_count": patient_vital_normal,
+                    "vital_field_total_count": patient_vital_total,
+                }
+            )
 
     vitals_health_percentage = (
         int(round(100 * normal_checks / total_checks)) if total_checks else 0
@@ -451,9 +453,11 @@ async def get_patient_intelligence(
         1 for r in ml_rows if float(r.get("risk_prob") or 0.0) >= th_high
     )
     # Full list for drill-down; `ml_forecast` stays top-5 for the compact UI column.
-    ml_forecast_high_risk_24h = [
-        r for r in ml_rows if float(r.get("risk_prob") or 0.0) >= th_high
-    ]
+    ml_forecast_high_risk_24h = (
+        []
+        if summary_only
+        else [r for r in ml_rows if float(r.get("risk_prob") or 0.0) >= th_high]
+    )
 
     return {
         "total_patients": total_patients,
