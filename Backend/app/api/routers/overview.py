@@ -169,6 +169,19 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
 
     import asyncio
 
+    latest_sq = _latest_vital_per_patient_subquery()
+    admitted_today_patients = (
+        select(Admission.patient_id)
+        .where(
+            and_(
+                Admission.admission_date >= day_start,
+                Admission.admission_date <= day_end,
+            )
+        )
+        .distinct()
+        .subquery()
+    )
+
     (
         admitted_today_r,
         discharged_today_r,
@@ -257,6 +270,8 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "elderly": int(elderly_r.scalar_one() or 0),
     }
 
+    lv_sq = _latest_vital_per_patient_subquery()
+
     (
         total_beds_br,
         occupied_br,
@@ -311,7 +326,6 @@ async def _compute_admin_kpi_breakdowns(db: AsyncSession, base_date: date) -> Di
         "under_maintenance": int(maint_br.scalar_one() or 0),
     }
 
-    lv_sq = _latest_vital_per_patient_subquery()
     crit_b = {"critical": 0, "emergency": 0, "stable": 0, "under_observation": 0}
     for (cl,) in lv_rows.all():
         bucket = _classify_latest_condition(cl)
