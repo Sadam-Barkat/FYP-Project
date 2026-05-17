@@ -830,9 +830,6 @@ function StaffTab() {
         </button>
       </div>
 
-      {isLoading && (
-        <p className="text-text-muted text-sm">Loading staff...</p>
-      )}
       {error && (
         <p className="text-status-danger text-sm">Error: {error}</p>
       )}
@@ -1044,11 +1041,12 @@ function StaffTab() {
             </div>
         ))}
       </div>
-      {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-          <p className="text-sm">No staff match your search.</p>
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden />
+          <p className="text-sm">Loading staff...</p>
         </div>
-      )}
+      ) : null}
 
       {filtered.length > 0 && totalPages > 1 && (
         <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
@@ -1215,9 +1213,6 @@ function PatientsTab() {
         />
       </div>
 
-      {isLoading && patients.length === 0 && (
-        <p className="text-text-muted text-sm">Loading patients...</p>
-      )}
       {error && (
         <p className="text-status-danger text-sm">{error}</p>
       )}
@@ -1250,11 +1245,16 @@ function PatientsTab() {
           </div>
         ))}
       </div>
-      {filtered.length === 0 && (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-blue" aria-hidden />
+          <p className="text-sm">Loading patients...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-text-muted">
           <p className="text-sm">No patients match your search.</p>
         </div>
-      )}
+      ) : null}
 
       {filtered.length > 0 && totalPages > 1 && (
         <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
