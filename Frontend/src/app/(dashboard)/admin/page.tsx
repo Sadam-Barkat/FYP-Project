@@ -436,14 +436,26 @@ function financeSnapshotModalPayload(
     };
   }
 
-  const invTable = financeInvoiceTable(financeData);
+  const invTableAll = financeInvoiceTable(financeData);
+  const invTablePaid = financeInvoiceTable({
+    ...financeData,
+    recent_invoices: Array.isArray(financeData.recent_invoices)
+      ? financeData.recent_invoices.filter((x: any) => String(x.status || "").toLowerCase() === "paid")
+      : []
+  });
+  const invTablePending = financeInvoiceTable({
+    ...financeData,
+    recent_invoices: Array.isArray(financeData.recent_invoices)
+      ? financeData.recent_invoices.filter((x: any) => String(x.status || "").toLowerCase() === "pending")
+      : []
+  });
   const trendTable = financeTrendTable(financeData);
 
   if (focus === "revenue") {
     return {
       title: "Today's revenue · billing lines",
       subtitle: `Recorded revenue: ₨${revenue.toFixed(2)}`,
-      tables: [invTable, trendTable],
+      tables: [invTablePaid, trendTable],
       blocks: [],
     };
   }
@@ -451,14 +463,14 @@ function financeSnapshotModalPayload(
     return {
       title: "Outstanding balance · invoices",
       subtitle: `Outstanding: ₨${outstanding.toFixed(2)}`,
-      tables: [invTable],
+      tables: [invTablePending],
       blocks: [],
     };
   }
   return {
     title: "Net profit · context",
     subtitle: `Rev ₨${revenue.toFixed(2)} · Exp ₨${expenses.toFixed(2)} · Net ₨${net.toFixed(2)}`,
-    tables: [invTable, trendTable],
+    tables: [invTableAll, trendTable],
     blocks: [],
   };
 }
