@@ -4659,10 +4659,6 @@ export default function AdminDashboard() {
                     </>
                   );
                 })()}
-
-                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  {/* ML text removed per request */}
-                </p>
               </div>
 
             </div>
