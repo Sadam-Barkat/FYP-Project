@@ -584,15 +584,12 @@ async def get_hospital_overview(
 
 
         # ---- 7-Day Trends (for mini charts and averages) ----
-        bed_occupancy_trend = []
-        icu_occupancy_trend = []
-        revenue_trend = []
+        import asyncio
         
-        for i in range(7):
+        async def fetch_day_trend(i: int):
             d = seven_days_ago + timedelta(days=i)
             d_start, d_end = day_bounds_utc_naive(d, tz)
             
-            # Active admissions on day d
             active_d_subq = (
                 select(Admission.id, Admission.bed_id)
                 .where(
@@ -604,48 +601,56 @@ async def get_hospital_overview(
                 .subquery()
             )
             
-            # Bed occupancy on day d
-            occ_d_result = await db.execute(
-                select(func.count(func.distinct(Bed.id)))
-                .select_from(Bed)
-                .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
-                .where(Bed.status == BedStatus.occupied)
-            )
-            occ_d = occ_d_result.scalar_one() or 0
-            bed_pct = (float(occ_d) / float(total_beds) * 100.0) if total_beds > 0 else 0.0
-            bed_occupancy_trend.append(bed_pct)
-            
-            # ICU occupancy on day d
-            icu_occ_d_result = await db.execute(
-                select(func.count(func.distinct(Bed.id)))
-                .select_from(Bed)
-                .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
-                .where(Bed.ward == "ICU")
-            )
-            icu_occ_d = icu_occ_d_result.scalar_one() or 0
-            icu_pct = (float(icu_occ_d) / float(icu_total) * 100.0) if icu_total > 0 else 0.0
-            icu_occupancy_trend.append(icu_pct)
-            
-            # Revenue on day d (payment transactions)
-            rev_d_result = await db.execute(
-                select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
-                    and_(
-                        Transaction.transaction_date >= d_start,
-                        Transaction.transaction_date <= d_end,
+            occ_d_result, icu_occ_d_result, rev_d_result = await asyncio.gather(
+                db.execute(
+                    select(func.count(func.distinct(Bed.id)))
+                    .select_from(Bed)
+                    .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
+                    .where(Bed.status == BedStatus.occupied)
+                ),
+                db.execute(
+                    select(func.count(func.distinct(Bed.id)))
+                    .select_from(Bed)
+                    .join(active_d_subq, Bed.id == active_d_subq.c.bed_id)
+                    .where(Bed.ward == "ICU")
+                ),
+                db.execute(
+                    select(func.coalesce(func.sum(Transaction.amount_paid), 0.0)).where(
+                        and_(
+                            Transaction.transaction_date >= d_start,
+                            Transaction.transaction_date <= d_end,
+                        )
                     )
                 )
             )
+            
+            occ_d = occ_d_result.scalar_one() or 0
+            icu_occ_d = icu_occ_d_result.scalar_one() or 0
             rev_d = float(rev_d_result.scalar_one() or 0.0)
-            revenue_trend.append(rev_d)
+            
+            bed_pct = (float(occ_d) / float(total_beds) * 100.0) if total_beds > 0 else 0.0
+            icu_pct = (float(icu_occ_d) / float(icu_total) * 100.0) if icu_total > 0 else 0.0
+            
+            return bed_pct, icu_pct, rev_d
+
+        trend_results = await asyncio.gather(*(fetch_day_trend(i) for i in range(7)))
+        
+        bed_occupancy_trend = [r[0] for r in trend_results]
+        icu_occupancy_trend = [r[1] for r in trend_results]
+        revenue_trend = [r[2] for r in trend_results]
             
         bed_occupancy_7d_avg = sum(bed_occupancy_trend) / len(bed_occupancy_trend) if bed_occupancy_trend else 0.0
         icu_occupancy_7d_avg = sum(icu_occupancy_trend) / len(icu_occupancy_trend) if icu_occupancy_trend else 0.0
         revenue_7d_avg = sum(revenue_trend) / len(revenue_trend) if revenue_trend else 0.0
 
-        today_kpis = await _compute_admin_kpi_snapshot(db, base_date)
         yesterday_date = base_date - timedelta(days=1)
-        yesterday_kpis = await _compute_admin_kpi_snapshot(db, yesterday_date)
-        kpi_breakdowns = await _compute_admin_kpi_breakdowns(db, base_date)
+        
+        today_kpis, yesterday_kpis, kpi_breakdowns = await asyncio.gather(
+            _compute_admin_kpi_snapshot(db, base_date),
+            _compute_admin_kpi_snapshot(db, yesterday_date),
+            _compute_admin_kpi_breakdowns(db, base_date)
+        )
+        
         tpb = kpi_breakdowns.get("total_patients_breakdown")
         if isinstance(tpb, dict):
             tpb["in_hospital"] = int(today_kpis["total_patients"])
