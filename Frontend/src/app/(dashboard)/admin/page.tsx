@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import useSWR from "swr";
 import { createPortal } from "react-dom";
 import {
   Users,
@@ -28,6 +29,12 @@ import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import { useHtmlDarkClass } from "@/components/theme/ThemeProvider";
 import type { DetailListItem, DetailModalPayload, DetailTablePayload } from "@/components/dashboard/DashboardDetailModal";
 import { useDashboardDetailModal } from "@/contexts/DashboardDetailModalContext";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+};
 
 const cardBase =
   "relative flex flex-col rounded-2xl overflow-hidden transition-all duration-300 cursor-default p-4 pb-[48%] bg-white border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 dark:bg-transparent dark:border-0 dark:shadow-none dark:hover:-translate-y-1";
@@ -1502,211 +1509,66 @@ const KPI_CARD_DEFS = [
 export default function AdminDashboard() {
   const htmlIsDark = useHtmlDarkClass();
   const { openDetail } = useDashboardDetailModal();
-  const [kpiData, setKpiData] = useState<HospitalOverviewKpis | null>(null);
-  const [kpiLoading, setKpiLoading] = useState(true);
+
   const [kpiHover, setKpiHover] = useState<string | null>(null);
-  const kpiHasLoadedOnce = useRef(false);
-
-  const [intelData, setIntelData] = useState<PatientIntelResponse | null>(null);
-  const [intelLoading, setIntelLoading] = useState(true);
-  const [intelLastFetch, setIntelLastFetch] = useState<Date | null>(null);
   const [intelClock, setIntelClock] = useState(0);
-  const [expandedIntelCard, setExpandedIntelCard] = useState<
-    "patients" | "vitals" | "critical" | null
-  >(null);
-
-  const [pharmacyData, setPharmacyData] = useState<PharmacyIntelResponse | null>(
-    null
-  );
-  const [pharmacyLoading, setPharmacyLoading] = useState(true);
-  const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
-  const [pharmacyStatHover, setPharmacyStatHover] =
-    useState<PharmacyStatHover>(null);
-
-  const [financeData, setFinanceData] = useState<any>(null);
-  const [financeLoading, setFinanceLoading] = useState(true);
-  const [financeLastFetch, setFinanceLastFetch] = useState<Date | null>(null);
-
-  const [bedsData, setBedsData] = useState<any>(null);
-  const [bedsLoading, setBedsLoading] = useState(true);
-  const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
+  const [expandedIntelCard, setExpandedIntelCard] = useState<"patients" | "vitals" | "critical" | null>(null);
+  const [pharmacyStatHover, setPharmacyStatHover] = useState<PharmacyStatHover>(null);
   const bedForecastChartRef = useRef<HTMLDivElement | null>(null);
 
-  const [staffData, setStaffData] = useState<any>(null);
-  const [staffLoading, setStaffLoading] = useState(true);
+  const [kpiLastFetch, setKpiLastFetch] = useState<Date | null>(null);
+  const { data: kpiData, isLoading: kpiLoading, mutate: mutateKpi } = useSWR<HospitalOverviewKpis>(
+    `${getApiBaseUrl()}/api/hospital-overview`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setKpiLastFetch(new Date()) }
+  );
+
+  const [intelLastFetch, setIntelLastFetch] = useState<Date | null>(null);
+  const { data: intelData, isLoading: intelLoading, mutate: mutateIntel } = useSWR<PatientIntelResponse>(
+    `${getApiBaseUrl()}/api/patient-intelligence`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setIntelLastFetch(new Date()) }
+  );
+
+  const [pharmacyLastFetch, setPharmacyLastFetch] = useState<Date | null>(null);
+  const { data: pharmacyData, isLoading: pharmacyLoading, mutate: mutatePharmacy } = useSWR<PharmacyIntelResponse>(
+    `${getApiBaseUrl()}/api/pharmacy-intelligence`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setPharmacyLastFetch(new Date()) }
+  );
+
+  const [financeLastFetch, setFinanceLastFetch] = useState<Date | null>(null);
+  const { data: financeData, isLoading: financeLoading, mutate: mutateFinance } = useSWR<any>(
+    `${getApiBaseUrl()}/api/billing-finance-overview`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setFinanceLastFetch(new Date()) }
+  );
+
+  const [bedsLastFetch, setBedsLastFetch] = useState<Date | null>(null);
+  const { data: bedsData, isLoading: bedsLoading, mutate: mutateBeds } = useSWR<any>(
+    `${getApiBaseUrl()}/api/patients-beds-overview`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setBedsLastFetch(new Date()) }
+  );
+
   const [staffLastFetch, setStaffLastFetch] = useState<Date | null>(null);
+  const { data: staffData, isLoading: staffLoading, mutate: mutateStaff } = useSWR<any>(
+    `${getApiBaseUrl()}/api/hr-staff-overview`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setStaffLastFetch(new Date()) }
+  );
 
-  const [labData, setLabData] = useState<any>(null);
-  const [labLoading, setLabLoading] = useState(true);
   const [labLastFetch, setLabLastFetch] = useState<Date | null>(null);
-
-  const loadKpis = useCallback(async () => {
-    if (!kpiHasLoadedOnce.current) {
-      setKpiLoading(true);
-    }
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/hospital-overview`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as HospitalOverviewKpis;
-      setKpiData(data);
-      kpiHasLoadedOnce.current = true;
-    } catch {
-      if (!kpiHasLoadedOnce.current) {
-        setKpiData(null);
-      }
-    } finally {
-      setKpiLoading(false);
-    }
-  }, []);
-
-  const loadIntel = useCallback(async () => {
-    setIntelLoading(true);
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/patient-intelligence`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as PatientIntelResponse;
-      setIntelData(data);
-      setIntelLastFetch(new Date());
-    } catch {
-      setIntelData(null);
-    } finally {
-      setIntelLoading(false);
-    }
-  }, []);
-
-  const loadPharmacy = useCallback(async () => {
-    setPharmacyLoading(true);
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/pharmacy-intelligence`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as PharmacyIntelResponse;
-      setPharmacyData(data);
-      setPharmacyLastFetch(new Date());
-    } catch {
-      setPharmacyData(null);
-    } finally {
-      setPharmacyLoading(false);
-    }
-  }, []);
-
-  const fetchFinanceData = useCallback(async () => {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/billing-finance-overview`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("Finance fetch failed");
-      const data = await res.json();
-      setFinanceData(data);
-      setFinanceLastFetch(new Date());
-    } catch {
-      // silent fail
-    } finally {
-      setFinanceLoading(false);
-    }
-  }, []);
-
-  const fetchBedsData = useCallback(async () => {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/patients-beds-overview`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("Beds fetch failed");
-      const data = await res.json();
-      setBedsData(data);
-      setBedsLastFetch(new Date());
-    } catch {
-      // silent fail
-    } finally {
-      setBedsLoading(false);
-    }
-  }, []);
-
-  const fetchStaffData = useCallback(async () => {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/hr-staff-overview`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("Staff fetch failed");
-      const data = await res.json();
-      setStaffData(data);
-      setStaffLastFetch(new Date());
-    } catch {
-      // silent fail
-    } finally {
-      setStaffLoading(false);
-    }
-  }, []);
-
-  const fetchLabData = useCallback(async () => {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/laboratory-overview`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) throw new Error("Lab fetch failed");
-      const data = await res.json();
-      setLabData(data);
-      setLabLastFetch(new Date());
-    } catch {
-      // silent fail
-    } finally {
-      setLabLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadKpis();
-  }, [loadKpis]);
-
-  useEffect(() => {
-    void loadIntel();
-  }, [loadIntel]);
-
-  useEffect(() => {
-    void loadPharmacy();
-  }, [loadPharmacy]);
-
-  useEffect(() => {
-    void fetchFinanceData();
-    const financeInterval = window.setInterval(() => {
-      void fetchFinanceData();
-    }, 60_000);
-    return () => window.clearInterval(financeInterval);
-  }, [fetchFinanceData]);
-
-  useEffect(() => {
-    void fetchBedsData();
-    const bedsInterval = window.setInterval(() => {
-      void fetchBedsData();
-    }, 60_000);
-    return () => window.clearInterval(bedsInterval);
-  }, [fetchBedsData]);
-
-  useEffect(() => {
-    void fetchStaffData();
-    const staffInterval = window.setInterval(() => {
-      void fetchStaffData();
-    }, 60_000);
-    return () => window.clearInterval(staffInterval);
-  }, [fetchStaffData]);
-
-  useEffect(() => {
-    void fetchLabData();
-    const labInterval = window.setInterval(() => {
-      void fetchLabData();
-    }, 60_000);
-    return () => window.clearInterval(labInterval);
-  }, [fetchLabData]);
+  const { data: labData, isLoading: labLoading, mutate: mutateLab } = useSWR<any>(
+    `${getApiBaseUrl()}/api/laboratory-overview`,
+    fetcher,
+    { refreshInterval: 60000, onSuccess: () => setLabLastFetch(new Date()) }
+  );
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
-    void loadKpis();
-    void loadIntel();
-    void loadPharmacy();
+    void mutateKpi();
+    void mutateIntel();
+    void mutatePharmacy();
   });
 
   useEffect(() => {
