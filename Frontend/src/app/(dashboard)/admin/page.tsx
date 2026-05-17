@@ -1484,6 +1484,10 @@ export default function AdminDashboard() {
   const [staffLoading, setStaffLoading] = useState(true);
   const [staffLastFetch, setStaffLastFetch] = useState<Date | null>(null);
 
+  const [labData, setLabData] = useState<any>(null);
+  const [labLoading, setLabLoading] = useState(true);
+  const [labLastFetch, setLabLastFetch] = useState<Date | null>(null);
+
   const loadKpis = useCallback(async () => {
     if (!kpiHasLoadedOnce.current) {
       setKpiLoading(true);
@@ -1587,6 +1591,22 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchLabData = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/laboratory-overview`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error("Lab fetch failed");
+      const data = await res.json();
+      setLabData(data);
+      setLabLastFetch(new Date());
+    } catch {
+      // silent fail
+    } finally {
+      setLabLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadKpis();
   }, [loadKpis]);
@@ -1622,6 +1642,14 @@ export default function AdminDashboard() {
     }, 60_000);
     return () => window.clearInterval(staffInterval);
   }, [fetchStaffData]);
+
+  useEffect(() => {
+    void fetchLabData();
+    const labInterval = window.setInterval(() => {
+      void fetchLabData();
+    }, 60_000);
+    return () => window.clearInterval(labInterval);
+  }, [fetchLabData]);
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
     void loadKpis();
@@ -4242,18 +4270,295 @@ export default function AdminDashboard() {
           ) : null}
         </div>
 
-        {/* ── Placeholder right card (Lab & Appointments — coming next) ── */}
+        {/* ── Lab & Appointments Intelligence Card ── */}
         <div
           className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
-          <div className="h-[44px] box-border flex items-center gap-3 px-5 py-0 border-b border-dash-border shrink-0">
-            <span className="text-xl" aria-hidden>🔬</span>
-            <h2 className="text-tx-bright font-bold text-lg">Lab & Appointments Intelligence</h2>
+          {/* Header */}
+          <div className="h-[44px] box-border flex items-center justify-between px-5 py-0 border-b border-dash-border shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-xl" aria-hidden>🔬</span>
+              <h2 className="text-tx-bright font-bold text-lg">Lab & Appointments Intelligence</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {labData ? (
+                <span className="whitespace-nowrap text-tx-secondary text-xs">
+                  {intelFooterUpdated(labLastFetch, intelClock)}
+                </span>
+              ) : null}
+              {labData ? (
+                <span className="relative flex h-2 w-2" aria-hidden>
+                  <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-kpi-purple" />
+                </span>
+              ) : null}
+            </div>
           </div>
-          <div className="h-[300px] flex items-center justify-center">
-            <p className="text-tx-muted text-xs">Coming soon...</p>
-          </div>
+
+          {/* Loading */}
+          {labLoading && !labData ? (
+            <div className="h-[300px] animate-pulse bg-dash-border/20" />
+          ) : null}
+
+          {/* Error */}
+          {!labData && !labLoading ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-xs text-tx-muted">Unable to load lab data.</p>
+            </div>
+          ) : null}
+
+          {/* Body — 3 columns same as all other cards */}
+          {labData ? (
+            <div className="h-[300px] grid grid-cols-[160px_1fr_180px] divide-x divide-dash-border overflow-hidden">
+
+              {/* ── COLUMN 1: 4 KPI Stats with TOOLTIPS ── */}
+              <div className="grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+
+                {/* Stat 1: Pending Tests */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Pending Tests</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-kpi-orange font-black text-xl tabular-nums leading-none">
+                      {labData.pending_tests ?? 0}
+                    </p>
+                    {(labData.pending_tests ?? 0) > 10 ? (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-orange opacity-70" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-orange" />
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-orange transition-all"
+                      style={{ width: `${Math.min(100, ((labData.pending_tests ?? 0) / Math.max(1, (labData.pending_tests ?? 0) + (labData.completed_today ?? 0))) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Pending by Category</p>
+                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.pending ?? 0) > 0).slice(0, 4).map((cat: any, i: number) => (
+                      <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">
+                        • {cat.category}: {cat.pending} pending
+                      </p>
+                    ))}
+                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.pending ?? 0) > 0).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">No pending tests</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stat 2: Completed Today */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Completed Today</p>
+                  <p className="text-kpi-green font-black text-xl tabular-nums leading-none mt-0.5">
+                    {labData.completed_today ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-green transition-all"
+                      style={{ width: `${Math.min(100, ((labData.completed_today ?? 0) / Math.max(1, (labData.pending_tests ?? 0) + (labData.completed_today ?? 0))) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Completed by Category</p>
+                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.completed ?? 0) > 0).slice(0, 4).map((cat: any, i: number) => (
+                      <p key={i} className="text-[10px] text-kpi-green mt-0.5 truncate">
+                        ✓ {cat.category}: {cat.completed} done
+                      </p>
+                    ))}
+                    {(labData.daily_test_volume_by_category ?? []).filter((c: any) => (c.completed ?? 0) > 0).length === 0 && (
+                      <p className="text-[10px] text-tx-secondary">No completions yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stat 3: Critical Results */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Critical Results</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
+                      {labData.critical_results ?? 0}
+                    </p>
+                    {(labData.critical_results ?? 0) > 0 ? (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-red transition-all"
+                      style={{ width: `${Math.min(100, ((labData.critical_results ?? 0) / Math.max(1, labData.completed_today ?? 1)) * 100)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Critical Detail</p>
+                    <p className="text-[10px] text-kpi-red">{labData.critical_results ?? 0} critical results found</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Requires immediate doctor review</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">Notify attending physicians now</p>
+                  </div>
+                </div>
+
+                {/* Stat 4: Active Technicians */}
+                <div className="relative group flex flex-col justify-center px-3 py-2 hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Active Techs</p>
+                  <p className="text-kpi-cyan font-black text-xl tabular-nums leading-none mt-0.5">
+                    {labData.active_technicians ?? 0}
+                  </p>
+                  <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-kpi-cyan transition-all"
+                      style={{ width: `${Math.min(100, (labData.active_technicians ?? 0) * 20)}%` }}
+                    />
+                  </div>
+                  {/* TOOLTIP */}
+                  <div className="absolute left-full top-0 z-50 ml-1 w-48 rounded-xl bg-[#0c1120] border border-white/10 shadow-panel p-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Lab Capacity</p>
+                    <p className="text-[10px] text-kpi-cyan">{labData.active_technicians ?? 0} technicians active</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Avg load: {Math.round((labData.pending_tests ?? 0) / Math.max(1, labData.active_technicians ?? 1))} tests/tech
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      {(labData.pending_tests ?? 0) > (labData.active_technicians ?? 1) * 5
+                        ? "⚠️ High workload per technician"
+                        : "✓ Workload manageable"}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ── COLUMN 2: Weekly Trends Chart + Category Breakdown ── */}
+              <div className="flex flex-col px-4 py-3 overflow-hidden">
+                <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
+                  🤖 ML Lab Workload Forecast
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-purple" />
+                  </span>
+                </p>
+
+                {/* Weekly normal vs abnormal trend chart */}
+                <div className="mt-2 h-[100px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={labData.weekly_result_trends ?? []}
+                      margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
+                      barCategoryGap="20%"
+                    >
+                      <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <Bar dataKey="normal" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Normal" />
+                      <Bar dataKey="abnormal" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Abnormal" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Category breakdown list */}
+                <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider mt-2 shrink-0">
+                  Test Category Load
+                </p>
+                <div className="mt-1 flex flex-col gap-0.5 overflow-hidden flex-1">
+                  {(labData.daily_test_volume_by_category ?? []).slice(0, 4).map((cat: any, i: number) => {
+                    const total = (cat.completed ?? 0) + (cat.pending ?? 0);
+                    const pct = Math.min(100, Math.round(((cat.pending ?? 0) / Math.max(1, total)) * 100));
+                    const barColor = pct >= 70 ? "#ef4444" : pct >= 40 ? "#f97316" : "#22c55e";
+                    return (
+                      <div key={i} className="flex items-center gap-2 py-0.5 border-b border-dash-border/40 last:border-0">
+                        <span className="text-[10px] text-tx-secondary truncate w-20 shrink-0">{cat.category}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-dash-border overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                        </div>
+                        <span className="text-[9px] text-tx-muted tabular-nums shrink-0 w-12 text-right">
+                          {cat.pending}/{total}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ML prediction summary */}
+                <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
+                  {(() => {
+                    const pending = labData.pending_tests ?? 0;
+                    const techs = Math.max(1, labData.active_technicians ?? 1);
+                    const load = Math.round(pending / techs);
+                    const isHigh = load >= 5 || pending >= 20;
+                    return (
+                      <p className={`text-[11px] font-semibold ${isHigh ? "text-kpi-red" : "text-kpi-green"}`}>
+                        ⚡ {isHigh
+                          ? `High lab load — ${pending} tests pending, ${load} per tech`
+                          : `Lab load normal — ${pending} tests pending`}
+                      </p>
+                    );
+                  })()}
+                  <p className="text-[9px] text-tx-muted mt-0.5 italic">
+                    ML model: lab_workload_model.pkl · Active
+                  </p>
+                </div>
+              </div>
+
+              {/* ── COLUMN 3: Suggestion Panel ── */}
+              <div className="flex flex-col px-4 py-3 bg-white/[0.01] overflow-hidden">
+                <p className="text-tx-muted text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                  💡 Suggestion
+                </p>
+
+                {(() => {
+                  const pending = labData.pending_tests ?? 0;
+                  const critical = labData.critical_results ?? 0;
+                  const techs = Math.max(1, labData.active_technicians ?? 1);
+                  const load = Math.round(pending / techs);
+
+                  const riskLevel =
+                    critical > 5 || load >= 10 ? "Critical" :
+                    critical > 2 || load >= 5 ? "High" :
+                    pending > 10 ? "Moderate" : "Low";
+
+                  const badgeClass =
+                    riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
+                    riskLevel === "High" ? "bg-orange-500/15 text-kpi-orange border-orange-500/20" :
+                    riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
+                    "bg-green-500/15 text-kpi-green border-green-500/20";
+
+                  const suggestion =
+                    riskLevel === "Critical"
+                      ? `${critical} critical results need immediate review. Alert doctors now and expedite ${pending} pending tests.`
+                      : riskLevel === "High"
+                      ? `Lab backlog growing — ${pending} tests pending. Consider adding technician shifts or prioritizing urgent cases.`
+                      : riskLevel === "Moderate"
+                      ? `${pending} tests still pending. Monitor turnaround time and ensure timely reporting.`
+                      : `Lab operations are running smoothly. ${labData.completed_today ?? 0} tests completed today.`;
+
+                  return (
+                    <>
+                      <div className="flex items-center gap-2 mt-1.5 shrink-0">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${badgeClass}`}>
+                          {riskLevel} Risk
+                        </span>
+                        <span className="text-[10px] text-tx-secondary">{pending} pending</span>
+                      </div>
+                      <div className="mt-2 bg-kpi-purple/8 border border-kpi-purple/20 rounded-xl p-3 flex-1 overflow-hidden">
+                        <p className="text-kpi-purple font-semibold text-[11px] leading-relaxed">
+                          {suggestion}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
+                  ML-powered · Lab workload prediction active
+                </p>
+              </div>
+
+            </div>
+          ) : null}
         </div>
       </div>
 
