@@ -1305,6 +1305,20 @@ export type HrStaffOverview = {
   selected_date?: string;
 };
 
+export type LabBacklogForecastPoint = {
+  date: string;
+  backlog_risk: boolean;
+  risk_probability: number;
+  day_name?: string;
+};
+
+export type LabAbnormalAtRisk = {
+  patient_name: string;
+  test_name: string;
+  category: string;
+  abnormal_probability: number;
+};
+
 export type LaboratoryOverview = {
   pending_tests?: number;
   completed_today?: number;
@@ -1312,6 +1326,17 @@ export type LaboratoryOverview = {
   critical_results?: number;
   daily_test_volume_by_category?: Array<{ category?: string; completed?: number; pending?: number }>;
   weekly_result_trends?: Array<{ day?: string; normal?: number; abnormal?: number }>;
+  ml_next_7_days_forecast?: LabBacklogForecastPoint[];
+  ml_backlog_risk?: {
+    risk_prob?: number;
+    risk_pct?: number;
+    risk_label?: string;
+    ml_available?: boolean;
+    ml_model_backlog?: string;
+    ml_model_abnormal?: string;
+  };
+  ml_abnormal_at_risk?: LabAbnormalAtRisk[];
+  ml_available?: boolean;
   selected_date?: string;
 };
 
@@ -4810,25 +4835,45 @@ export default function AdminDashboard() {
               {/* ── COLUMN 2: Weekly Trends Chart + Category Breakdown ── */}
               <div className="flex flex-col px-4 py-3 overflow-hidden">
                 <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-                  🤖 ML Lab Workload Forecast
+                  🤖 ML Lab Backlog Risk (Next 7 Days)
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-purple" />
                   </span>
                 </p>
 
-                {/* Weekly normal vs abnormal trend chart */}
                 <div className="mt-2 h-[100px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={labData.weekly_result_trends ?? []}
+                      data={
+                        (labData.ml_next_7_days_forecast ?? []).length > 0
+                          ? (labData.ml_next_7_days_forecast ?? []).map((f) => ({
+                              ...f,
+                              risk_pct: Math.round((f.risk_probability ?? 0) * 100),
+                              day: f.date?.length >= 10 ? f.date.slice(5) : f.date,
+                            }))
+                          : (labData.weekly_result_trends ?? [])
+                      }
                       margin={{ top: 2, right: 0, left: -28, bottom: 0 }}
                       barCategoryGap="20%"
                     >
                       <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                      <Bar dataKey="normal" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Normal" />
-                      <Bar dataKey="abnormal" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Abnormal" />
+                      {(labData.ml_next_7_days_forecast ?? []).length > 0 ? (
+                        <Bar
+                          dataKey="risk_pct"
+                          fill="#a855f7"
+                          fillOpacity={0.85}
+                          radius={[2, 2, 0, 0]}
+                          name="Backlog risk %"
+                          isAnimationActive={false}
+                        />
+                      ) : (
+                        <>
+                          <Bar dataKey="normal" fill="#22c55e" fillOpacity={0.8} radius={[2, 2, 0, 0]} name="Normal" />
+                          <Bar dataKey="abnormal" fill="#ef4444" fillOpacity={0.7} radius={[2, 2, 0, 0]} name="Abnormal" />
+                        </>
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -4859,20 +4904,24 @@ export default function AdminDashboard() {
                 {/* ML prediction summary */}
                 <div className="mt-auto pt-2 border-t border-dash-border shrink-0">
                   {(() => {
-                    const pending = labData.pending_tests ?? 0;
-                    const techs = Math.max(1, labData.active_technicians ?? 1);
-                    const load = Math.round(pending / techs);
-                    const isHigh = load >= 5 || pending >= 20;
+                    const ml = labData.ml_backlog_risk ?? {};
+                    const label = String(ml.risk_label ?? "Low");
+                    const pct = typeof ml.risk_pct === "number" ? ml.risk_pct : 0;
+                    const highRiskDays = (labData.ml_next_7_days_forecast ?? []).filter(
+                      (f) => f.backlog_risk,
+                    ).length;
+                    const isHigh = ["High", "Critical"].includes(label) || pct >= 50;
                     return (
                       <p className={`text-[11px] font-semibold ${isHigh ? "text-kpi-red" : "text-kpi-green"}`}>
-                        ⚡ {isHigh
-                          ? `High lab load — ${pending} tests pending, ${load} per tech`
-                          : `Lab load normal — ${pending} tests pending`}
+                        ⚡ ML backlog risk: {label} ({pct}% avg)
+                        {highRiskDays > 0 ? ` · ${highRiskDays} high-risk day(s)` : ""}
                       </p>
                     );
                   })()}
                   <p className="text-[9px] text-tx-muted mt-0.5 italic">
-                    ML model: lab_workload_model.pkl · Active
+                    {labData.ml_available
+                      ? "lab_backlog_model.pkl + lab_abnormal_model.pkl · live inference"
+                      : "ML models loading or unavailable — showing DB snapshot"}
                   </p>
                 </div>
               </div>
@@ -4888,11 +4937,17 @@ export default function AdminDashboard() {
                   const critical = labData.critical_results ?? 0;
                   const techs = Math.max(1, labData.active_technicians ?? 1);
                   const load = Math.round(pending / techs);
+                  const mlRisk = labData.ml_backlog_risk?.risk_label ?? "Low";
+                  const atRisk = labData.ml_abnormal_at_risk ?? [];
 
                   const riskLevel =
-                    critical > 5 || load >= 10 ? "Critical" :
-                    critical > 2 || load >= 5 ? "High" :
-                    pending > 10 ? "Moderate" : "Low";
+                    mlRisk === "Critical" || critical > 5 || load >= 10
+                      ? "Critical"
+                      : mlRisk === "High" || critical > 2 || load >= 5
+                      ? "High"
+                      : mlRisk === "Moderate" || pending > 10
+                      ? "Moderate"
+                      : "Low";
 
                   const badgeClass =
                     riskLevel === "Critical" ? "bg-red-500/15 text-kpi-red border-red-500/20" :
@@ -4900,14 +4955,17 @@ export default function AdminDashboard() {
                     riskLevel === "Moderate" ? "bg-yellow-500/15 text-tx-yellow border-yellow-500/20" :
                     "bg-green-500/15 text-kpi-green border-green-500/20";
 
+                  const topAbnormal = atRisk.slice(0, 2).map((r) => r.patient_name).join(", ");
                   const suggestion =
                     riskLevel === "Critical"
-                      ? `${critical} critical results need immediate review. Alert doctors now and expedite ${pending} pending tests.`
+                      ? `${critical} critical results need immediate review. ML flags ${mlRisk} backlog risk — expedite ${pending} pending tests.`
                       : riskLevel === "High"
-                      ? `Lab backlog growing — ${pending} tests pending. Consider adding technician shifts or prioritizing urgent cases.`
+                      ? `Lab backlog growing (${mlRisk} ML risk). ${pending} tests pending — add technician capacity or prioritize urgent cases.${
+                          topAbnormal ? ` Watch: ${topAbnormal}.` : ""
+                        }`
                       : riskLevel === "Moderate"
-                      ? `${pending} tests still pending. Monitor turnaround time and ensure timely reporting.`
-                      : `Lab operations are running smoothly. ${labData.completed_today ?? 0} tests completed today.`;
+                      ? `${pending} tests still pending. ML backlog risk is ${mlRisk.toLowerCase()} — monitor turnaround time.`
+                      : `Lab operations are running smoothly. ${labData.completed_today ?? 0} tests completed today (ML risk: ${mlRisk}).`;
 
                   return (
                     <>
@@ -4927,7 +4985,9 @@ export default function AdminDashboard() {
                 })()}
 
                 <p className="text-[9px] text-tx-muted italic mt-2 shrink-0">
-                  ML-powered · Lab workload prediction active
+                  {labData.ml_available
+                    ? "ML-powered · lab_backlog_model.pkl + lab_abnormal_model.pkl"
+                    : "Rule-based suggestion · enable ML models on backend"}
                 </p>
               </div>
 

@@ -1,0 +1,82 @@
+{
+  "abnormal_model": {
+    "name": "lab_abnormal_model",
+    "version": "1.0",
+    "trained_at": "2026-05-17T22:43:04.682843",
+    "algorithm": "RandomForestClassifier",
+    "features": [
+      "age",
+      "gender_encoded",
+      "hour_of_day",
+      "day_of_week",
+      "month",
+      "numeric_value",
+      "category_encoded",
+      "test_encoded"
+    ],
+    "accuracy": 1.0,
+    "training_samples": 584
+  },
+  "backlog_model": {
+    "name": "lab_backlog_model",
+    "version": "1.0",
+    "trained_at": "2026-05-17T22:43:04.684994",
+    "algorithm": "GradientBoostingClassifier",
+    "features": [
+      "total_lag1",
+      "total_lag7",
+      "total_rolling7",
+      "pending_lag1",
+      "abnormal_rate",
+      "day_of_week",
+      "month",
+      "day_of_month"
+    ],
+    "accuracy": 0.6216,
+    "training_samples": 146
+  },
+  "next_7_days_forecast": [
+    {
+      "date": "2026-05-18",
+      "backlog_risk": false,
+      "risk_probability": 0.021,
+      "day_name": "Monday"
+    },
+    {
+      "date": "2026-05-19",
+      "backlog_risk": false,
+      "risk_probability": 0.033,
+      "day_name": "Tuesday"
+    },
+    {
+      "date": "2026-05-20",
+      "backlog_risk": false,
+      "risk_probability": 0.01,
+      "day_name": "Wednesday"
+    },
+    {
+      "date": "2026-05-21",
+      "backlog_risk": false,
+      "risk_probability": 0.006,
+      "day_name": "Thursday"
+    },
+    {
+      "date": "2026-05-22",
+      "backlog_risk": false,
+      "risk_probability": 0.006,
+      "day_name": "Friday"
+    },
+    {
+      "date": "2026-05-23",
+      "backlog_risk": false,
+      "risk_probability": 0.001,
+      "day_name": "Saturday"
+    },
+    {
+      "date": "2026-05-24",
+      "backlog_risk": false,
+      "risk_probability": 0.101,
+      "day_name": "Sunday"
+    }
+  ]
+}

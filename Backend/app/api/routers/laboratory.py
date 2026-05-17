@@ -9,6 +9,10 @@ from app.database import get_db
 from app.models.laboratory import LaboratoryResult
 from app.models.laboratory_extra import LabCategory, LabRequest
 from app.models.staff import Staff
+from app.services.lab_workload_model import (
+    predict_abnormal_risk_samples,
+    predict_next_7_days_lab_backlog,
+)
 
 router = APIRouter(prefix="/api", tags=["laboratory"])
 
@@ -19,6 +23,7 @@ LAB_ENTRY_DELIMITER = " | "
 @router.get("/laboratory-overview")
 async def get_laboratory_overview(
     date_param: Optional[date] = Query(None, alias="date"),
+    summary_only: bool = Query(False, alias="summary_only"),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """
@@ -208,7 +213,7 @@ async def get_laboratory_overview(
                 }
             )
 
-        return {
+        result: Dict[str, Any] = {
             "pending_tests": int(pending_tests),
             "completed_today": int(completed_today),
             "active_technicians": int(active_technicians),
@@ -217,6 +222,44 @@ async def get_laboratory_overview(
             "weekly_result_trends": weekly_result_trends,
             "selected_date": base_date.isoformat(),
         }
+
+        if summary_only:
+            result["weekly_result_trends"] = []
+
+        try:
+            ml_points, ml_summary = await predict_next_7_days_lab_backlog(
+                db, base_date=base_date
+            )
+            result["ml_next_7_days_forecast"] = [
+                {
+                    "date": p.date,
+                    "backlog_risk": p.backlog_risk,
+                    "risk_probability": round(p.risk_probability, 3),
+                    "day_name": p.day_name,
+                }
+                for p in ml_points
+            ]
+            result["ml_backlog_risk"] = ml_summary
+            if not summary_only:
+                result["ml_abnormal_at_risk"] = await predict_abnormal_risk_samples(
+                    db, base_date=base_date, limit=12
+                )
+            else:
+                result["ml_abnormal_at_risk"] = []
+            result["ml_available"] = bool(ml_summary.get("ml_available"))
+        except Exception as ml_exc:
+            result["ml_next_7_days_forecast"] = []
+            result["ml_backlog_risk"] = {
+                "risk_prob": 0.0,
+                "risk_pct": 0,
+                "risk_label": "Low",
+                "ml_available": False,
+            }
+            result["ml_abnormal_at_risk"] = []
+            result["ml_available"] = False
+            result["ml_error"] = str(ml_exc)
+
+        return result
 
     except Exception as exc:
         raise HTTPException(
