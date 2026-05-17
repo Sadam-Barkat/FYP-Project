@@ -111,13 +111,6 @@ function patientIntelHoverPanelCls(htmlIsDark: boolean): string {
   return "rounded-xl border border-white/10 bg-[#0d1424] p-2.5 shadow-panel";
 }
 
-function pharmacyIntelStatHoverPanelCls(htmlIsDark: boolean): string {
-  if (!htmlIsDark) {
-    return "rounded-xl border border-slate-200 !bg-white p-2.5 shadow-[0_4px_20px_rgba(15,23,42,0.1)]";
-  }
-  return "rounded-xl border border-white/15 bg-[#0d1424] p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.7)]";
-}
-
 function makeSparkData(value: number) {
   const v = Number.isFinite(value) ? value : 0;
   return Array.from({ length: 14 }, (_, i) => ({
@@ -2339,7 +2332,7 @@ export default function AdminDashboard() {
         </div>
 
         <div
-          className="order-3 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
+          className="order-3 bg-white border border-slate-200 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.08)] overflow-visible dark:bg-panel dark:border-white/[0.06] dark:shadow-panel"
           style={{ height: 344, display: "flex", flexDirection: "column" }}
         >
           {/* Header */}
@@ -2377,14 +2370,14 @@ export default function AdminDashboard() {
 
           {/* Body — 3 columns same as Patient Intelligence */}
           {pharmacyData ? (
-            <div className="h-[300px] min-w-0 grid grid-cols-[160px_minmax(0,1fr)_180px] divide-x divide-dash-border overflow-hidden">
+            <div className="h-[300px] min-w-0 grid grid-cols-[160px_minmax(0,1fr)_180px] divide-x divide-dash-border overflow-visible">
 
               {/* ── COLUMN 1: 4 KPI Stats ── */}
-              <div className="min-w-0 grid grid-rows-4 divide-y divide-dash-border overflow-hidden">
+              <div className="min-w-0 grid grid-rows-4 divide-y divide-dash-border overflow-visible">
 
-                {/* Stat 1: Total Medicines — tooltip opens downward */}
+                {/* Stat 1: Total Medicines */}
                 <div
-                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() => openPharmacyDetail((d) => pharmacyInventorySnapshotTable(d))}
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
@@ -2416,11 +2409,10 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })()}
-                  {/* Tooltip — opens DOWNWARD inside column 1 width, overlays stats below */}
                   <div
-                    className={`absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto ${pharmacyIntelStatHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
                   >
-                    <p className="text-[10px] text-tx-muted uppercase font-bold tracking-wider mb-1.5">Stock Overview</p>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Stock Overview</p>
                     {(() => {
                       const total = Math.max(1, pharmacyData.total_medicines);
                       const oos = pharmacyData.out_of_stock_count ?? 0;
@@ -2445,9 +2437,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stat 2: Out of Stock — tooltip opens downward */}
+                {/* Stat 2: Out of Stock */}
                 <div
-                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
+                  className="relative group flex min-w-0 flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors ring-1 ring-inset ring-kpi-red/20"
                   onClick={() =>
                     openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
@@ -2474,11 +2466,10 @@ export default function AdminDashboard() {
                       {(pharmacyData.out_of_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.out_of_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Tooltip — opens DOWNWARD inside column 1 */}
                   <div
-                    className={`absolute top-full left-0 mt-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto ${pharmacyIntelStatHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
                   >
-                    <p className="text-[10px] text-kpi-red uppercase font-bold tracking-wider mb-1.5">Out of Stock — {pharmacyData.out_of_stock_count ?? 0}</p>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Out of Stock — {pharmacyData.out_of_stock_count ?? 0}</p>
                     {(pharmacyData.out_of_stock_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.out_of_stock_medicines ?? []).slice(0, 5).map((m, i) => (
@@ -2497,9 +2488,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stat 3: Low Stock — tooltip opens upward */}
+                {/* Stat 3: Low Stock */}
                 <div
-                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() =>
                     openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
@@ -2523,11 +2514,10 @@ export default function AdminDashboard() {
                       {(pharmacyData.low_stock_medicines ?? []).length > 2 ? ` +${(pharmacyData.low_stock_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Tooltip — opens UPWARD inside column 1 */}
                   <div
-                    className={`absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[150px] overflow-y-auto ${pharmacyIntelStatHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                    className={`absolute left-full top-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
                   >
-                    <p className="text-[10px] text-kpi-orange uppercase font-bold tracking-wider mb-1.5">Low Stock — {pharmacyData.low_stock_count ?? 0}</p>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Low Stock — {pharmacyData.low_stock_count ?? 0}</p>
                     {(pharmacyData.low_stock_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.low_stock_medicines ?? []).slice(0, 5).map((m, i) => (
@@ -2546,9 +2536,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Stat 4: Expiring Soon — tooltip opens upward to prevent bottom overflow */}
+                {/* Stat 4: Expiring Soon */}
                 <div
-                  className="relative group flex min-w-0 flex-col justify-center pl-3 pr-4 py-2 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="relative group flex min-w-0 flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
                   onClick={() =>
                     openPharmacyDetail((d) =>
                       pharmacyMedicineNameTable(
@@ -2572,11 +2562,10 @@ export default function AdminDashboard() {
                       {(pharmacyData.expiring_soon_medicines ?? []).length > 2 ? ` +${(pharmacyData.expiring_soon_medicines ?? []).length - 2}` : ""}
                     </p>
                   ) : null}
-                  {/* Tooltip — opens UPWARD inside column 1, anchored above stat to never get cut at bottom */}
                   <div
-                    className={`absolute bottom-full left-0 mb-1 z-[9999] w-[160px] max-h-[225px] overflow-y-auto ${pharmacyIntelStatHoverPanelCls(htmlIsDark)} opacity-0 transition-opacity duration-150 group-hover:opacity-100 pointer-events-none`}
+                    className={`absolute left-full bottom-0 z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`}
                   >
-                    <p className="text-[10px] text-tx-yellow uppercase font-bold tracking-wider mb-1.5">Expiring 30d — {pharmacyData.expiring_soon_count ?? 0}</p>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Expiring 30d — {pharmacyData.expiring_soon_count ?? 0}</p>
                     {(pharmacyData.expiring_soon_medicines ?? []).length > 0 ? (
                       <>
                         {(pharmacyData.expiring_soon_medicines ?? []).slice(0, 5).map((m, i) => (
