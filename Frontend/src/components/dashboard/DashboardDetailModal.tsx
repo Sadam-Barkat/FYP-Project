@@ -178,8 +178,43 @@ export function DashboardDetailModal({ open, payload, htmlIsDark, onClose }: Pro
 
         <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
           {payload.loading ? (
-            <div className="flex flex-1 items-center justify-center px-6 py-16">
-              <p className={`text-sm ${htmlIsDark ? "text-tx-muted" : "text-slate-500"}`}>Loading…</p>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 [scrollbar-width:thin] space-y-4">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl border overflow-hidden ${
+                    htmlIsDark ? "border-white/[0.08] bg-white/[0.02]" : "border-slate-200 bg-white"
+                  }`}
+                >
+                  <div
+                    className={`h-9 px-3 flex items-center ${
+                      htmlIsDark ? "bg-white/[0.03]" : "bg-slate-50"
+                    }`}
+                  >
+                    <div
+                      className={`h-3 rounded animate-pulse ${
+                        htmlIsDark ? "bg-white/10" : "bg-slate-200"
+                      }`}
+                      style={{ width: `${88 + (i % 3) * 24}px` }}
+                    />
+                  </div>
+                  <ul className="divide-y divide-dash-border/40 dark:divide-white/[0.06] px-3 py-2 space-y-2">
+                    {[0, 1, 2].map((j) => (
+                      <li key={j}>
+                        <div
+                          className={`h-3 rounded animate-pulse ${
+                            htmlIsDark ? "bg-white/[0.06]" : "bg-slate-100"
+                          }`}
+                          style={{ width: `${55 + ((i + j) % 4) * 12}%` }}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <p className={`text-center text-xs ${htmlIsDark ? "text-tx-muted" : "text-slate-500"}`}>
+                Loading details…
+              </p>
             </div>
           ) : tableSections.length > 0 ? (
             <div

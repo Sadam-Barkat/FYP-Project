@@ -22,7 +22,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers.auth import get_current_user
@@ -549,6 +549,25 @@ async def get_pharmacy_intelligence(
         [str(r[0]) for r in expired_rows if r[0]]
     )
 
+    # Healthy / safe: above low threshold, not expiring within 30d, not expired
+    safe_medicines = _sorted_unique_medicine_names([
+        str(r[0]) for r in (await db.execute(
+            select(PharmacyStock.medicine_name)
+            .where(
+                and_(
+                    PharmacyStock.quantity > PharmacyStock.low_stock_threshold,
+                    or_(
+                        PharmacyStock.expiry_date.is_(None),
+                        PharmacyStock.expiry_date == "",
+                        and_(exp_col >= today, exp_col > until_30),
+                    ),
+                )
+            )
+            .order_by(PharmacyStock.medicine_name.asc())
+            .limit(_NAME_LIST_CAP)
+        )).all() if r[0]
+    ])
+
     # ── Expiry details (for suggestion text) ──────────────────────────────────
     exp_rows = (await db.execute(
         select(PharmacyStock.medicine_name,
@@ -718,6 +737,7 @@ async def get_pharmacy_intelligence(
         low_stock_medicines = low_stock_medicines[:2]
         expiring_soon_medicines = expiring_soon_medicines[:2]
         expired_medicines = expired_medicines[:2]
+        safe_medicines = safe_medicines[:2]
 
     return {
         # ── Stock counts (real DB data) ──
@@ -732,6 +752,7 @@ async def get_pharmacy_intelligence(
         "low_stock_medicines": low_stock_medicines,
         "expiring_soon_medicines": expiring_soon_medicines,
         "expired_medicines": expired_medicines,
+        "safe_medicines": safe_medicines,
         # ── ML predictions ──
         "stockout_prediction": stockout_prediction,
         "medicines_to_reorder": medicines_to_reorder,

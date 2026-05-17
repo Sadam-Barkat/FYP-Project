@@ -27,7 +27,12 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { getAuthHeaders } from "@/lib/auth";
 import { useRealtimeEvent } from "@/hooks/useRealtimeEvent";
 import { useHtmlDarkClass } from "@/components/theme/ThemeProvider";
-import type { DetailListItem, DetailModalPayload, DetailTablePayload } from "@/components/dashboard/DashboardDetailModal";
+import type {
+  DetailListItem,
+  DetailModalPayload,
+  DetailSection,
+  DetailTablePayload,
+} from "@/components/dashboard/DashboardDetailModal";
 import { useDashboardDetailModal } from "@/contexts/DashboardDetailModalContext";
 
 const fetcher = async (url: string) => {
@@ -1036,6 +1041,7 @@ export type PharmacyIntelResponse = {
   low_stock_medicines?: string[];
   expiring_soon_medicines?: string[];
   expired_medicines?: string[];
+  safe_medicines?: string[];
   stockout_prediction: string;
   medicines_to_reorder: string[];
   expiry_warning: string;
@@ -1131,60 +1137,42 @@ function pharmacyStockBreakdown(pharmacyData: PharmacyIntelResponse) {
   return { total, oos, low, soon, expired, safe, healthPct, share };
 }
 
+function pharmacyCategorySection(
+  label: string,
+  names: string[],
+  accent: DetailSection["accent"],
+): DetailSection {
+  return {
+    title: `${label} (${names.length})`,
+    accent,
+    items:
+      names.length === 0
+        ? [{ primary: "None in this category" }]
+        : names.map((name) => ({ primary: name })),
+  };
+}
+
 function pharmacyInventorySnapshotTable(pharmacyData: PharmacyIntelResponse): DetailModalPayload {
-  const { total, oos, low, soon, expired, safe, healthPct, share } =
-    pharmacyStockBreakdown(pharmacyData);
-
-  const overviewRows: Record<string, string | number>[] = [
-    { category: "✓ Safe", count: safe, share: share(safe) },
-    { category: "⚠ Low stock", count: low, share: share(low) },
-    { category: "⏳ Expiring soon (30d)", count: soon, share: share(soon) },
-    { category: "✗ Out of stock", count: oos, share: share(oos) },
-    { category: "💀 Expired", count: expired, share: share(expired) },
-    { category: "Catalogue total", count: total, share: "100%" },
-    { category: "Health rate", count: `${healthPct}%`, share: "—" },
-  ];
-
-  const medicineRows: Record<string, string>[] = [];
-  (pharmacyData.out_of_stock_medicines ?? []).forEach((medicine) =>
-    medicineRows.push({ category: "Out of stock", medicine }),
-  );
-  (pharmacyData.low_stock_medicines ?? []).forEach((medicine) =>
-    medicineRows.push({ category: "Low stock", medicine }),
-  );
-  (pharmacyData.expiring_soon_medicines ?? []).forEach((medicine) =>
-    medicineRows.push({ category: "Expiring soon", medicine }),
-  );
-  (pharmacyData.expired_medicines ?? []).forEach((medicine) =>
-    medicineRows.push({ category: "Expired", medicine }),
-  );
+  const safe = pharmacyData.safe_medicines ?? [];
+  const low = pharmacyData.low_stock_medicines ?? [];
+  const oos = pharmacyData.out_of_stock_medicines ?? [];
+  const soon = pharmacyData.expiring_soon_medicines ?? [];
+  const expired = pharmacyData.expired_medicines ?? [];
 
   return {
     title: "Total Medicines",
-    subtitle: `${total} in catalogue · ${healthPct}% healthy`,
-    tables: [
+    subtitle: "Medicine names by stock category",
+    blocks: [
       {
-        caption: "Stock overview (same as hover tooltip)",
-        columns: [
-          { key: "category", label: "Category" },
-          { key: "count", label: "Count" },
-          { key: "share", label: "Share" },
+        sections: [
+          pharmacyCategorySection("✓ Safe", safe, "green"),
+          pharmacyCategorySection("⚠ Low stock", low, "orange"),
+          pharmacyCategorySection("✗ Out of stock", oos, "red"),
+          pharmacyCategorySection("⏳ Expiring soon (30d)", soon, "yellow"),
+          pharmacyCategorySection("💀 Expired", expired, "neutral"),
         ],
-        rows: overviewRows,
-      },
-      {
-        caption: "Medicines by category",
-        columns: [
-          { key: "category", label: "Category" },
-          { key: "medicine", label: "Medicine" },
-        ],
-        rows:
-          medicineRows.length > 0
-            ? medicineRows
-            : [{ category: "—", medicine: "No named medicines in flagged categories" }],
       },
     ],
-    blocks: [],
   };
 }
 
@@ -1661,7 +1649,7 @@ const KPI_CARD_DEFS = [
 
 export default function AdminDashboard() {
   const htmlIsDark = useHtmlDarkClass();
-  const { openDetail } = useDashboardDetailModal();
+  const { openDetail, openDetailAsync } = useDashboardDetailModal();
 
   const [kpiHover, setKpiHover] = useState<string | null>(null);
   const [intelClock, setIntelClock] = useState(0);
@@ -1734,38 +1722,68 @@ export default function AdminDashboard() {
   );
 
   const openIntelDetail = useCallback(
-    (builder: (d: PatientIntelResponse) => DetailModalPayload) => {
-      void ensureIntelDetail().then((d) => openDetail(builder(d)));
+    (
+      builder: (d: PatientIntelResponse) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensureIntelDetail();
+        return builder(d);
+      }, loading);
     },
-    [ensureIntelDetail, openDetail],
+    [ensureIntelDetail, openDetailAsync],
   );
 
   const openPharmacyDetail = useCallback(
-    (builder: (d: PharmacyIntelResponse) => DetailModalPayload) => {
-      void ensurePharmacyDetail().then((d) => openDetail(builder(d)));
+    (
+      builder: (d: PharmacyIntelResponse) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensurePharmacyDetail();
+        return builder(d);
+      }, loading);
     },
-    [ensurePharmacyDetail, openDetail],
+    [ensurePharmacyDetail, openDetailAsync],
   );
 
   const openFinanceDetail = useCallback(
-    (builder: (d: FinanceBillingOverview) => DetailModalPayload) => {
-      void ensureFinanceDetail().then((d) => openDetail(builder(d)));
+    (
+      builder: (d: FinanceBillingOverview) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensureFinanceDetail();
+        return builder(d);
+      }, loading);
     },
-    [ensureFinanceDetail, openDetail],
+    [ensureFinanceDetail, openDetailAsync],
   );
 
   const openBedsDetail = useCallback(
-    (builder: (d: PatientsBedsOverview) => DetailModalPayload) => {
-      void ensureBedsDetail().then((d) => openDetail(builder(d)));
+    (
+      builder: (d: PatientsBedsOverview) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensureBedsDetail();
+        return builder(d);
+      }, loading);
     },
-    [ensureBedsDetail, openDetail],
+    [ensureBedsDetail, openDetailAsync],
   );
 
   const openStaffDetail = useCallback(
-    (builder: (d: HrStaffOverview) => DetailModalPayload) => {
-      void ensureStaffDetail().then((d) => openDetail(builder(d)));
+    (
+      builder: (d: HrStaffOverview) => DetailModalPayload,
+      loading?: { title?: string; subtitle?: string },
+    ) => {
+      void openDetailAsync(async () => {
+        const d = await ensureStaffDetail();
+        return builder(d);
+      }, loading);
     },
-    [ensureStaffDetail, openDetail],
+    [ensureStaffDetail, openDetailAsync],
   );
 
   useRealtimeEvent(["vitals_updated", "admin_data_changed"], () => {
@@ -2423,7 +2441,12 @@ export default function AdminDashboard() {
                 {/* Stat 1: Total Medicines */}
                 <div
                   className="relative group flex min-w-0 flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors"
-                  onClick={() => openPharmacyDetail((d) => pharmacyInventorySnapshotTable(d))}
+                  onClick={() =>
+                    openPharmacyDetail((d) => pharmacyInventorySnapshotTable(d), {
+                      title: "Total Medicines",
+                      subtitle: "Loading medicine lists…",
+                    })
+                  }
                 >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Total Medicines</p>
                   <p className="text-tx-bright font-black text-xl tabular-nums leading-none mt-0.5">
