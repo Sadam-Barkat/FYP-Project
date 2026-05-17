@@ -470,7 +470,7 @@ function financeSnapshotModalPayload(
   return {
     title: "Net profit · context",
     subtitle: `Rev ₨${revenue.toFixed(2)} · Exp ₨${expenses.toFixed(2)} · Net ₨${net.toFixed(2)}`,
-    tables: [invTableAll, trendTable],
+    tables: [invTablePaid, trendTable],
     blocks: [],
   };
 }
