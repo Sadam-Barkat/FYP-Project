@@ -215,8 +215,7 @@ function patientIntelRosterTablePayload(
   } else if (filter === "at_risk") {
     rows = roster.filter((r) => {
       const n = Number(r.news2_score ?? 0);
-      const lab = String(r.ml_risk_label ?? "").toLowerCase();
-      return n >= 5 || lab === "high" || lab === "critical";
+      return n >= 5;
     });
   } else if (filter === "ml_deterioration_24h") {
     const fullHigh =
