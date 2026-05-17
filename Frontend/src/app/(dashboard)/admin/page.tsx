@@ -410,6 +410,179 @@ function staffForecastFullModalPayload(staffData: Record<string, unknown>): Deta
   };
 }
 
+function bedsWardDepartmentTable(d: PatientsBedsOverview, caption: string): DetailTablePayload {
+  const deps = d.bed_occupancy_by_department ?? [];
+  return {
+    caption,
+    columns: [
+      { key: "department", label: "Ward" },
+      { key: "occupied", label: "Occupied" },
+      { key: "total", label: "Total" },
+      { key: "free", label: "Free" },
+      { key: "pct", label: "Occupancy" },
+    ],
+    rows: deps.map((dep) => {
+      const occ = Number(dep.occupied ?? 0);
+      const tot = Number(dep.total ?? 0);
+      const free = Math.max(0, tot - occ);
+      return {
+        department: dep.department ?? "—",
+        occupied: occ,
+        total: tot,
+        free,
+        pct: `${Math.round((occ / Math.max(1, tot)) * 100)}%`,
+      };
+    }),
+  };
+}
+
+function bedsAdmissionsTrendTable(d: PatientsBedsOverview): DetailTablePayload {
+  const trend = d.admissions_discharges_trend ?? [];
+  return {
+    caption: "Admissions vs discharges (7 days)",
+    columns: [
+      { key: "day", label: "Day" },
+      { key: "admissions", label: "Admissions" },
+      { key: "discharges", label: "Discharges" },
+      { key: "net", label: "Net" },
+    ],
+    rows: trend.map((row) => {
+      const a = Number(row.admissions ?? 0);
+      const dis = Number(row.discharges ?? 0);
+      return {
+        day: String(row.day ?? "—"),
+        admissions: a,
+        discharges: dis,
+        net: a - dis,
+      };
+    }),
+  };
+}
+
+function bedsInpatientRosterModalPayload(d: PatientsBedsOverview, title: string): DetailModalPayload {
+  const roster = d.active_inpatient_roster ?? [];
+  const mapped = roster.map((r) => mapInpatientRosterModalRow(r)) as Record<
+    string,
+    string | number | boolean | null | undefined
+  >[];
+  return {
+    title,
+    subtitle:
+      mapped.length === 0
+        ? "No inpatients on this date."
+        : `${mapped.length} inpatient${mapped.length === 1 ? "" : "s"}`,
+    table: {
+      caption: `Inpatients (${mapped.length})`,
+      columns: INPATIENT_ROSTER_MODAL_COLS.map((c) => ({ key: c.key, label: c.label })),
+      rows: mapped,
+    },
+    blocks: [],
+  };
+}
+
+function bedsCapacityModalPayload(d: PatientsBedsOverview): DetailModalPayload {
+  return {
+    title: "Total capacity",
+    subtitle: `${d.total_capacity ?? 0} beds · ${Number(d.occupancy_percentage ?? 0).toFixed(1)}% occupied · ${d.available_beds ?? 0} free`,
+    tables: [bedsWardDepartmentTable(d, "Ward capacity"), bedsAdmissionsTrendTable(d)],
+    blocks: [],
+  };
+}
+
+function bedsOccupiedModalPayload(d: PatientsBedsOverview): DetailModalPayload {
+  const roster = d.active_inpatient_roster ?? [];
+  if (roster.length > 0) {
+    return bedsInpatientRosterModalPayload(d, "Occupied beds — inpatient roster");
+  }
+  return {
+    title: "Occupied beds",
+    subtitle: `${d.occupied_beds ?? 0} occupied across wards`,
+    tables: [bedsWardDepartmentTable(d, "Ward occupancy")],
+    blocks: [],
+  };
+}
+
+function bedsFreeModalPayload(d: PatientsBedsOverview): DetailModalPayload {
+  const deps = d.bed_occupancy_by_department ?? [];
+  const rows = deps.map((dep) => {
+    const occ = Number(dep.occupied ?? 0);
+    const tot = Number(dep.total ?? 0);
+    const free = Math.max(0, tot - occ);
+    return {
+      ward: dep.department ?? "—",
+      free,
+      total: tot,
+      status: free === 0 ? "Full" : free <= 2 ? "Low" : "Available",
+    };
+  });
+  return {
+    title: "Free beds",
+    subtitle: `${d.available_beds ?? 0} free of ${d.total_capacity ?? 0} total (${d.available_beds_status ?? 0} marked available in system)`,
+    tables: [
+      {
+        caption: "Free capacity by ward",
+        columns: [
+          { key: "ward", label: "Ward" },
+          { key: "free", label: "Free beds" },
+          { key: "total", label: "Total" },
+          { key: "status", label: "Status" },
+        ],
+        rows,
+      },
+      bedsAdmissionsTrendTable(d),
+    ],
+    blocks: [],
+  };
+}
+
+function bedsEmergencyModalPayload(d: PatientsBedsOverview): DetailModalPayload {
+  const ml = (d.ml_shortage_risk ?? {}) as Record<string, unknown>;
+  return {
+    title: "Emergency & critical cases",
+    subtitle: `${d.emergency_cases ?? 0} emergency · ${d.critical_condition_cases ?? 0} critical severity today`,
+    blocks: [
+      {
+        sections: [
+          {
+            title: "Alert counts (selected date)",
+            accent: "red",
+            items: [
+              {
+                primary: "Critical-severity alerts",
+                badge: String(d.emergency_cases ?? 0),
+              },
+              {
+                primary: "High-severity alerts",
+                badge: String(d.critical_condition_cases ?? 0),
+              },
+              {
+                primary: "Occupied / capacity",
+                secondary: `${d.occupied_beds ?? 0} / ${d.total_capacity ?? 0}`,
+              },
+              {
+                primary: "Free beds remaining",
+                secondary: String(d.available_beds ?? 0),
+              },
+            ],
+          },
+          {
+            title: "ML bed shortage risk",
+            accent: "orange",
+            items: [
+              {
+                primary: String(ml.risk_label ?? "—"),
+                secondary: `7-day predicted admissions: ${Math.round(Number(ml.predicted_admissions_7d_total ?? 0))}`,
+                badge:
+                  typeof ml.risk_pct === "number" ? `${ml.risk_pct}%` : undefined,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 function bedsAdmissionsForecastModalPayload(bedsData: Record<string, unknown>): DetailModalPayload {
   const fc = Array.isArray(bedsData.ml_next_7_days_forecast)
     ? (bedsData.ml_next_7_days_forecast as Record<string, unknown>[])
@@ -1116,6 +1289,7 @@ export type PatientsBedsOverview = {
   previous_7_days_discharges?: number;
   ml_next_7_days_forecast?: Array<Record<string, unknown>>;
   ml_shortage_risk?: Record<string, unknown>;
+  active_inpatient_roster?: ActiveInpatientRosterRow[];
   selected_date?: string;
 };
 
@@ -3478,7 +3652,15 @@ export default function AdminDashboard() {
               {/* ── COLUMN 1: 4 KPI Stats ── */}
               <div className="grid grid-rows-4 divide-y divide-dash-border overflow-visible">
                 {/* Stat 1: Total Capacity */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  onClick={() =>
+                    openBedsDetail((d) => bedsCapacityModalPayload(d), {
+                      title: "Total capacity",
+                      subtitle: "Loading ward breakdown…",
+                    })
+                  }
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Total Capacity
                   </p>
@@ -3513,7 +3695,15 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 2: Occupied Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  onClick={() =>
+                    openBedsDetail((d) => bedsOccupiedModalPayload(d), {
+                      title: "Occupied beds",
+                      subtitle: "Loading inpatient roster…",
+                    })
+                  }
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Occupied
                   </p>
@@ -3553,7 +3743,15 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Stat 3: Free Beds */}
-                <div className="relative group flex flex-col justify-center px-3 py-1.5 hover:bg-white/[0.02] transition-colors">
+                <div
+                  className={`relative group flex flex-col justify-center px-3 py-1.5 cursor-pointer hover:bg-white/[0.02] transition-colors ${insightOpenCls}`}
+                  onClick={() =>
+                    openBedsDetail((d) => bedsFreeModalPayload(d), {
+                      title: "Free beds",
+                      subtitle: "Loading ward availability…",
+                    })
+                  }
+                >
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">
                     Free Beds
                   </p>
@@ -3821,7 +4019,10 @@ export default function AdminDashboard() {
                   title="Admission forecast detail"
                   onClick={() =>
                     bedsData &&
-                    openBedsDetail((d) => bedsAdmissionsForecastModalPayload(d))
+                    openBedsDetail((d) => bedsAdmissionsForecastModalPayload(d), {
+                      title: "Forecasted admissions (ML)",
+                      subtitle: "Loading 7-day forecast…",
+                    })
                   }
                 >
                   {(() => {

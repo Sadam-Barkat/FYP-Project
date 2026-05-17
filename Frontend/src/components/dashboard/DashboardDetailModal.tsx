@@ -85,6 +85,78 @@ function cellText(v: string | number | boolean | null | undefined): string {
   return s.length > 0 ? s : "—";
 }
 
+function DetailTableSection({
+  tbl,
+  htmlIsDark,
+  scrollMaxClass = "max-h-[min(52vh,480px)]",
+}: {
+  tbl: DetailTablePayload;
+  htmlIsDark: boolean;
+  scrollMaxClass?: string;
+}) {
+  const headBg = htmlIsDark ? "bg-[#111827]" : "bg-white";
+  const cellBorder = htmlIsDark ? "border-white/10" : "border-slate-200";
+
+  return (
+    <div className={`overflow-hidden rounded-lg border ${htmlIsDark ? "border-white/10" : "border-slate-200"}`}>
+      <div
+        className={`${scrollMaxClass} overflow-auto overscroll-contain [scrollbar-width:thin] ${
+          htmlIsDark ? "bg-[#0a0f1a]" : "bg-white"
+        }`}
+      >
+        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-left text-[11px]">
+          <thead className={`sticky top-0 z-20 ${headBg} shadow-[0_1px_0_0_rgba(148,163,184,0.25)]`}>
+            <tr>
+              {tbl.columns.map((c) => (
+                <th
+                  key={c.key}
+                  className={`whitespace-nowrap border-b px-2 py-2 font-semibold uppercase tracking-wide ${cellBorder} ${headBg}`}
+                >
+                  {c.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tbl.rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={Math.max(1, tbl.columns.length)}
+                  className={`px-3 py-8 text-center ${htmlIsDark ? "text-tx-muted" : "text-slate-500"}`}
+                >
+                  No rows to display.
+                </td>
+              </tr>
+            ) : (
+              tbl.rows.map((row, ri) => (
+                <tr
+                  key={ri}
+                  className={
+                    htmlIsDark
+                      ? "border-b border-white/[0.06] odd:bg-white/[0.02] hover:bg-white/[0.04]"
+                      : "border-b border-slate-200/80 odd:bg-slate-50/80 hover:bg-slate-100/80"
+                  }
+                >
+                  {tbl.columns.map((c) => (
+                    <td
+                      key={c.key}
+                      className={`max-w-[220px] whitespace-normal break-words border-b px-2 py-2 align-top tabular-nums ${cellBorder} ${
+                        htmlIsDark ? "text-tx-primary bg-[#0a0f1a]" : "text-slate-800 bg-white"
+                      }`}
+                    >
+                      {cellText(row[c.key])}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   open: boolean;
   payload: DetailModalPayload | null;
@@ -218,7 +290,7 @@ export function DashboardDetailModal({ open, payload, htmlIsDark, onClose }: Pro
             </div>
           ) : tableSections.length > 0 ? (
             <div
-              className={`min-h-0 flex-1 overflow-auto px-3 py-3 [scrollbar-width:thin] ${
+              className={`min-h-0 flex-1 overflow-hidden px-3 py-3 ${
                 htmlIsDark ? "bg-[#0a0f1a]" : "bg-slate-50/80"
               }`}
             >
@@ -234,64 +306,15 @@ export function DashboardDetailModal({ open, payload, htmlIsDark, onClose }: Pro
                         {tbl.caption}
                       </p>
                     ) : null}
-                    <div className="inline-block min-w-full align-middle">
-                      <table className="min-w-full border-collapse text-left text-[11px]">
-                        <thead
-                          className={`sticky top-0 z-10 shadow-sm ${
-                            htmlIsDark ? "bg-[#111827] text-tx-muted" : "bg-white text-slate-600"
-                          }`}
-                        >
-                          <tr>
-                            {tbl.columns.map((c) => (
-                              <th
-                                key={c.key}
-                                className={`whitespace-nowrap border-b px-2 py-2 font-semibold uppercase tracking-wide ${
-                                  htmlIsDark ? "border-white/10" : "border-slate-200"
-                                }`}
-                              >
-                                {c.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tbl.rows.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan={Math.max(1, tbl.columns.length)}
-                                className={`px-3 py-8 text-center ${
-                                  htmlIsDark ? "text-tx-muted" : "text-slate-500"
-                                }`}
-                              >
-                                No rows to display.
-                              </td>
-                            </tr>
-                          ) : (
-                            tbl.rows.map((row, ri) => (
-                              <tr
-                                key={ri}
-                                className={
-                                  htmlIsDark
-                                    ? "border-b border-white/[0.06] odd:bg-white/[0.02] hover:bg-white/[0.04]"
-                                    : "border-b border-slate-200/80 odd:bg-white hover:bg-slate-100/80"
-                                }
-                              >
-                                {tbl.columns.map((c) => (
-                                  <td
-                                    key={c.key}
-                                    className={`max-w-[220px] whitespace-normal break-words px-2 py-2 align-top tabular-nums ${
-                                      htmlIsDark ? "text-tx-primary" : "text-slate-800"
-                                    }`}
-                                  >
-                                    {cellText(row[c.key])}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                    <DetailTableSection
+                      tbl={tbl}
+                      htmlIsDark={htmlIsDark}
+                      scrollMaxClass={
+                        tableSections.length === 1
+                          ? "max-h-[min(58vh,520px)]"
+                          : "max-h-[min(40vh,360px)]"
+                      }
+                    />
                   </div>
                 ))}
               </div>

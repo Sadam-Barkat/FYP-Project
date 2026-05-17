@@ -313,6 +313,54 @@ async def get_patients_beds_overview(
         }
         if summary_only:
             result["admissions_discharges_trend"] = []
+        else:
+            roster_res = await db.execute(
+                select(Admission, Patient)
+                .join(Patient, Admission.patient_id == Patient.id)
+                .where(
+                    and_(
+                        Admission.admission_date <= day_end,
+                        or_(
+                            Admission.discharge_date.is_(None),
+                            Admission.discharge_date >= day_start,
+                        ),
+                    )
+                )
+                .order_by(Patient.name)
+            )
+            active_inpatient_roster: List[Dict[str, Any]] = []
+            for admission, patient in roster_res.all():
+                pid = int(patient.id)
+                active_inpatient_roster.append(
+                    {
+                        "patient_id": pid,
+                        "name": (patient.name or "").strip() or f"Patient #{pid}",
+                        "age": int(patient.age) if patient.age is not None else None,
+                        "gender": patient.gender or "",
+                        "blood_group": getattr(patient, "blood_group", None),
+                        "contact": patient.contact or "",
+                        "address": (patient.address or "")[:200],
+                        "admission_date": admission.admission_date.isoformat()
+                        if admission.admission_date
+                        else None,
+                        "reason_for_admission": (admission.reason_for_admission or "")[:200],
+                        "bed_id": int(admission.bed_id) if admission.bed_id is not None else 0,
+                        "news2_score": 0,
+                        "heart_rate": None,
+                        "spo2": None,
+                        "temperature": None,
+                        "blood_pressure_sys": None,
+                        "blood_pressure_dia": None,
+                        "respiratory_rate": None,
+                        "ml_risk_label": "—",
+                        "ml_risk_pct": 0,
+                        "has_abnormal_vital": False,
+                        "vital_field_normal_count": 0,
+                        "vital_field_total_count": 0,
+                    }
+                )
+            result["active_inpatient_roster"] = active_inpatient_roster
+
         return result
 
     except Exception as exc:
