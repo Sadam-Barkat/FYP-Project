@@ -1622,7 +1622,7 @@ export default function AdminDashboard() {
       <section className="shrink-0 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-transparent">
         {KPI_CARD_DEFS.map((k) => {
           const Icon = k.icon;
-          const displayValue = formatKpiDisplay(kpiData, k.valueKey, k.kind);
+          const displayValue = formatKpiDisplay(kpiData || null, k.valueKey, k.kind);
           const seedValue = Number(kpiData?.[k.valueKey] ?? 0);
           const value = Number.isFinite(seedValue) ? seedValue : 0;
           const trendRaw = kpiData?.[k.trendKey];
@@ -1636,11 +1636,12 @@ export default function AdminDashboard() {
               : `${trendStr} vs yesterday`;
           const { title: tipTitle, rows: tipRows } = kpiTooltipContent(
             k.label,
-            kpiData
+            kpiData || null
           );
           const showTip =
-            !kpiLoading && kpiHover === k.label && tipRows.length > 0;
+            !kpiLoading && !!kpiData && kpiHover === k.label && tipRows.length > 0;
           const sparkData = makeSparkData(value);
+          const isActuallyLoading = kpiLoading && !kpiData;
           return (
             <div
               key={k.label}
@@ -1661,7 +1662,7 @@ export default function AdminDashboard() {
                   <div
                     className="mb-2 flex min-h-[2.25rem] items-center"
                   >
-                  {kpiLoading ? (
+                  {isActuallyLoading ? (
                     <div
                       className="h-8 w-24 max-w-full animate-pulse rounded-xl bg-slate-100 dark:bg-white/8"
                       aria-hidden
@@ -1677,8 +1678,8 @@ export default function AdminDashboard() {
                 <p
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${trendPillClass(trendStr)}`}
                 >
-                  <span className={kpiLoading ? "text-slate-600 dark:text-tx-secondary" : trendTextClass(trendStr)}>
-                    {kpiLoading ? "N/A vs yesterday" : trendLine}
+                  <span className={isActuallyLoading ? "text-slate-600 dark:text-tx-secondary" : trendTextClass(trendStr)}>
+                    {isActuallyLoading ? "N/A vs yesterday" : trendLine}
                   </span>
                 </p>
               </div>
