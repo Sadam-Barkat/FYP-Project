@@ -5182,7 +5182,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="mt-2 h-[100px] shrink-0">
+                <div className="mt-2 h-[100px] shrink-0 relative overflow-visible">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={
@@ -5199,6 +5199,62 @@ export default function AdminDashboard() {
                     >
                       <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 9, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                      <RechartsTooltip
+                        wrapperStyle={{ zIndex: 9999, pointerEvents: "none" }}
+                        cursor={{ fill: "rgba(168, 85, 247, 0.15)" }}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const p = (payload[0]?.payload ?? {}) as {
+                            date?: string;
+                            day?: string;
+                            day_name?: string;
+                            risk_pct?: number;
+                            backlog_risk?: boolean;
+                          };
+                          const useMl = (labData.ml_next_7_days_forecast ?? []).length > 0;
+                          const panel = htmlIsDark
+                            ? "rounded-lg border border-white/10 bg-[#0d1424] px-2.5 py-2 shadow-panel"
+                            : "rounded-lg border border-slate-200 !bg-white px-2.5 py-2 shadow-[0_4px_20px_rgba(15,23,42,0.08)]";
+                          const titleCls = htmlIsDark
+                            ? "text-[10px] font-semibold uppercase text-tx-muted"
+                            : "text-[10px] font-semibold uppercase text-slate-500";
+                          const rowCls = htmlIsDark
+                            ? "text-[10px] text-tx-secondary"
+                            : "text-[10px] text-slate-700";
+                          return (
+                            <div className={panel}>
+                              <p className={titleCls}>
+                                {useMl ? (p.date ?? label ?? "—") : String(label ?? "—")}
+                              </p>
+                              {useMl ? (
+                                <div className="mt-1 space-y-0.5">
+                                  <p className="text-[10px] text-kpi-purple">
+                                    Backlog risk:{" "}
+                                    <span className="font-semibold tabular-nums">{p.risk_pct ?? 0}%</span>
+                                  </p>
+                                  <p className={rowCls}>
+                                    {p.backlog_risk
+                                      ? "⚠ High backlog risk day"
+                                      : "✓ Normal expected load"}
+                                  </p>
+                                  {p.day_name ? (
+                                    <p className="text-[10px] text-tx-muted">{p.day_name}</p>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="mt-1 space-y-0.5">
+                                  {payload.map((entry) => (
+                                    <p key={String(entry.dataKey)} className={rowCls}>
+                                      <span style={{ color: entry.color }}>{entry.name}: </span>
+                                      <span className="font-semibold tabular-nums">{entry.value}</span>
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
                       {(labData.ml_next_7_days_forecast ?? []).length > 0 ? (
                         <Bar
                           dataKey="risk_pct"
