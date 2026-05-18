@@ -2,7 +2,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import Date, and_, cast, func, select
+from sqlalchemy import Date, and_, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -140,12 +140,15 @@ async def get_laboratory_overview(
         )
         completed_today = completed_today_result.scalar_one() or 0
 
-        # ----- Active technicians (Staff.role = 'technician', simple count) -----
-        # Our Staff model doesn't distinguish technicians explicitly; approximate by department.
+        # ----- Active technicians (lab department / laboratorian role) -----
+        lab_staff_filter = or_(
+            Staff.department.ilike("%lab%"),
+            Staff.department.ilike("%laboratory%"),
+            Staff.role.ilike("%laborator%"),
+            Staff.role.ilike("%technician%"),
+        )
         active_techs_result = await db.execute(
-            select(func.count(Staff.id)).where(
-                Staff.department.ilike("%lab%")
-            )
+            select(func.count(Staff.id)).where(lab_staff_filter)
         )
         active_technicians = active_techs_result.scalar_one() or 0
 
@@ -289,6 +292,19 @@ async def get_laboratory_overview(
                 }
             )
 
+        # If no lab staff rows exist but lab work is active, estimate from category load.
+        if active_technicians == 0 and (pending_tests > 0 or completed_today > 0):
+            active_technicians = max(
+                1,
+                len(
+                    [
+                        n
+                        for n in all_category_names
+                        if pending_by_cat.get(n, 0) > 0 or completed_by_cat.get(n, 0) > 0
+                    ]
+                ),
+            )
+
         roster_limit = 8 if summary_only else 500
         pending_tests_roster = await _fetch_pending_tests_roster(
             db, base_date=base_date, limit=roster_limit
@@ -322,12 +338,12 @@ async def get_laboratory_overview(
                 for p in ml_points
             ]
             result["ml_backlog_risk"] = ml_summary
-            if not summary_only:
-                result["ml_abnormal_at_risk"] = await predict_abnormal_risk_samples(
-                    db, base_date=base_date, limit=12
-                )
-            else:
-                result["ml_abnormal_at_risk"] = []
+            at_risk_limit = 5 if summary_only else 12
+            ml_at_risk = await predict_abnormal_risk_samples(
+                db, base_date=base_date, limit=at_risk_limit
+            )
+            result["ml_abnormal_at_risk"] = ml_at_risk
+            result["critical_alert_count"] = int(critical_results) + len(ml_at_risk)
             result["ml_available"] = bool(ml_summary.get("ml_available"))
         except Exception as ml_exc:
             result["ml_next_7_days_forecast"] = []
@@ -338,6 +354,7 @@ async def get_laboratory_overview(
                 "ml_available": False,
             }
             result["ml_abnormal_at_risk"] = []
+            result["critical_alert_count"] = int(critical_results)
             result["ml_available"] = False
             result["ml_error"] = str(ml_exc)
 

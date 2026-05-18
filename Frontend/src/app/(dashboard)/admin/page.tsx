@@ -619,6 +619,17 @@ function labIntelTooltipPanelCls(
   return `absolute left-full ${pos} z-[9999] ml-1 w-44 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover:block pointer-events-none`;
 }
 
+function labMlChartHeaderTooltipCls(htmlIsDark: boolean): string {
+  return `absolute top-full left-0 z-[9999] mt-1.5 w-52 ${patientIntelHoverPanelCls(htmlIsDark)} hidden group-hover/labmlheader:block pointer-events-none`;
+}
+
+function labCriticalKpiCount(d: LaboratoryOverview): number {
+  if (typeof d.critical_alert_count === "number") return d.critical_alert_count;
+  const critical = d.critical_results ?? 0;
+  const atRisk = (d.ml_abnormal_at_risk ?? []).length;
+  return critical + atRisk;
+}
+
 function labPendingTestsModalPayload(d: LaboratoryOverview): DetailModalPayload {
   const roster = d.pending_tests_roster ?? [];
   const total = Math.max(d.pending_tests ?? 0, roster.length);
@@ -1543,6 +1554,7 @@ export type LaboratoryOverview = {
   completed_today?: number;
   active_technicians?: number;
   critical_results?: number;
+  critical_alert_count?: number;
   daily_test_volume_by_category?: Array<{ category?: string; completed?: number; pending?: number }>;
   weekly_result_trends?: Array<{ day?: string; normal?: number; abnormal?: number }>;
   ml_next_7_days_forecast?: LabBacklogForecastPoint[];
@@ -5060,9 +5072,9 @@ export default function AdminDashboard() {
                   <p className="text-tx-muted text-[9px] font-semibold uppercase tracking-wider">Critical Results</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-kpi-red font-black text-xl tabular-nums leading-none">
-                      {labData.critical_results ?? 0}
+                      {labCriticalKpiCount(labData)}
                     </p>
-                    {(labData.critical_results ?? 0) > 0 ? (
+                    {labCriticalKpiCount(labData) > 0 ? (
                       <span className="relative flex h-1.5 w-1.5">
                         <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-red opacity-70" />
                         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-red" />
@@ -5072,13 +5084,15 @@ export default function AdminDashboard() {
                   <div className="w-full h-1 rounded-full bg-dash-border mt-1 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-kpi-red transition-all"
-                      style={{ width: `${Math.min(100, ((labData.critical_results ?? 0) / Math.max(1, labData.completed_today ?? 1)) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (labCriticalKpiCount(labData) / Math.max(1, labData.completed_today ?? 1)) * 100)}%` }}
                     />
                   </div>
                   <div className={`${labIntelTooltipPanelCls(htmlIsDark)} top-0`}>
                     <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">Critical Detail</p>
-                    <p className="text-[10px] text-kpi-red">{labData.critical_results ?? 0} critical today</p>
-                    <p className="text-[10px] text-tx-secondary mt-0.5">Requires immediate physician review</p>
+                    <p className="text-[10px] text-kpi-red">{labCriticalKpiCount(labData)} alert(s) today</p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      {labData.critical_results ?? 0} critical · {(labData.ml_abnormal_at_risk ?? []).length} ML at-risk
+                    </p>
                     {(labData.ml_abnormal_at_risk ?? []).slice(0, 3).map((r, i) => (
                       <p key={i} className="text-[10px] text-kpi-orange mt-0.5 truncate">
                         ⚠ {r.patient_name}: {Math.round((r.abnormal_probability ?? 0) * 100)}%
@@ -5129,39 +5143,43 @@ export default function AdminDashboard() {
               </div>
 
               {/* ── COLUMN 2: Weekly Trends Chart + Category Breakdown ── */}
-              <div className="flex flex-col px-4 py-3 overflow-hidden">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex flex-col px-4 py-3 overflow-visible">
+                <div className="relative group/labmlheader flex items-center gap-1.5 shrink-0 overflow-visible z-10">
+                  <p className="text-kpi-purple text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-help">
                     🤖 ML Lab Backlog Risk (Next 7 Days)
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-live-ping absolute inline-flex h-full w-full rounded-full bg-kpi-purple opacity-70" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-kpi-purple" />
                     </span>
                   </p>
-                  <span className="relative group/labmlinfo inline-flex items-center justify-center cursor-help">
-                    <svg
-                      className="w-3 h-3 text-tx-muted transition-colors group-hover/labmlinfo:text-kpi-purple"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span
-                      role="tooltip"
-                      className={
-                        htmlIsDark
-                          ? "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[220px] rounded-md border border-white/10 bg-gray-900 px-2 py-1.5 text-[10px] leading-snug text-white shadow-[0_8px_32px_rgba(0,0,0,0.7)] opacity-0 transition-opacity duration-150 delay-150 group-hover/labmlinfo:opacity-100"
-                          : "pointer-events-none absolute top-full left-0 z-[9999] mt-1.5 w-[220px] rounded-md border border-slate-200 !bg-white px-2 py-1.5 text-[10px] leading-snug text-slate-700 shadow-[0_4px_20px_rgba(15,23,42,0.1)] opacity-0 transition-opacity duration-150 delay-150 group-hover/labmlinfo:opacity-100"
-                      }
-                    >
-                      Daily backlog risk % from the ML model for the next 7 days. Higher bars mean more pending workload. Click the footer for the full forecast table.
-                    </span>
-                  </span>
+                  <div className={labMlChartHeaderTooltipCls(htmlIsDark)}>
+                    <p className="text-[10px] text-tx-muted uppercase font-semibold mb-1">ML backlog forecast</p>
+                    <p className="text-[10px] text-kpi-purple">
+                      Purple bars = daily backlog risk %
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Higher bars mean more pending workload expected that day.
+                    </p>
+                    <p className="text-[10px] text-tx-secondary mt-0.5">
+                      Click the footer below for the full 7-day forecast table.
+                    </p>
+                    {(() => {
+                      const fc = labData.ml_next_7_days_forecast ?? [];
+                      const high = fc.filter((f) => f.backlog_risk).length;
+                      const avg =
+                        fc.length > 0
+                          ? Math.round(
+                              (fc.reduce((s, f) => s + (f.risk_probability ?? 0), 0) / fc.length) *
+                                100,
+                            )
+                          : 0;
+                      return fc.length > 0 ? (
+                        <p className="text-[10px] text-tx-secondary mt-0.5">
+                          Next 7 days: {high} high-risk day(s) · {avg}% avg probability
+                        </p>
+                      ) : null;
+                    })()}
+                  </div>
                 </div>
 
                 <div className="mt-2 h-[100px] shrink-0">
@@ -5272,7 +5290,7 @@ export default function AdminDashboard() {
 
                 {(() => {
                   const pending = labData.pending_tests ?? 0;
-                  const critical = labData.critical_results ?? 0;
+                  const critical = labCriticalKpiCount(labData);
                   const techs = Math.max(1, labData.active_technicians ?? 1);
                   const load = Math.round(pending / techs);
                   const mlRisk = labData.ml_backlog_risk?.risk_label ?? "Low";
